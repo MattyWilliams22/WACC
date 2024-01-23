@@ -5,7 +5,7 @@ before_script:
   - apt-get install -y make gcc-arm-linux-gnueabi qemu-user
   - curl -fL "https://github.com/VirtusLab/coursier-m1/releases/latest/download/cs-aarch64-pc-linux.gz" | gzip -d > cs
   - chmod +x cs
-  - ./cs setup
+  - cs setup
 
 
 build:
