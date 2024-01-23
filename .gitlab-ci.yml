@@ -1,4 +1,4 @@
-image: kryptos12/wacc-04
+image: kryptos12/wacc-04:0.0.1
 
 build:
   stage: build
