@@ -1,12 +1,11 @@
-image: openjdk:11
+image: sbtscala/scala-sbt:eclipse-temurin-focal-17.0.5_8_1.8.2_2.13.10
+
+before_script:
+  - apt-get update
+  - apt-get install -y make gcc-arm-linux-gnueabi qemu-user
+
 
 build:
   stage: build
   script:
-    - apt-get update --allow-unauthenticated
-    - apt-get -y install make
-    - curl -fL "https://github.com/coursier/launchers/raw/master/cs-x86_64-pc-linux.gz" | gzip -d > cs
-    - chmod +x cs
-    - ./cs setup -y
-    - scala --version
     - make
