@@ -1,4 +1,11 @@
-image: kryptos12/wacc-04:0.0.2
+image: openjdk:11
+
+before_script:
+  - apt-get update -y
+  - apt-get install make -y
+  - curl -fL https://github.com/Virtuslab/scala-cli/releases/latest/download/scala-cli-x86_64-pc-linux.gz | gzip -d > scala-cli
+  - chmod +x scala-cli
+  - mv scala-cli /usr/local/bin/scala-cli
 
 build:
   stage: build
