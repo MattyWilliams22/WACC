@@ -1,8 +1,7 @@
-image: zifeo/sbt-scala-coursier:latest
+image: openjdk:11
 
 build:
   stage: build
   script:
-    - apt-get update -y
-    - apt-get install make -y
+    - curl -fL "https://github.com/coursier/launchers/raw/master/cs-x86_64-pc-linux.gz" | gzip -d > cs
     - make
