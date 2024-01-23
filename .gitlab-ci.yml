@@ -3,5 +3,5 @@ image: zifeo/sbt-scala-coursier:latest
 build:
   stage: build
   script:
-    - apt-get install make
+    - apt-get install build-essential
     - make
