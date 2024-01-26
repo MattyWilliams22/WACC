@@ -8,14 +8,20 @@ import parsley.token.predicate
 object lexer {
     private val desc = LexicalDesc.plain.copy(
         symbolDesc = SymbolDesc.plain.copy(
-
+            hardKeywords = Set("true", "false", "null", "if", "else", "int",
+            "bool", "char", "string", "pair", "begin", "end", "is", "skip",
+            "read", "free", "return", "exit", "print", "println", "then", "fi",
+            "while", "do", "done", "newpair", "call", "fst", "snd"),
+            hardOperators = Set("len", "ord", "chr", "+", "*", "/", "%", "-",
+            ">", ">=", "<", "<=", "==", "!=", "&&", "||")
         ),
         nameDesc = NameDesc.plain.copy(
             identifierStart = predicate.Basic(c => c.isLetter | c == '_'),
-            identifierLetter = predicate.Basic(c => c.isLetterOrDigit | c == '_'),
+            identifierLetter = predicate.Basic(c => c.isLetterOrDigit | c == '_')
         ),
         spaceDesc = SpaceDesc.plain.copy(
-
+            lineCommentStart = "#",
+            lineCommentAllowsEOF = true
         ),
         numericDesc = numeric.NumericDesc.plain.copy(
 
