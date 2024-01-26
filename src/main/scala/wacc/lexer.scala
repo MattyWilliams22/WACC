@@ -3,6 +3,7 @@ package wacc
 import parsley.Parsley
 import parsley.token.Lexer
 import parsley.token.descriptions._
+import parsley.token.descriptions.text.EscapeDesc
 import parsley.token.predicate
 
 object lexer {
@@ -27,8 +28,11 @@ object lexer {
 
         ),
         textDesc = text.TextDesc.plain.copy(
-
-        ),
+            escapeSequences = EscapeDesc.plain.copy(
+                escBegin = '\\',
+                literals = Set('0', 'b', 't', 'n', 'f', 'r', '"', '\'', '\\'),
+            )
+        )
     )
     private val lexer = new Lexer(desc)
 
