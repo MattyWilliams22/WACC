@@ -20,28 +20,39 @@ object lexer {
         ),
         nameDesc = NameDesc.plain.copy(
             identifierStart = predicate.Basic(c => c.isLetter | c == '_'),
-            identifierLetter = predicate.Basic(c => c.isLetterOrDigit | c == '_')
+            identifierLetter = predicate.Basic(c => c.isLetterOrDigit | c == '_'),
         ),
         spaceDesc = SpaceDesc.plain.copy(
             lineCommentStart = "#",
-            lineCommentAllowsEOF = true
+            lineCommentAllowsEOF = true,
+            space = predicate.Basic(Character.isWhitespace)
         ),
         numericDesc = numeric.NumericDesc.plain.copy(
-            literalBreakChar = BreakCharDesc.NoBreakChar,
-            leadingZerosAllowed = true,
-            positiveSign = PlusSignPresence.Optional,
             integerNumbersCanBeHexadecimal = false,
             integerNumbersCanBeOctal = false,
-            integerNumbersCanBeBinary = false,
             decimalExponentDesc = ExponentDesc.NoExponents
         ),
         textDesc = text.TextDesc.plain.copy(
             escapeSequences = EscapeDesc.plain.copy(
                 escBegin = '\\',
-                literals = Set('0', 'b', 't', 'n', 'f', 'r', '"', '\'', '\\'),
+                literals = Set.empty,
+                mapping = Map(
+                    "0" -> 0x0000,
+                    "b" -> 0x0008,
+                    "t" -> 0x0009,
+                    "n" -> 0x000a,
+                    "f" -> 0x000c,
+                    "r" -> 0x000d,
+                    "\"" -> 0x0022,
+                    "\'" -> 0x0027,
+                    "\\" -> 0x005c
+                )
             ),
             characterLiteralEnd = '\'',
-            stringEnds = Set(("\"", "\""))
+            stringEnds = Set(("\"", "\"")),
+            graphicCharacter = predicate.Basic(c =>
+                c >= ' ' && c <= '~' && !Set('\\', '\'', '\"').contains(c)
+            )
         )
     )
     private val lexer = new Lexer(desc)
