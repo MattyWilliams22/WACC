@@ -57,9 +57,7 @@ object lexer {
     )
     private val lexer = new Lexer(desc)
 
-    val integer = lexer.lexeme.integer.decimal
-
-    val int_liter = lexer.lexeme.integer
+    val int_liter = lexer.lexeme.integer.decimal
     val char_liter = lexer.lexeme.character
     val str_liter = lexer.lexeme.string 
     val ident = lexer.lexeme.names.identifier
