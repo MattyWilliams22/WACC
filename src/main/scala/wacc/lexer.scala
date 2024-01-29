@@ -27,8 +27,8 @@ object lexer {
             identifierLetter = predicate.Basic(c => c.isLetterOrDigit | c == '_'),
         ),
         spaceDesc = SpaceDesc.plain.copy(
-            lineCommentStart = "#",
-            lineCommentAllowsEOF = true,
+            commentLine = "#",
+            commentLineAllowsEOF = true,
             space = predicate.Basic(Character.isWhitespace)
         ),
         numericDesc = numeric.NumericDesc.plain.copy(
@@ -39,21 +39,19 @@ object lexer {
         textDesc = text.TextDesc.plain.copy(
             escapeSequences = EscapeDesc.plain.copy(
                 escBegin = '\\',
-                literals = Set.empty,
-                mapping = Map(
-                    "0" -> 0x0000,
-                    "b" -> 0x0008,
-                    "t" -> 0x0009,
-                    "n" -> 0x000a,
-                    "f" -> 0x000c,
-                    "r" -> 0x000d,
-                    "\"" -> 0x0022,
-                    "\'" -> 0x0027,
-                    "\\" -> 0x005c
-                )
+                literals = Set('\'', '\"', '\\'),
+                singleMap = Map(
+                    '0' -> 0x0000,
+                    'b' -> 0x0008,
+                    't' -> 0x0009,
+                    'n' -> 0x000a,
+                    'f' -> 0x000c,
+                    'r' -> 0x000d,
+                ),
+                gapsSupported = false
             ),
             characterLiteralEnd = '\'',
-            stringEnds = Set(("\"", "\"")),
+            stringEnds = Set("\""),
             graphicCharacter = predicate.Basic(c =>
                 c >= ' ' && c <= '~' && !Set('\\', '\'', '\"').contains(c)
             )
