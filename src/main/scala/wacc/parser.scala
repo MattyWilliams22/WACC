@@ -4,7 +4,7 @@ import parsley.{Parsley, Result}
 import parsley.expr.{InfixL, InfixN, InfixR, Ops, Prefix, precedence}
 import lexer.implicits.implicitSymbol
 import lexer.{bool, char, fully, ident, int, pairLiter, str}
-import parsley.Parsley.many
+import parsley.Parsley.{atomic, some}
 
 object parser {
     def parse(input: String): Result[String, Expr] = parser.parse(input)
@@ -38,7 +38,7 @@ object parser {
     case class ArrayElem(x: String, y: List[Expr]) extends Expr
 
     private lazy val atom: Parsley[Expr] = {
-        "(" ~> expr <~ ")" | (ident <~> many("[" ~> expr <~ "]")).map(x => ArrayElem(x._1, x._2)) |
+        "(" ~> expr <~ ")" | atomic(ident <~> some("[" ~> expr <~ "]")).map(x => ArrayElem(x._1, x._2)) |
           int.map(Num) | ident.map(Var) | bool.map(Bool) | char.map(Ch) | str.map(Str) |
           pairLiter.map(PairLiter)
     }
