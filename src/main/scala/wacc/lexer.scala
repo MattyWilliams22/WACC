@@ -6,7 +6,7 @@ import parsley.token.descriptions._
 import parsley.token.descriptions.text.EscapeDesc
 import parsley.token.predicate
 import parsley.token.descriptions.numeric._
-import parsley.syntax.character.{charLift, stringLift}
+import parsley.syntax.character.stringLift
 import parsley.token.symbol.ImplicitSymbol
 
 import scala.language.postfixOps
