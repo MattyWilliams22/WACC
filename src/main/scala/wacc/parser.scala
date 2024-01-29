@@ -1,10 +1,9 @@
 package wacc
 
 import parsley.{Parsley, Result}
-import parsley.expr.{precedence, InfixL, Ops, Prefix, InfixN, InfixR}
-
+import parsley.expr.{InfixL, InfixN, InfixR, Ops, Prefix, precedence}
 import lexer.implicits.implicitSymbol
-import lexer.{int_liter, fully, ident}
+import lexer.{bool, char, fully, ident, int, str, pairLiter}
 
 object parser {
     def parse(input: String): Result[String, Expr] = parser.parse(input)
@@ -31,9 +30,15 @@ object parser {
     case class Chr(x: Expr) extends Expr
     case class Num(x: BigInt) extends Expr
     case class Var(x: String) extends Expr
+    case class Bool(x: String) extends Expr
+    case class Ch(x: Char) extends Expr
+    case class Str(x: String) extends Expr
+    case class PairLiter(x: String) extends Expr
 
-    private lazy val atom: Parsley[Expr] =
-        "(" ~> expr <~ ")" | int_liter.map(Num) | ident.map(Var)
+    private lazy val atom: Parsley[Expr] = {
+        "(" ~> expr <~ ")" | int.map(Num) | ident.map(Var) | bool.map(Bool) |
+          char.map(Ch) | str.map(Str) | pairLiter.map(PairLiter)
+    }
 
     private lazy val expr: Parsley[Expr] = {
         precedence(atom)(
