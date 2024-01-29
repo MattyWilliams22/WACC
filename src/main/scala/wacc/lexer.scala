@@ -7,6 +7,7 @@ import parsley.token.descriptions.text.EscapeDesc
 import parsley.token.predicate
 import parsley.token.descriptions.numeric._
 import parsley.syntax.character.{charLift, stringLift}
+import parsley.token.symbol.ImplicitSymbol
 
 import scala.language.postfixOps
 
@@ -60,14 +61,13 @@ object lexer {
     )
     private val lexer = new Lexer(desc)
 
-    val int = lexer.lexeme.integer.decimal
-    val char = lexer.lexeme.character.ascii
-    val str = lexer.lexeme.string.ascii
-    val bool = lexer.lexeme("true" | "false")
-    val pairLiter = lexer.lexeme("null")
-    //val arrayElem = ident ('[' ~> expr <~ ']')+
-    val ident = lexer.lexeme.names.identifier
+    val int: Parsley[BigInt] = lexer.lexeme.integer.decimal
+    val char: Parsley[Char] = lexer.lexeme.character.ascii
+    val str: Parsley[String] = lexer.lexeme.string.ascii
+    val bool: Parsley[String] = lexer.lexeme("true" | "false")
+    val pairLiter: Parsley[String] = lexer.lexeme("null")
+    val ident: Parsley[String] = lexer.lexeme.names.identifier
 
-    val implicits = lexer.lexeme.symbol.implicits
+    val implicits: ImplicitSymbol = lexer.lexeme.symbol.implicits
     def fully[A](p: Parsley[A]): Parsley[A] = lexer.fully(p)
 }
