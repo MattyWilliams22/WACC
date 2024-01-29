@@ -9,15 +9,17 @@ object Main {
   private val FILE_ERR_CODE = 150
 
   def main(args: Array[String]): Unit = {
-    println("hello WACC!")
+    println("Hello WACC!")
 
     if (args.length < 1) {
-      println("please enter an expression")
+      println("Please enter an expression!")
       System.exit(FILE_ERR_CODE)
     }
 
-    if (args(0).endsWith(".wacc")) {
+    var input = ""
+    val arg = args(0)
 
+    if (arg.endsWith(".wacc")) {
       val inputFile = new File(args(0))
 
       /* Checks if file exists*/
@@ -35,19 +37,15 @@ object Main {
       /*Reads file contents */
       val source = Source.fromFile(inputFile)
       val fileContents = try source.mkString finally source.close()
-
-      /* Parsing result */
-      val parseResult = parser.parse(fileContents)
-      parseResult match {
-        case Success(x) => println(s"$parseResult = $x")
-        case Failure(msg) => println(msg)
-      }
+      input = fileContents
     } else {
-      /* Parsing of expression */
-      parser.parse(args(0)) match {
-        case Success(x) => println(s"$args(0) = $x")
-        case Failure(msg) => println(msg)
-      }
+      input = arg
+    }
+
+    /* Parsing of expression */
+    parser.parse(input) match {
+      case Success(x) => println(s"$arg = $x")
+      case Failure(msg) => println(msg)
     }
   }
 }
