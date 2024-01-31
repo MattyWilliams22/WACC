@@ -5,37 +5,45 @@ import parsley.character.string
 import parsley.combinator.{option, sepBy}
 import parsley.expr._
 import parsley.{Parsley, Result}
-import wacc.lexer.implicits.implicitSymbol
-import wacc.lexer._
 import wacc.ASTNodes._
+import wacc.lexer._
+import wacc.lexer.implicits.implicitSymbol
 
 object parser {
     def parse(input: String): Result[String, Prog] = parser.parse(input)
 
-    private val parser = fully(rvalue)
+    private val parser = fully(statement)
+
+    private lazy val prog = "begin" ~> many(func) <~> statement <~ "end"
 
     private lazy val statement: Parsley[Statement] = {
-            (lvalue <~ "=" ~> rvalue) |
-            ("read" ~> lvalue) |
-            ("free" ~> expr) |
-            ("return" ~> expr) |
-            ("exit" ~> expr) |
-            ("print" ~> expr) |
-            ("println" ~> expr) |
-            ("if" ~> expr <~ "then" ~> statement <~ "else" ~> statement <~ "fi") |
-            ("while" ~> expr <~ "do" ~> statement <~ "done") |
-            ("begin" ~> statement <~ "end") |
-            (statement <~ ";" <~ statement) |
-            ("skip" ~> statement) |
-            declare
+        atomic(lvalue <~ "=" ~> rvalue) |
+            atomic("read" ~> lvalue) |
+            atomic("free" ~> expr) |
+            atomic("return" ~> expr) |
+            atomic("exit" ~> expr) |
+            atomic("print" ~> expr) |
+            atomic("println" ~> expr) |
+            atomic("if" ~> expr <~ "then" ~> statement <~ "else" ~> statement <~ "fi") |
+            atomic("while" ~> expr <~ "do" ~> statement <~ "done") |
+            atomic("begin" ~> statement <~ "end") |
+            atomic("skip" ~> statement) |
+            atomic(declare) |
+            atomic(statement <~ ";" <~ statement)
     }
 
-    private lazy val arrayElem = ident <~> some("[" ~> expr <~ "]")
+    private lazy val func  = types <~> ident <~ "(" <~> option(paramList) <~ ")" <~ "is" <~ statement <~ "end"
+
+    private lazy val paramList = param <+:> many("," ~> param)
+
+    private lazy val param = types <~> ident
+
+    private lazy val arrayElem = atomic(ident <~> some("[" ~> expr <~ "]"))
 
     private lazy val pairElem = string("fst") <~> lvalue | string("snd") <~> lvalue
 
     private lazy val lvalue: Parsley[Statement] = {
-        ident.map(Var) | atomic(arrayElem).map(x => ArrayElem(x._1, x._2)) |
+        atomic(ident.map(Var)) | atomic(arrayElem).map(x => ArrayElem(x._1, x._2)) |
             atomic(pairElem).map(x => PairElem(x._1, x._2))
     }
 
@@ -54,22 +62,22 @@ object parser {
     }
 
     private lazy val declare = {
-        (types <~> ident <~ "=" ~> rvalue).map(x => Declare(x._1, x._2))
+        atomic((types <~> ident <~ "=") <~> rvalue).map(x => Declare(x._1._1, x._1._2, x._2))
     }
 
     private lazy val types: Parsley[String] = {
-        baseType | arrayType | pairType
+        atomic(baseType) | atomic(arrayType) | atomic(pairType)
     }
 
     private lazy val baseType: Parsley[String] = {
-        string("int") | string("bool") | string("char") | string("string") | string("pair")
+        atomic(string("int")) | atomic(string("bool")) | atomic(string("char")) | atomic(string("string")) | atomic(string("pair"))
     }
 
-    private lazy val arrayType: Parsley[String] = types <~ "[]"
+    private lazy val arrayType: Parsley[String] = atomic(types <~ "[" <~"]")
 
-    private lazy val pairType: Parsley[String] = "pair" ~> "(" ~> pairElemType <~ "," <~ pairElemType <~ ")"
+    private lazy val pairType: Parsley[String] = atomic("pair" ~> "(" ~> pairElemType <~ "," <~ pairElemType <~ ")")
 
-    private lazy val pairElemType: Parsley[String] = baseType | arrayType | string("pair")
+    private lazy val pairElemType: Parsley[String] = atomic(baseType) | atomic(arrayType) | atomic(string("pair"))
 
     private lazy val atom: Parsley[Expr] = {
         "(" ~> expr <~ ")" | atomic(arrayElem).map(x => ArrayElem(x._1, x._2)) |

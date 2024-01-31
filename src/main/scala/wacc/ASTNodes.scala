@@ -9,7 +9,7 @@ object ASTNodes {
   case class PairElem(func: String, stat: Statement) extends Statement
   case class Call(funcName: String, args: List[Expr]) extends Statement
   case class ArrayLiter(elems: List[Expr]) extends Statement
-  case class Declare(_type: String, varName: String) extends Statement
+  case class Declare(_type: String, varName: String, stat: Statement) extends Statement
 
   sealed trait Expr extends Prog with Statement
   case class Mul(exp1: Expr, exp2: Expr) extends Expr
