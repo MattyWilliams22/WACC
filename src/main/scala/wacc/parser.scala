@@ -26,7 +26,8 @@ object parser {
             ("while" ~> expr <~ "do" ~> statement <~ "done") |
             ("begin" ~> statement <~ "end") |
             (statement <~ ";" <~ statement) |
-            ("skip" ~> statement)
+            ("skip" ~> statement) |
+            declare
     }
 
     private lazy val arrayElem = ident <~> some("[" ~> expr <~ "]")
@@ -51,6 +52,24 @@ object parser {
               case None => ArrayLiter(List())
           }
     }
+
+    private lazy val declare = {
+        (types <~> ident <~ "=" ~> rvalue).map(x => Declare(x._1, x._2))
+    }
+
+    private lazy val types: Parsley[String] = {
+        baseType | arrayType | pairType
+    }
+
+    private lazy val baseType: Parsley[String] = {
+        string("int") | string("bool") | string("char") | string("string") | string("pair")
+    }
+
+    private lazy val arrayType: Parsley[String] = types <~ "[]"
+
+    private lazy val pairType: Parsley[String] = "pair" ~> "(" ~> pairElemType <~ "," <~ pairElemType <~ ")"
+
+    private lazy val pairElemType: Parsley[String] = baseType | arrayType | string("pair")
 
     private lazy val atom: Parsley[Expr] = {
         "(" ~> expr <~ ")" | atomic(arrayElem).map(x => ArrayElem(x._1, x._2)) |
