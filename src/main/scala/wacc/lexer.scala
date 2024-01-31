@@ -14,10 +14,10 @@ import scala.language.postfixOps
 object lexer {
     private val desc = LexicalDesc.plain.copy(
         symbolDesc = SymbolDesc.plain.copy(
-            hardKeywords = Set("true", "false", "null", "if", "else", "int",
-            "bool", "char", "string", "pair", "begin", "end", "is", "skip",
-            "read", "free", "return", "exit", "print", "println", "then", "fi",
-            "while", "do", "done", "newpair", "call", "fst", "snd"),
+//            hardKeywords = Set("true", "false", "null", "if", "else", "int",
+//            "bool", "char", "string", "pair", "begin", "end", "is", "skip",
+//            "read", "free", "return", "exit", "print", "println", "then", "fi",
+//            "while", "do", "done", "newpair", "call", "fst", "snd"),
             hardOperators = Set("len", "ord", "chr", "+", "*", "/", "%", "-",
             ">", ">=", "<", "<=", "==", "!=", "&&", "||"),
             caseSensitive = true,

@@ -11,58 +11,60 @@ import wacc.lexer._
 object parser {
     def parse(input: String): Result[String, Prog] = parser.parse(input)
 
-    private val parser = fully(statement)
+    private val parser = fully(rvalue)
 
     sealed trait Prog
 
     sealed trait Statement extends Prog
-    case class NewPair(x: Expr) extends Statement
-    case class PairElem(x: String, y: Statement) extends Statement
-    case class Call(x: String, y: List[Expr]) extends Statement
+    case class Skip() extends Statement
+    case class NewPair(exp1: Expr, exp2: Expr) extends Statement
+    case class PairElem(func: String, stat: Statement) extends Statement
+    case class Call(funcName: String, args: List[Expr]) extends Statement
+    case class ArrayLiter(elems: List[Expr]) extends Statement
+    case class Declare(_type: String, varName: String, expr: Statement) extends Statement
 
     sealed trait Expr extends Prog with Statement
-    case class Mul(x: Expr, y: Expr) extends Expr
-    case class Div(x: Expr, y: Expr) extends Expr
-    case class Mod(x: Expr, y: Expr) extends Expr
-    case class Add(x: Expr, y: Expr) extends Expr
-    case class Sub(x: Expr, y: Expr) extends Expr
-    case class GT(x: Expr, y: Expr) extends Expr
-    case class GTEQ(x: Expr, y: Expr) extends Expr
-    case class LT(x: Expr, y: Expr) extends Expr
-    case class LTEQ(x: Expr, y: Expr) extends Expr
-    case class EQ(x: Expr, y: Expr) extends Expr
-    case class NEQ(x: Expr, y: Expr) extends Expr
-    case class And(x: Expr, y: Expr) extends Expr
-    case class Or(x: Expr, y: Expr) extends Expr
-    case class Not(x: Expr) extends Expr
-    case class Neg(x: Expr) extends Expr
-    case class Len(x: Expr) extends Expr
-    case class Ord(x: Expr) extends Expr
-    case class Chr(x: Expr) extends Expr
-    case class Num(x: BigInt) extends Expr
+    case class Mul(exp1: Expr, exp2: Expr) extends Expr
+    case class Div(exp1: Expr, exp2: Expr) extends Expr
+    case class Mod(exp1: Expr, exp2: Expr) extends Expr
+    case class Add(exp1: Expr, exp2: Expr) extends Expr
+    case class Sub(exp1: Expr, exp2: Expr) extends Expr
+    case class GT(exp1: Expr, exp2: Expr) extends Expr
+    case class GTEQ(exp1: Expr, exp2: Expr) extends Expr
+    case class LT(exp1: Expr, exp2: Expr) extends Expr
+    case class LTEQ(exp1: Expr, exp2: Expr) extends Expr
+    case class EQ(exp1: Expr, exp2: Expr) extends Expr
+    case class NEQ(exp1: Expr, exp2: Expr) extends Expr
+    case class And(exp1: Expr, exp2: Expr) extends Expr
+    case class Or(exp1: Expr, exp2: Expr) extends Expr
+    case class Not(exp: Expr) extends Expr
+    case class Neg(exp: Expr) extends Expr
+    case class Len(exp: Expr) extends Expr
+    case class Ord(exp: Expr) extends Expr
+    case class Chr(exp: Expr) extends Expr
+    case class Num(value: BigInt) extends Expr
 
     sealed trait Atom extends Expr
-    case class Var(x: String) extends Atom with Statement
-    case class Bool(x: String) extends Atom
-    case class Ch(x: Char) extends Atom
-    case class Str(x: String) extends Atom
-    case class PairLiter(x: String) extends Atom
-    case class ArrayElem(x: String, y: List[Expr]) extends Atom with Statement
+    case class Var(varName: String) extends Atom with Statement
+    case class Bool(bool: String) extends Atom
+    case class Ch(chr: Char) extends Atom
+    case class Str(str: String) extends Atom
+    case class PairLiter(str: String) extends Atom
+    case class ArrayElem(varName: String, args: List[Expr]) extends Atom with Statement
 
-    private lazy val statement: Parsley[Statement] = {rvalue// statement <~ ";" ~> statement
-//            ("skip" ^^^ Skip) |
-//            ("read" ~> lvalue) |
-//            ("free" ~> lvalue) |
-//            ("return" ~> expr) |
-//            ("exit" ~> expr) |
-//            ("print" ~> expr) |
-//            ("println" ~> expr) |
-//            ("if" ~> expr <~ "then") ~ statement ~ ("else" ~> statement <~ "fi") |
-//            ("while" ~> expr <~ "do") ~ statement ~ ("done" ~> expr) |
-//            ("begin" ~> statement <~ "end") |
-//            ("newpair" ~> expr <~ "," <~ expr) |
-//            ("call" ~> ident <~ "(" ~> option(expr <~> many("," ~> expr)) <~ ")")
-
+    private lazy val statement: Parsley[Statement] = {
+            (lvalue <~ "=" ~> rvalue) |
+            ("read" ~> lvalue) |
+            ("free" ~> expr) |
+            ("return" ~> expr) |
+            ("exit" ~> expr) |
+            ("print" ~> expr) |
+            ("println" ~> expr) |
+            ("if" ~> expr <~ "then" ~> statement <~ "else" ~> statement <~ "fi") |
+            ("while" ~> expr <~ "do" ~> statement <~ "done") |
+            ("begin" ~> statement <~ "end") |
+            (statement <~ ";" <~ statement) |
+            ("skip" ~> statement)
     }
 
     private lazy val arrayElem = ident <~> some("[" ~> expr <~ "]")
@@ -75,12 +77,17 @@ object parser {
     }
 
     private lazy val rvalue: Parsley[Statement] = {
-        expr | ("newpair(" ~> expr <~ "," ~> expr <~ ")").map(NewPair)
-//            (("call" ~> ident <~ "(") <~> option(sepBy(expr, ",")) <~ ")").map {
-//                case Success((name: String, Some(x: List[Expr]))) => Call(name, x)
-//            }
-//        ("[" ~> option(expr <~> many("," <~ expr)) <~ "]")
-
+        atomic("newpair(" ~> expr <~ "," <~> expr <~ ")").map(x => NewPair(x._1, x._2)) |
+          (("call" ~> ident <~ "(") <~> option(sepBy(expr, ",")) <~ ")").map {
+              case (name: String, Some(x: List[Expr])) => Call(name, x)
+              case (name: String, None) => Call(name, List())
+          } |
+          atomic(expr) |
+          atomic(pairElem).map(x => PairElem(x._1, x._2)) |
+          ("[" ~> option(expr <+:> many("," ~> expr)) <~ "]").map {
+              case Some(x: List[Expr]) => ArrayLiter(x)
+              case None => ArrayLiter(List())
+          }
     }
 
     private lazy val atom: Parsley[Expr] = {
