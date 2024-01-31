@@ -10,4 +10,9 @@ before_script:
 build:
   stage: build
   script:
-    - make
+    - scala-cli compile .
+
+test:
+  stage: test
+  script:
+    - scala-cli test .
