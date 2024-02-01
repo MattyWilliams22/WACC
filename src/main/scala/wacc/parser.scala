@@ -14,10 +14,55 @@ object parser {
 
     private val parser = fully(prog)
 
-    // Need 0 or more funcs
-    private lazy val prog: Parsley[Prog] = ("begin" ~> func <~> stmt <~ "end").map(x => Prog(List(x._1), x._2))
+    private lazy val expr: Parsley[Expr] = {
+        precedence(atom)(
+            Ops(Prefix)("!" as Not),
+            Ops(Prefix)("-" as Neg),
+            Ops(Prefix)("len" as Len),
+            Ops(Prefix)("ord" as Ord),
+            Ops(Prefix)("chr" as Chr),
+            Ops(InfixL)("*" as Mul),
+            Ops(InfixL)("%" as Mod),
+            Ops(InfixL)("/" as Div),
+            Ops(InfixL)("+" as Add),
+            Ops(InfixL)("-" as Sub),
+            Ops(InfixN)(">" as GT),
+            Ops(InfixN)(">=" as GTEQ),
+            Ops(InfixN)("<" as LT),
+            Ops(InfixN)("<=" as LTEQ),
+            Ops(InfixN)("==" as EQ),
+            Ops(InfixN)("!=" as NEQ),
+            Ops(InfixR)("&&" as And),
+            Ops(InfixR)("||" as Or)
+        )
+    }
 
-    private lazy val func: Parsley[Func] = ???
+    private lazy val arrayElem = ident <~> some("[" ~> expr <~ "]")
+
+    private lazy val types: Parsley[Type] = {
+        baseType | arrayType | pairType
+    }
+
+    private lazy val baseType: Parsley[BaseT] = {
+        string("int").map(BaseT) | string("bool").map(BaseT) | string("char").map(BaseT) | string("string").map(BaseT)
+    }
+
+    private lazy val arrayType: Parsley[ArrayT] = (types <~ "[]").map(ArrayT)
+
+    private lazy val pairType: Parsley[PairT] = ("pair" ~> ("(" ~> pairElemType <~ ",") <~> pairElemType <~ ")").map(x => PairT(x._1, x._2))
+
+    private lazy val pairElemType: Parsley[PairElemT] = baseType | arrayType | string("pair").map(x => PairNull())
+
+    private lazy val prog: Parsley[Prog] = ("begin" ~> many(func) <~> stmt <~ "end").map(x => Prog(x._1, x._2))
+
+    private lazy val func: Parsley[Func] = ((((types <~> ident <~ "(") <~> option(paramList) <~ ")") <~ "is") <~> stmt <~ "end").map {
+              case (((t, i), Some(ps)), s) => Func(t, Ident(i), ps, s)
+              case (((t, i), None), s) => Func(t, Ident(i), List(), s)
+        }
+
+    private lazy val paramList: Parsley[List[Param]] = (param <~> many("," ~> param)).map(x => x._1 :: x._2)
+
+    private lazy val param: Parsley[Param] = (types <~> ident).map(x => Param(x._1, Ident(x._2)))
 
     private lazy val stmt: Parsley[Stmt] = {
             string("skip").map(x => Skip()) |
@@ -47,9 +92,7 @@ object parser {
         }
     }
 
-    private lazy val stmts: Parsley[Stmt] = ???
-
-    private lazy val arrayElem = ident <~> some("[" ~> expr <~ "]")
+    private lazy val stmts: Parsley[Stmts] = (stmt <~> many(";" ~> stmt)).map(x => Stmts(x._1 :: x._2))
 
     private lazy val pairElem = string("fst") <~> lvalue | string("snd") <~> lvalue
 
@@ -69,49 +112,17 @@ object parser {
           ("[" ~> option(expr <+:> many("," ~> expr)) <~ "]").map {
               case Some(x: List[Expr]) => ArrayLiter(x)
               case None => ArrayLiter(List())
-          }
+          } |
+          arrayLiter
     }
 
-    private lazy val types: Parsley[Type] = {
-        baseType | arrayType | pairType
+    private lazy val arrayLiter: Parsley[ArrayLiter] = {
+        ("[" ~> expr <~> many("," ~> expr) <~ "]").map(x => ArrayLiter(x._1 :: x._2))
     }
-
-    private lazy val baseType: Parsley[BaseT] = {
-        string("int").map(BaseT) | string("bool").map(BaseT) | string("char").map(BaseT) | string("string").map(BaseT)
-    }
-
-    private lazy val arrayType: Parsley[ArrayT] = (types <~ "[]").map(ArrayT)
-
-    private lazy val pairType: Parsley[PairT] = ("pair" ~> ("(" ~> pairElemType <~ ",") <~> pairElemType <~ ")").map(x => PairT(x._1, x._2))
-
-    private lazy val pairElemType: Parsley[PairElemT] = baseType | arrayType | string("pair").map(x => PairNull())
 
     private lazy val atom: Parsley[Expr] = {
         "(" ~> expr <~ ")" | atomic(arrayElem).map(x => ArrayElem(Ident(x._1), x._2)) |
             int.map(Num) | ident.map(Ident) | bool.map(Bool) | char.map(Ch) | str.map(Str) |
             pairLiter.map(PairLiter)
-    }
-
-    private lazy val expr: Parsley[Expr] = {
-        precedence(atom)(
-            Ops(Prefix)("!" as Not),
-            Ops(Prefix)("-" as Neg),
-            Ops(Prefix)("len" as Len),
-            Ops(Prefix)("ord" as Ord),
-            Ops(Prefix)("chr" as Chr),
-            Ops(InfixL)("*" as Mul),
-            Ops(InfixL)("%" as Mod),
-            Ops(InfixL)("/" as Div),
-            Ops(InfixL)("+" as Add),
-            Ops(InfixL)("-" as Sub),
-            Ops(InfixN)(">" as GT),
-            Ops(InfixN)(">=" as GTEQ),
-            Ops(InfixN)("<" as LT),
-            Ops(InfixN)("<=" as LTEQ),
-            Ops(InfixN)("==" as EQ),
-            Ops(InfixN)("!=" as NEQ),
-            Ops(InfixR)("&&" as And),
-            Ops(InfixR)("||" as Or)
-        )
     }
 }
