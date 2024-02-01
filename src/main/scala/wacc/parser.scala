@@ -12,11 +12,12 @@ import wacc.lexer.implicits.implicitSymbol
 object parser {
     def parse(input: String): Result[String, Prog] = parser.parse(input)
 
-    private val parser = fully(statement)
+    private val parser = fully(rvalue)
 
     private lazy val prog = "begin" ~> many(func) <~> statement <~ "end"
 
     private lazy val statement: Parsley[Statement] = {
+        atomic(declare) |
         atomic(lvalue <~ "=" ~> rvalue) |
             atomic("read" ~> lvalue) |
             atomic("free" ~> expr) |
@@ -28,7 +29,6 @@ object parser {
             atomic("while" ~> expr <~ "do" ~> statement <~ "done") |
             atomic("begin" ~> statement <~ "end") |
             atomic("skip" ~> statement) |
-            atomic(declare) |
             atomic(statement <~ ";" <~ statement)
     }
 
@@ -66,18 +66,12 @@ object parser {
     }
 
     private lazy val types: Parsley[String] = {
-        atomic(baseType) | atomic(arrayType) | atomic(pairType)
+        ((baseType | pairType) <~> many("[]")).map{case (base: String, arr: List[Unit]) => base + arr.mkString}
     }
-
-    private lazy val baseType: Parsley[String] = {
-        atomic(string("int")) | atomic(string("bool")) | atomic(string("char")) | atomic(string("string")) | atomic(string("pair"))
-    }
-
-    private lazy val arrayType: Parsley[String] = atomic(types <~ "[" <~"]")
 
     private lazy val pairType: Parsley[String] = atomic("pair" ~> "(" ~> pairElemType <~ "," <~ pairElemType <~ ")")
 
-    private lazy val pairElemType: Parsley[String] = atomic(baseType) | atomic(arrayType) | atomic(string("pair"))
+    private lazy val pairElemType: Parsley[String] = atomic(baseType) | atomic(string("pair"))
 
     private lazy val atom: Parsley[Expr] = {
         "(" ~> expr <~ ")" | atomic(arrayElem).map(x => ArrayElem(x._1, x._2)) |
