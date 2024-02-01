@@ -32,24 +32,24 @@ object parser {
       atomic(statement <~ ";" <~ statement)
   }
 
-  private lazy val func  = types <~> ident <~ "(" <~> option(paramList) <~ ")" <~ "is" <~ statement <~ "end"
+  private lazy val func  = types <~> IDENT <~ "(" <~> option(paramList) <~ ")" <~ "is" <~ statement <~ "end"
 
   private lazy val paramList = param <+:> many("," ~> param)
 
-  private lazy val param = types <~> ident
+  private lazy val param = types <~> IDENT
 
-  private lazy val arrayElem = atomic(ident <~> some("[" ~> expr <~ "]"))
+  private lazy val arrayElem = atomic(IDENT <~> some("[" ~> expr <~ "]"))
 
   private lazy val pairElem = string("fst") <~> lvalue | string("snd") <~> lvalue
 
   private lazy val lvalue: Parsley[Statement] = {
-    atomic(ident.map(Var)) | atomic(arrayElem).map(x => ArrayElem(x._1, x._2)) |
+    atomic(IDENT.map(Var)) | atomic(arrayElem).map(x => ArrayElem(x._1, x._2)) |
       atomic(pairElem).map(x => PairElem(x._1, x._2))
   }
 
   private lazy val rvalue: Parsley[Statement] = {
     atomic("newpair(" ~> expr <~ "," <~> expr <~ ")").map(x => NewPair(x._1, x._2)) |
-      (("call" ~> ident <~ "(") <~> option(sepBy(expr, ",")) <~ ")").map {
+      (("call" ~> IDENT <~ "(") <~> option(sepBy(expr, ",")) <~ ")").map {
         case (name: String, Some(x: List[Expr])) => Call(name, x)
         case (name: String, None) => Call(name, List())
       } |
@@ -62,20 +62,20 @@ object parser {
   }
 
   private lazy val declare = {
-    atomic((types <~> ident <~ "=") <~> rvalue).map(x => Declare(x._1._1, x._1._2, x._2))
+    atomic((types <~> IDENT <~ "=") <~> rvalue).map(x => Declare(x._1._1, x._1._2, x._2))
   }
 
   private lazy val types: Parsley[String] = {
-    ((baseType | pairType) <~> many("[]")).map{case (base: String, arr: List[Unit]) => base + arr.mkString}
+    ((BASETYPE | pairType) <~> many("[]")).map{case (base: String, arr: List[Unit]) => base + arr.mkString}
   }
 
   private lazy val pairType: Parsley[String] = atomic("pair" ~> "(" ~> pairElemType <~ "," <~ pairElemType <~ ")")
 
-  private lazy val pairElemType: Parsley[String] = atomic(baseType) | atomic(string("pair"))
+  private lazy val pairElemType: Parsley[String] = atomic(BASETYPE) | atomic(string("pair"))
 
   private lazy val atom: Parsley[Expr] = {
     "(" ~> expr <~ ")" | atomic(arrayElem).map(x => ArrayElem(x._1, x._2)) |
-      int.map(Num) | ident.map(Var) | bool.map(Bool) | char.map(Ch) | str.map(Str) |
+      int.map(Num) | IDENT.map(Var) | bool.map(Bool) | char.map(Ch) | str.map(Str) |
       pairLiter.map(PairLiter)
   }
 
