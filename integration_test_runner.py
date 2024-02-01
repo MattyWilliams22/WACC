@@ -17,10 +17,12 @@ def get_return_code(fname):
   return 0
 
 passes = 0
-total = 0
+total = len(tests)
 
+print("Running tests...")
 for test in tests:
   for fname in glob.glob(base + test):
+    print(f"sh compile {fname}")
     proc = subprocess.run(["sh", "compile", fname], stdout=subprocess.DEVNULL)
 
     actual = proc.returncode
