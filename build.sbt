@@ -5,5 +5,5 @@ ThisBuild / scalaVersion := "2.13.12"
 lazy val root = (project in file("."))
   .settings(
     name := "WACC_04",
-    libraryDependencies += "com.github.j-mie6" %% "parsley" % "4.5.1"
+    libraryDependencies += "com.github.j-mie6" %% "parsley" % "5.0.0-M4"
   )
