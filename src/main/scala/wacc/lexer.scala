@@ -87,8 +87,8 @@ object lexer {
   val SND: Parsley[Unit] = lexer.lexeme.symbol("snd")
   val ASSIGN: Parsley[Unit] = lexer.lexeme.symbol("=")
   val STARTBRACKET: Parsley[Unit] = lexer.lexeme.symbol.openParen
-  val ENDBRACKET: Parsley[Unit] = lexer.lexeme.symbol.closeParen
-  val SEMICOLON: Parsley[Unit] = lexer.lexeme.symbol(";")
+  val ENDBRACKET: Parsley[Unit] = lexer.lexeme.symbol.closingParen
+  val SEMICOLON: Parsley[Unit] = lexer.lexeme.symbol.semi
   val COMMA: Parsley[Unit] = lexer.lexeme.symbol.comma
 
   val INT: Parsley[BigInt] = lexer.lexeme.integer.decimal
@@ -99,10 +99,10 @@ object lexer {
   val IDENT: Parsley[String] = lexer.lexeme.names.identifier
   val BASETYPE: Parsley[String] = lexer.lexeme("int" | "bool" | "char" | "string" | "pair")
 
-  val OPENSQUARE: Parsley[String] = lexer.lexeme.symbol.openSquare
-  val CLOSESQUARE: Parsley[String] = lexer.lexeme.symbol.closeSquare
+  val OPENSQUARE: Parsley[UNIT] = lexer.lexeme.symbol.openSquare
+  val CLOSESQUARE: Parsley[UNIT] = lexer.lexeme.symbol.closeSquare
 
-  val PAIR: Parsley[String] = lexer.lexeme("pair")
+  val PAIR: Parsley[UNIT] = lexer.lexeme("pair")
 
   val implicits: ImplicitSymbol = lexer.lexeme.symbol.implicits
   def fully[A](p: Parsley[A]): Parsley[A] = lexer.fully(p)
