@@ -4,6 +4,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import parsley.{Success, Result}
 import wacc.parser._
+import wacc.ASTNodes._
 
 class ParserSpec extends AnyFlatSpec with Matchers {
 
