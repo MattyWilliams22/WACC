@@ -1,17 +1,8 @@
 package wacc
 
 object ASTNodes {
-  sealed trait Prog
 
-  sealed trait Statement extends Prog
-  case class Skip() extends Statement
-  case class NewPair(exp1: Expr, exp2: Expr) extends Statement
-  case class PairElem(func: String, stat: Statement) extends Statement
-  case class Call(funcName: String, args: List[Expr]) extends Statement
-  case class ArrayLiter(elems: List[Expr]) extends Statement
-  case class Declare(_type: String, varName: String, stat: Statement) extends Statement
-
-  sealed trait Expr extends Prog with Statement
+  sealed trait Expr extends RValue
   case class Mul(exp1: Expr, exp2: Expr) extends Expr
   case class Div(exp1: Expr, exp2: Expr) extends Expr
   case class Mod(exp1: Expr, exp2: Expr) extends Expr
@@ -33,10 +24,43 @@ object ASTNodes {
 
   sealed trait Atom extends Expr
   case class Num(value: BigInt) extends Atom
-  case class Var(varName: String) extends Atom with Statement
   case class Bool(bool: String) extends Atom
   case class Ch(chr: Char) extends Atom
   case class Str(str: String) extends Atom
   case class PairLiter(str: String) extends Atom
-  case class ArrayElem(varName: String, args: List[Expr]) extends Atom with Statement
+  case class Ident(str: String) extends Atom with LValue
+  case class ArrayElem(ident: Ident, args: List[Expr]) extends Atom with LValue
+
+  sealed trait Type
+  sealed trait PairElemT extends Type
+  case class BaseT(str: String) extends Type with PairElemT
+  case class ArrayT(_type: Type) extends Type with PairElemT
+  case class PairT(pet_1: PairElemT, pet_2: PairElemT) extends Type
+  case class PairNull() extends PairElemT
+
+  case class Prog(funcs: List[Func], stat: Stmt)
+
+  case class Func(_type: Type, ident: Ident, param_list: List[Param], body: Stmt)
+
+  case class Param(_type: Type, ident: Ident)
+
+  sealed trait Stmt
+  case class Skip() extends Stmt
+  case class Declare(_type: Type, ident: Ident, value: RValue) extends Stmt
+  case class Assign(lvalue: LValue, rvalue: RValue) extends Stmt
+  case class Read(lvalue: LValue) extends Stmt
+  case class Action(action: String, exp: Expr) extends Stmt
+  case class If(cond: Expr, thenS: Stmt, elseS: Stmt) extends Stmt
+  case class While(cond: Expr, body: Stmt) extends Stmt
+  case class Scope(body: Stmt) extends Stmt
+  case class Stmts(stmts: List[Stmt]) extends Stmt
+
+  sealed trait LValue
+
+  sealed trait RValue
+  case class ArrayLiter(elems: List[Expr]) extends RValue
+  case class NewPair(exp1: Expr, exp2: Expr) extends RValue
+  case class PairElem(func: String, lvalue: LValue) extends RValue with LValue
+  case class Call(funcName: Ident, args: List[Expr]) extends RValue
+
 }

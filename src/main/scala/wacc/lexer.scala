@@ -17,10 +17,10 @@ object lexer {
 
   private val desc = LexicalDesc.plain.copy(
     symbolDesc = SymbolDesc.plain.copy(
-       hardKeywords = Set[String]("true", "false", "null", "if", "else", "int",
-       "bool", "char", "string", "pair", "begin", "end", "is", "skip",
-       "read", "free", "return", "exit", "print", "println", "then", "fi",
-       "while", "do", "done", "newpair", "call", "fst", "snd"),
+//       hardKeywords = Set[String]("true", "false", "null", "if", "else", "int",
+//       "bool", "char", "string", "pair", "begin", "end", "is", "skip",
+//       "read", "free", "return", "exit", "print", "println", "then", "fi",
+//       "while", "do", "done", "newpair", "call", "fst", "snd"),
       hardOperators = Set("len", "ord", "chr", "+", "*", "/", "%", "-",
       ">", ">=", "<", "<=", "==", "!=", "&&", "||"),
       caseSensitive = true,
@@ -83,8 +83,8 @@ object lexer {
   val DONE: Parsley[Unit] = lexer.lexeme.symbol("done")
   val NEWPAIR: Parsley[Unit] = lexer.lexeme.symbol("newpair")
   val CALL: Parsley[Unit] = lexer.lexeme.symbol("call")
-  val FST: Parsley[Unit] = lexer.lexeme.symbol("fst")
-  val SND: Parsley[Unit] = lexer.lexeme.symbol("snd")
+  val FST: Parsley[String] = lexer.lexeme("fst")
+  val SND: Parsley[String] = lexer.lexeme("snd")
   val ASSIGN: Parsley[Unit] = lexer.lexeme.symbol("=")
   val STARTBRACKET: Parsley[Unit] = lexer.lexeme.symbol.openParen
   val ENDBRACKET: Parsley[Unit] = lexer.lexeme.symbol.closingParen
