@@ -8,40 +8,40 @@ import wacc.lexer._
 class LexerSpec extends AnyFlatSpec with Matchers {
 
   "Lexer" should "lex integers" in {
-    val result = int.parse("123")
+    val result = INT.parse("123")
     result shouldBe Success(BigInt(123))
   }
 
   it should "lex characters" in {
-    val result = char.parse("'a'")
+    val result = CHAR.parse("'a'")
     result shouldBe Success('a')
   }
 
   it should "lex strings" in {
-    val result = str.parse("\"hello\"")
+    val result = STR.parse("\"hello\"")
     result shouldBe Success("hello")
   }
 
   it should "lex booleans" in {
-    val trueResult = bool.parse("true")
+    val trueResult = BOOL.parse("true")
     trueResult shouldBe Success("true")
 
-    val falseResult = bool.parse("false")
+    val falseResult = BOOL.parse("false")
     falseResult shouldBe Success("false")
   }
 
   it should "lex null" in {
-    val result = pairLiter.parse("null")
+    val result = PAIRLITER.parse("null")
     result shouldBe Success("null")
   }
 
   it should "lex identifiers" in {
-    val result = ident.parse("variableName")
+    val result = IDENT.parse("variableName")
     result shouldBe Success("variableName")
   }
 
   it should "fully parse a given parser" in {
-    val result = fully(ident).parse("fullyParsed")
+    val result = fully(IDENT).parse("fullyParsed")
     result shouldBe Success("fullyParsed")
   }
 }
