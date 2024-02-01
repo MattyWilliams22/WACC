@@ -99,13 +99,13 @@ object lexer {
   val IDENT: Parsley[String] = lexer.lexeme.names.identifier
   val BASETYPE: Parsley[String] = lexer.lexeme("int" | "bool" | "char" | "string" | "pair")
 
-  val OPENSQUARE: Parsley[UNIT] = lexer.lexeme.symbol.openSquare
-  val CLOSESQUARE: Parsley[UNIT] = lexer.lexeme.symbol.closeSquare
+  val OPENSQUARE: Parsley[Unit] = lexer.lexeme.symbol.openSquare
+  val CLOSESQUARE: Parsley[Unit] = lexer.lexeme.symbol.closingSquare
 
-  val PAIR: Parsley[UNIT] = lexer.lexeme("pair")
+  val PAIR: Parsley[Unit] = lexer.lexeme("pair")
 
   val implicits: ImplicitSymbol = lexer.lexeme.symbol.implicits
   def fully[A](p: Parsley[A]): Parsley[A] = lexer.fully(p)
 
-  def symbol(s: String): Parsley[String] = lexer.lexeme.symbol(s)
+  def symbol(s: String) = lexer.lexeme.symbol(s)
 }
