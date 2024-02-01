@@ -75,8 +75,8 @@ object parser {
 
   private lazy val atom: Parsley[Expr] = {
     "(" ~> expr <~ ")" | atomic(arrayElem).map(x => ArrayElem(x._1, x._2)) |
-      int.map(Num) | IDENT.map(Var) | bool.map(Bool) | char.map(Ch) | str.map(Str) |
-      pairLiter.map(PairLiter)
+      INT.map(Num) | IDENT.map(Var) | VOOL.map(Bool) | CHAR.map(Ch) | STR.map(Str) |
+      PAIRLITER.map(PairLiter)
   }
 
   private lazy val expr: Parsley[Expr] = {

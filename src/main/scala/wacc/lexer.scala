@@ -64,32 +64,32 @@ object lexer {
 
   // Tokens
 
-  val BEGIN: Parsley[String] = lexer.lexeme("begin")
-  val END: Parsley[String] = lexer.lexeme("end")
-  val IS: Parsley[String] = lexer.lexeme("is")
-  val SKIP: Parsley[String] = lexer.lexeme("skip")
-  val READ: Parsley[String] = lexer.lexeme("read")
-  val FREE: Parsley[String] = lexer.lexeme("free")
-  val RETURN: Parsley[String] = lexer.lexeme("return")
-  val EXIT: Parsley[String] = lexer.lexeme("exit")
-  val PRINT: Parsley[String] = lexer.lexeme("print")
-  val PRINTLN: Parsley[String] = lexer.lexeme("println")
-  val IF: Parsley[String] = lexer.lexeme("if")
-  val THEN: Parsley[String] = lexer.lexeme("then")
-  val ELSE: Parsley[String] = lexer.lexeme("else")
-  val FI: Parsley[String] = lexer.lexeme("fi")
-  val WHILE: Parsley[String] = lexer.lexeme("while")
-  val DO: Parsley[String] = lexer.lexeme("do")
-  val DONE: Parsley[String] = lexer.lexeme("done")
-  val NEWPAIR: Parsley[String] = lexer.lexeme("newpair")
-  val CALL: Parsley[String] = lexer.lexeme("call")
-  val FST: Parsley[String] = lexer.lexeme("fst")
-  val SND: Parsley[String] = lexer.lexeme("snd")
-  val ASSIGN: Parsley[String] = lexer.lexeme.symbol("=")
-  val STARTBRACKET: Parsley[String] = lexer.lexeme.symbol.openParen
-  val ENDBRACKET: Parsley[String] = lexer.lexeme.symbol.closeParen
-  val COMMA: Parsley[String] = lexer.lexeme.symbol.comma
-  val SEMICOLON: Parsley[String] = lexer.lexeme.symbol.semiColon
+  val BEGIN: Parsley[Unit] = lexer.lexeme.symbol("begin")
+  val END: Parsley[Unit] = lexer.lexeme.symbol("end")
+  val IS: Parsley[Unit] = lexer.lexeme.symbol("is")
+  val SKIP: Parsley[Unit] = lexer.lexeme.symbol("skip")
+  val READ: Parsley[Unit] = lexer.lexeme.symbol("read")
+  val FREE: Parsley[Unit] = lexer.lexeme.symbol("free")
+  val RETURN: Parsley[Unit] = lexer.lexeme.symbol("return")
+  val EXIT: Parsley[Unit] = lexer.lexeme.symbol("exit")
+  val PRINT: Parsley[Unit] = lexer.lexeme.symbol("print")
+  val PRINTLN: Parsley[Unit] = lexer.lexeme.symbol("println")
+  val IF: Parsley[Unit] = lexer.lexeme.symbol("if")
+  val THEN: Parsley[Unit] = lexer.lexeme.symbol("then")
+  val ELSE: Parsley[Unit] = lexer.lexeme.symbol("else")
+  val FI: Parsley[Unit] = lexer.lexeme.symbol("fi")
+  val WHILE: Parsley[Unit] = lexer.lexeme.symbol("while")
+  val DO: Parsley[Unit] = lexer.lexeme.symbol("do")
+  val DONE: Parsley[Unit] = lexer.lexeme.symbol("done")
+  val NEWPAIR: Parsley[Unit] = lexer.lexeme.symbol("newpair")
+  val CALL: Parsley[Unit] = lexer.lexeme.symbol("call")
+  val FST: Parsley[Unit] = lexer.lexeme.symbol("fst")
+  val SND: Parsley[Unit] = lexer.lexeme.symbol("snd")
+  val ASSIGN: Parsley[Unit] = lexer.lexeme.symbol("=")
+  val STARTBRACKET: Parsley[Unit] = lexer.lexeme.symbol.openParen
+  val ENDBRACKET: Parsley[Unit] = lexer.lexeme.symbol.closeParen
+  val SEMICOLON: Parsley[Unit] = lexer.lexeme.symbol(";")
+  val COMMA: Parsley[Unit] = lexer.lexeme.symbol.comma
 
   val INT: Parsley[BigInt] = lexer.lexeme.integer.decimal
   val CHAR: Parsley[Char] = lexer.lexeme.character.ascii
