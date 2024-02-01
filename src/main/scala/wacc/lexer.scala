@@ -102,7 +102,7 @@ object lexer {
   val OPENSQUARE: Parsley[Unit] = lexer.lexeme.symbol.openSquare
   val CLOSESQUARE: Parsley[Unit] = lexer.lexeme.symbol.closingSquare
 
-  val PAIR: Parsley[Unit] = lexer.lexeme("pair")
+  val PAIR: Parsley[Unit] = lexer.lexeme.symbol("pair")
 
   val implicits: ImplicitSymbol = lexer.lexeme.symbol.implicits
   def fully[A](p: Parsley[A]): Parsley[A] = lexer.fully(p)
