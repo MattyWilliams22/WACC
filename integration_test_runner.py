@@ -79,7 +79,7 @@ for test in runningTests:
       if "syntax" in fname:
         syntaxTotal++
       elif "semantic" in fname:
-        semanticTotal++
+        semanticTotal += 1
     else:
       valid++
 
@@ -88,9 +88,9 @@ for test in runningTests:
         if "syntax" in fname:
           syntaxPasses++
         elif "semantic" in fname:
-          semanticPasses++
+          semanticPasses += 1
       else:
-        validPasses++
+        validPasses += 1
     else:
       print(f"Failed test {fname}. Expected exit code {expected} but got {actual}")
 
