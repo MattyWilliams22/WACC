@@ -35,7 +35,10 @@ for directory in list_directories_in_directory(base):
 
   # Added subdirectoried of valid and invalid directories
   for subdirectory in list_directories_in_directory(base + directory + "/"):
-    tests[directory + "-" + subdirectory] = list_files_in_directory(base + directory + "/" + subdirectory + "/")
+    subdirectoryName = subdirectory
+    if subdirectory.endswith("Err"):
+      subdirectoryName = subdirectory[:-3]
+    tests[directory + "-" + subdirectoryName] = list_files_in_directory(base + directory + "/" + subdirectory + "/")
 
     # Added subdirectories of
     if directory == "invalid":
