@@ -13,8 +13,6 @@ import scala.language.postfixOps
 
 object lexer {
 
-  val escapes = Set('\\', '\u0000', '\b', '\t', '\n', '\f', '\r', '\"', '\'')
-
   private val desc = LexicalDesc.plain.copy(
     symbolDesc = SymbolDesc.plain.copy(
        hardKeywords = Set[String]("true", "false", "null", "if", "else", "int",
@@ -56,7 +54,7 @@ object lexer {
       characterLiteralEnd = '\'',
       stringEnds = Set(("\"", "\"")),
       graphicCharacter = predicate.Basic(c =>
-        c >= ' ' && !Set('\\', '\'', '\"').contains(c) || escapes.contains(c)
+        c >= ' ' && !Set('\\', '\'', '\"').contains(c)
       )
     )
   )
