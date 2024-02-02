@@ -44,8 +44,15 @@ object Main {
 
     /* Parsing of expression */
     parser.parse(input) match {
-      case Success(x) => println(s"$arg = $x")
-      case Failure(msg) => println(msg)
+      case Success(x) => {
+        // Semantic Analysis
+        println(s"$arg = $x")
+        System.exit(0)
+      }
+      case Failure(msg) => {
+        println(msg)
+        System.exit(100)
+      }
     }
   }
 }
