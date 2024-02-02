@@ -97,7 +97,7 @@ object lexer {
   val BOOL: Parsley[String] = lexer.lexeme("true" | "false")
   val PAIRLITER: Parsley[String] = lexer.lexeme("null")
   val IDENT: Parsley[String] = lexer.lexeme.names.identifier
-  val BASETYPE: Parsley[String] = lexer.lexeme("int" | "bool" | "char" | "string" | "pair")
+  val BASETYPE: Parsley[String] = lexer.lexeme("int" | "bool" | "char" | "string")
 
   val OPENSQUARE: Parsley[Unit] = lexer.lexeme.symbol.openSquare
   val CLOSESQUARE: Parsley[Unit] = lexer.lexeme.symbol.closingSquare
