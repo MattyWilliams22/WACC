@@ -10,9 +10,11 @@ import wacc.lexer._
 import wacc.lexer.implicits.implicitSymbol
 
 object parser {
-  def parse(input: String): Result[String, Expr] = parser.parse(input)
+  def parse(input: String): Result[String, Prog] = parser.parse(input)
+  private [wacc] def parseTest(input: String): Result[String, Expr] = parserTest.parse(input)
 
-  private val parser = fully(expr)
+  private lazy val parserTest = fully(expr)
+  private val parser = fully(prog)
 
   private lazy val expr: Parsley[Expr] = {
     precedence(atom)(
@@ -36,6 +38,7 @@ object parser {
       Ops(InfixR)("||" as Or)
     )
   }
+
 
   private lazy val arrayElem = IDENT <~> some("[" ~> expr <~ "]")
 
