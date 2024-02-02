@@ -5,7 +5,7 @@ import os
 import sys
 
 def get_return_code(fname):
-  if "valid" in fname:
+  if (not fname.startswith("wacc_examples/in")):
     return 0
   with open(fname) as f:
     lines = f.readlines()
