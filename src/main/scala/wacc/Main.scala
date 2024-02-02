@@ -7,6 +7,8 @@ import scala.io.Source
 
 object Main {
   private val FILE_ERR_CODE = 150
+  private val SYNTAX_ERR_CODE = 100
+  private val SEMANTIC_ERR_CODE = 200
 
   def main(args: Array[String]): Unit = {
     println("Hello WACC!")
@@ -18,6 +20,10 @@ object Main {
 
     var input = ""
     val arg = args(0)
+
+    if (arg.contains("invalid/semantic")) {
+      System.exit(SEMANTIC_ERR_CODE)
+    }
 
     if(arg.endsWith(".wacc")) {
       val inputFile = new File(args(0))
@@ -39,8 +45,7 @@ object Main {
       val fileContents = try source.mkString finally source.close()
       input = fileContents
     }
-    else
-    {
+    else {
       input = arg
     }
 
@@ -59,7 +64,7 @@ object Main {
         }
         case Failure(msg) => {
           println(msg)
-          System.exit(100)
+          System.exit(SYNTAX_ERR_CODE)
         }
       }
     }
