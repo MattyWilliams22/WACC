@@ -19,7 +19,7 @@ object Main {
     var input = ""
     val arg = args(0)
 
-    if (arg.endsWith(".wacc")) {
+    if(arg.endsWith(".wacc")) {
       val inputFile = new File(args(0))
 
       /* Checks if file exists*/
@@ -38,20 +38,29 @@ object Main {
       val source = Source.fromFile(inputFile)
       val fileContents = try source.mkString finally source.close()
       input = fileContents
-    } else {
+    }
+    else
+    {
       input = arg
     }
 
-    /* Parsing of expression */
-    parser.parse(input) match {
-      case Success(x) => {
-        // Semantic Analysis
-        println(s"$arg = $x")
-        System.exit(0)
+    if (args.length > 1) {
+      parser.parseTest(input) match {
+        case Success(x) => println(s"$arg = $x")
+        case Failure(msg) => println(msg)
       }
-      case Failure(msg) => {
-        println(msg)
-        System.exit(100)
+    } else {
+      /* Parsing of expression */
+      parser.parse(input) match {
+        case Success(x) => {
+          // Semantic Analysis
+          println(s"$arg = $x")
+          System.exit(0)
+        }
+        case Failure(msg) => {
+          println(msg)
+          System.exit(100)
+        }
       }
     }
   }
