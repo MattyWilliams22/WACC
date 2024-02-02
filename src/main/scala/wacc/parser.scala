@@ -87,11 +87,11 @@ object parser {
       atomic(declare) |
       (lvalue <~> ("=" ~> rvalue)).map(x => Assign(x._1, x._2)) |
       (read ~> lvalue).map(Read) |
-      (free <~> expr).map(x => Action(x._1, x._2)) |
-      (ret <~> expr).map(x => Action(x._1, x._2)) |
-      (exit <~> expr).map(x => Action(x._1, x._2)) |
-      atomic(println <~> expr).map(x => Action(x._1, x._2)) |
-      atomic(print <~> expr).map(x => Action(x._1, x._2)) |
+      (free ~> expr).map(Free) |
+      (ret ~> expr).map(Return) |
+      (exit ~> expr).map(Exit) |
+      atomic(println ~> expr).map(Println) |
+      atomic(print ~> expr).map(Print) |
       ifElse |
       ((WHILE ~> expr <~ DO) <~> stmt <~ done).map(x => While(x._1, x._2)) |
       (begin ~> stmt <~ end).map(Scope)) <~> many(";" ~> stmt)).map(x => Stmts(x._1 :: x._2))

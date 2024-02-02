@@ -4,95 +4,250 @@ object ASTNodes {
 
   sealed trait Expr extends RValue {
     def check(): Boolean
+    def getType(): Type
   }
   case class Mul(exp1: Expr, exp2: Expr) extends Expr {
     def check(): Boolean = {
-      return (exp1.check() && exp2.check())
+      if (!exp1.check() || !exp2.check()) {
+        return false
+      }
+      if (exp1.getType() != BaseT("int") || exp2.getType() != BaseT("int")) {
+        return false
+      }
+      return true
+    }
+    def getType(): Type = {
+      return BaseT("int")
     }
   }
   case class Div(exp1: Expr, exp2: Expr) extends Expr {
     def check(): Boolean = {
-      return (exp1.check() && exp2.check())
+      if (!exp1.check() || !exp2.check()) {
+        return false
+      }
+      if (exp1.getType() != BaseT("int") || exp2.getType() != BaseT("int")) {
+        return false
+      }
+      return true
+    }
+    def getType(): Type = {
+      return BaseT("int")
     }
   }
   case class Mod(exp1: Expr, exp2: Expr) extends Expr {
     def check(): Boolean = {
-      return (exp1.check() && exp2.check())
+      if (!exp1.check() || !exp2.check()) {
+        return false
+      }
+      if (exp1.getType() != BaseT("int") || exp2.getType() != BaseT("int")) {
+        return false
+      }
+      return true
+    }
+    def getType(): Type = {
+      return BaseT("int")
     }
   }
   case class Add(exp1: Expr, exp2: Expr) extends Expr {
     def check(): Boolean = {
-      return (exp1.check() && exp2.check())
+      if (!exp1.check() || !exp2.check()) {
+        return false
+      }
+      if (exp1.getType() != BaseT("int") || exp2.getType() != BaseT("int")) {
+        return false
+      }
+      return true
+    }
+    def getType(): Type = {
+      return BaseT("int")
     }
   }
   case class Sub(exp1: Expr, exp2: Expr) extends Expr {
     def check(): Boolean = {
-      return (exp1.check() && exp2.check())
+      if (!exp1.check() || !exp2.check()) {
+        return false
+      }
+      if (exp1.getType() != BaseT("int") || exp2.getType() != BaseT("int")) {
+        return false
+      }
+      return true
+    }
+    def getType(): Type = {
+      return BaseT("int")
     }
   }
   case class GT(exp1: Expr, exp2: Expr) extends Expr {
     def check(): Boolean = {
-      return (exp1.check() && exp2.check())
+      if (!exp1.check() || !exp2.check()) {
+        return false
+      }
+      def type1: Type = exp1.getType()
+      def type2: Type = exp2.getType()
+      if ((type1 != BaseT("int") && type1 != BaseT("char")) || (type2 != BaseT("int") && type2 != BaseT("char"))) {
+        return false
+      }
+      return true
+    }
+    def getType(): Type = {
+      return BaseT("bool")
     }
   }
   case class GTEQ(exp1: Expr, exp2: Expr) extends Expr {
     def check(): Boolean = {
-      return (exp1.check() && exp2.check())
+      if (!exp1.check() || !exp2.check()) {
+        return false
+      }
+      def type1: Type = exp1.getType()
+      def type2: Type = exp2.getType()
+      if ((type1 != BaseT("int") && type1 != BaseT("char")) || (type2 != BaseT("int") && type2 != BaseT("char"))) {
+        return false
+      }
+      return true
+    }
+    def getType(): Type = {
+      return BaseT("bool")
     }
   }
   case class LT(exp1: Expr, exp2: Expr) extends Expr {
     def check(): Boolean = {
-      return (exp1.check() && exp2.check())
+      if (!exp1.check() || !exp2.check()) {
+        return false
+      }
+      def type1: Type = exp1.getType()
+      def type2: Type = exp2.getType()
+      if ((type1 != BaseT("int") && type1 != BaseT("char")) || (type2 != BaseT("int") && type2 != BaseT("char"))) {
+        return false
+      }
+      return true
+    }
+    def getType(): Type = {
+      return BaseT("bool")
     }
   }
   case class LTEQ(exp1: Expr, exp2: Expr) extends Expr {
     def check(): Boolean = {
-      return (exp1.check() && exp2.check())
+      if (!exp1.check() || !exp2.check()) {
+        return false
+      }
+      def type1: Type = exp1.getType()
+      def type2: Type = exp2.getType()
+      if ((type1 != BaseT("int") && type1 != BaseT("char")) || (type2 != BaseT("int") && type2 != BaseT("char"))) {
+        return false
+      }
+      return true
+    }
+    def getType(): Type = {
+      return BaseT("bool")
     }
   }
   case class EQ(exp1: Expr, exp2: Expr) extends Expr {
     def check(): Boolean = {
-      return (exp1.check() && exp2.check())
+      if (!exp1.check() || !exp2.check()) {
+        return false
+      }
+      return true
+    }
+    def getType(): Type = {
+      return BaseT("bool")
     }
   }
   case class NEQ(exp1: Expr, exp2: Expr) extends Expr {
     def check(): Boolean = {
-      return (exp1.check() && exp2.check())
+      if (!exp1.check() || !exp2.check()) {
+        return false
+      }
+      return true
+    }
+    def getType(): Type = {
+      return BaseT("bool")
     }
   }
   case class And(exp1: Expr, exp2: Expr) extends Expr {
     def check(): Boolean = {
-      return (exp1.check() && exp2.check())
+      if (!exp1.check() || !exp2.check()) {
+        return false
+      }
+      if (exp1.getType() != BaseT("bool") || exp2.getType() != BaseT("bool")) {
+        return false
+      }
+      return true
+    }
+    def getType(): Type = {
+      return BaseT("bool")
     }
   }
   case class Or(exp1: Expr, exp2: Expr) extends Expr {
     def check(): Boolean = {
-      return (exp1.check() && exp2.check())
+      if (!exp1.check() || !exp2.check()) {
+        return false
+      }
+      if (exp1.getType() != BaseT("bool") || exp2.getType() != BaseT("bool")) {
+        return false
+      }
+      return true
+    }
+    def getType(): Type = {
+      return BaseT("bool")
     }
   }
   case class Not(exp: Expr) extends Expr {
     def check(): Boolean = {
-      return exp.check()
+      if (!exp.check() || !(exp.getType() == BaseT("bool"))) {
+        return false
+      }
+      return true
+    }
+    def getType(): Type = {
+      return BaseT("bool")
     }
   }
   case class Neg(exp: Expr) extends Expr {
     def check(): Boolean = {
-      return exp.check()
+      if (!exp.check() || !(exp.getType() == BaseT("int"))) {
+        return false
+      }
+      return true
+    }
+    def getType(): Type = {
+      return BaseT("int")
     }
   }
   case class Len(exp: Expr) extends Expr {
     def check(): Boolean = {
-      return exp.check()
+      if (!exp.check()) {
+        return false
+      }
+      def arrT: Type = exp.getType()
+      def valid = arrT match {
+        case ArrayT(_, n) if n > 0 => true
+        case _ => false
+      }
+      return valid
+    }
+    def getType(): Type = {
+      return BaseT("int")
     }
   }
   case class Ord(exp: Expr) extends Expr {
     def check(): Boolean = {
-      return exp.check()
+      if (!exp.check() || !(exp.getType() == BaseT("char"))) {
+        return false
+      }
+      return true
+    }
+    def getType(): Type = {
+      return BaseT("int")
     }
   }
   case class Chr(exp: Expr) extends Expr {
     def check(): Boolean = {
-      return exp.check()
+      if (!exp.check() || !(exp.getType() == BaseT("int"))) {
+        return false
+      }
+      return true
+    }
+    def getType(): Type = {
+      return BaseT("char")
     }
   }
 
@@ -101,31 +256,50 @@ object ASTNodes {
     def check(): Boolean = {
       return true
     }
+    def getType(): Type = {
+      return BaseT("int")
+    }
   }
   case class Bool(bool: String) extends Atom {
     def check(): Boolean = {
       return (bool == "true" || bool == "false")
+    }
+    def getType(): Type = {
+      return BaseT("bool")
     }
   }
   case class Ch(chr: Char) extends Atom {
     def check(): Boolean = {
       return true
     }
+    def getType(): Type = {
+      return BaseT("char")
+    }
   }
   case class Str(str: String) extends Atom {
     def check(): Boolean = {
       return true
     }
+    def getType(): Type = {
+      return BaseT("string")
+    }
   }
-  case class PairLiter() extends Atom {
+  case class PairLiter() extends Atom with Type {
     def check(): Boolean = {
       return true;
+    }
+    def getType(): Type = {
+      return PairLiter()
     }
   }
   case class Ident(str: String) extends Atom with LValue {
     def check(): Boolean = {
       // Need symbol table code
       return false
+    }
+    def getType(): Type = {
+      // MUST FIND FROM SYMBOL TABLE
+      return BaseT("ERROR")
     }
   }
   case class ArrayElem(ident: Ident, args: List[Expr]) extends Atom with LValue {
@@ -137,31 +311,48 @@ object ASTNodes {
       }
       return valid
     }
+    def getType(): Type = {
+      return ident.getType()
+    }
   }
   sealed trait Type {
     def check(): Boolean
+    def getType(): Type
   }
   sealed trait PairElemT extends Type {
     def check(): Boolean
+    def getType(): Type
   }
   case class BaseT(str: String) extends Type with PairElemT {
     def check(): Boolean = {
       return (str == "int" || str == "bool" || str == "char" || str == "string")
+    }
+    def getType(): Type = {
+      return BaseT(str)
     }
   }
   case class ArrayT(_type: Type, dim: Int) extends Type with PairElemT {
     def check(): Boolean = {
       return _type.check()
     }
+    def getType(): Type = {
+      return ArrayT(_type, dim)
+    }
   }
   case class PairT(pet1: PairElemT, pet2: PairElemT) extends Type {
     def check(): Boolean = {
       return (pet1.check() && pet2.check())
     }
+    def getType(): Type = {
+      return PairT(pet1, pet2)
+    }
   }
   case class PairNull() extends PairElemT {
     def check(): Boolean = {
       return true
+    }
+    def getType(): Type = {
+      return PairNull()
     }
   }
 
@@ -185,11 +376,17 @@ object ASTNodes {
       }
       return (valid && body.check())
     }
+    def getType(): Type = {
+      return _type.getType()
+    }
   }
 
   case class Param(_type: Type, ident: Ident) {
     def check(): Boolean = {
       return (_type.check() && ident.check())
+    }
+    def getType(): Type = {
+      return _type.getType()
     }
   }
 
@@ -216,7 +413,27 @@ object ASTNodes {
       return lvalue.check()
     }
   }
-  case class Action(action: String, exp: Expr) extends Stmt {
+  case class Free(exp: Expr) extends Stmt {
+    def check(): Boolean = {
+      return exp.check()
+    }
+  }
+  case class Return(exp: Expr) extends Stmt {
+    def check(): Boolean = {
+      return exp.check()
+    }
+  }
+  case class Exit(exp: Expr) extends Stmt {
+    def check(): Boolean = {
+      return exp.check()
+    }
+  }
+  case class Print(exp: Expr) extends Stmt {
+    def check(): Boolean = {
+      return exp.check()
+    }
+  }
+  case class Println(exp: Expr) extends Stmt {
     def check(): Boolean = {
       return exp.check()
     }
@@ -248,10 +465,12 @@ object ASTNodes {
 
   sealed trait LValue {
     def check(): Boolean
+    def getType(): Type
   }
 
   sealed trait RValue {
     def check(): Boolean
+    def getType(): Type
   }
 
   case class ArrayLiter(elems: List[Expr]) extends RValue {
@@ -262,15 +481,35 @@ object ASTNodes {
       }
       return valid
     }
+    def getType(): Type = {
+      return ArrayT(elems.head.getType(), 1)
+    }
   }
   case class NewPair(exp1: Expr, exp2: Expr) extends RValue {
     def check(): Boolean = {
-      return (exp1.check() && exp2.check())
+      if (!exp1.check() || !exp2.check()) {
+        return false
+      }
+      if (exp1.getType() != BaseT("int") || exp2.getType() != BaseT("int")) {
+        return false
+      }
+      return true
+    }
+    def getType(): Type = {
+      return PairT(exp1.getType().asInstanceOf[PairElemT], exp2.getType().asInstanceOf[PairElemT])
     }
   }
   case class PairElem(func: String, lvalue: LValue) extends RValue with LValue {
     def check(): Boolean = {
       return lvalue.check()
+    }
+    def getType(): Type = {
+      def parentT: PairT = lvalue.getType().asInstanceOf[PairT]
+      def childT: PairElemT = func match {
+        case "fst" => parentT.pet1
+        case "snd" => parentT.pet2
+      }
+      return childT
     }
   }
   case class Call(funcName: Ident, args: List[Expr]) extends RValue {
@@ -281,6 +520,10 @@ object ASTNodes {
         valid = valid && arg.check()
       }
       return valid
+    }
+    def getType(): Type = {
+      // GET TYPE OF FUNC FROM SYMBOL TABLE
+      return BaseT("ERROR")
     }
   }
 }
