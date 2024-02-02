@@ -17,10 +17,10 @@ object lexer {
 
   private val desc = LexicalDesc.plain.copy(
     symbolDesc = SymbolDesc.plain.copy(
-//       hardKeywords = Set[String]("true", "false", "null", "if", "else", "int",
-//       "bool", "char", "string", "pair", "begin", "end", "is", "skip",
-//       "read", "free", "return", "exit", "print", "println", "then", "fi",
-//       "while", "do", "done", "newpair", "call", "fst", "snd"),
+       hardKeywords = Set[String]("true", "false", "null", "if", "else", "int",
+       "bool", "char", "string", "pair", "begin", "end", "is", "skip",
+       "read", "free", "return", "exit", "print", "println", "then", "fi",
+       "while", "do", "done", "newpair", "call", "fst", "snd"),
       hardOperators = Set("len", "ord", "chr", "+", "*", "/", "%", "-",
       ">", ">=", "<", "<=", "==", "!=", "&&", "||"),
       caseSensitive = true,
@@ -62,50 +62,35 @@ object lexer {
   )
   private val lexer = new Lexer(desc)
 
-  // Tokens
+  val fst: Parsley[String] = lexer.lexeme("fst")
+  val snd: Parsley[String] = lexer.lexeme("snd")
+  val print: Parsley[String] = lexer.lexeme("print")
+  val println: Parsley[String] = lexer.lexeme("println")
+  val read: Parsley[String] = lexer.lexeme("read")
+  val free: Parsley[String] = lexer.lexeme("free")
+  val ret: Parsley[String] = lexer.lexeme("return")
+  val exit: Parsley[String] = lexer.lexeme("exit")
+  val begin: Parsley[String] = lexer.lexeme("begin")
+  val end: Parsley[String] = lexer.lexeme("end")
+  val WHILE: Parsley[String] = lexer.lexeme("while")
+  val DO: Parsley[String] = lexer.lexeme("do")
+  val done: Parsley[String] = lexer.lexeme("done")
+  val IF: Parsley[String] = lexer.lexeme("if")
+  val THEN: Parsley[String] = lexer.lexeme("then")
+  val ELSE: Parsley[String] = lexer.lexeme("else")
+  val fi: Parsley[String] = lexer.lexeme("fi")
+  val call: Parsley[String] = lexer.lexeme("call")
+  val skip: Parsley[String] = lexer.lexeme("skip")
+  val is: Parsley[String] = lexer.lexeme("is")
 
-  val BEGIN: Parsley[Unit] = lexer.lexeme.symbol("begin")
-  val END: Parsley[Unit] = lexer.lexeme.symbol("end")
-  val IS: Parsley[Unit] = lexer.lexeme.symbol("is")
-  val SKIP: Parsley[Unit] = lexer.lexeme.symbol("skip")
-  val READ: Parsley[Unit] = lexer.lexeme.symbol("read")
-  val FREE: Parsley[Unit] = lexer.lexeme.symbol("free")
-  val RETURN: Parsley[Unit] = lexer.lexeme.symbol("return")
-  val EXIT: Parsley[Unit] = lexer.lexeme.symbol("exit")
-  val PRINT: Parsley[Unit] = lexer.lexeme.symbol("print")
-  val PRINTLN: Parsley[Unit] = lexer.lexeme.symbol("println")
-  val IF: Parsley[Unit] = lexer.lexeme.symbol("if")
-  val THEN: Parsley[Unit] = lexer.lexeme.symbol("then")
-  val ELSE: Parsley[Unit] = lexer.lexeme.symbol("else")
-  val FI: Parsley[Unit] = lexer.lexeme.symbol("fi")
-  val WHILE: Parsley[Unit] = lexer.lexeme.symbol("while")
-  val DO: Parsley[Unit] = lexer.lexeme.symbol("do")
-  val DONE: Parsley[Unit] = lexer.lexeme.symbol("done")
-  val NEWPAIR: Parsley[Unit] = lexer.lexeme.symbol("newpair")
-  val CALL: Parsley[Unit] = lexer.lexeme.symbol("call")
-  val FST: Parsley[String] = lexer.lexeme("fst")
-  val SND: Parsley[String] = lexer.lexeme("snd")
-  val ASSIGN: Parsley[Unit] = lexer.lexeme.symbol("=")
-  val STARTBRACKET: Parsley[Unit] = lexer.lexeme.symbol.openParen
-  val ENDBRACKET: Parsley[Unit] = lexer.lexeme.symbol.closingParen
-  val SEMICOLON: Parsley[Unit] = lexer.lexeme.symbol.semi
-  val COMMA: Parsley[Unit] = lexer.lexeme.symbol.comma
-
-  val INT: Parsley[BigInt] = lexer.lexeme.integer.decimal
-  val CHAR: Parsley[Char] = lexer.lexeme.character.ascii
-  val STR: Parsley[String] = lexer.lexeme.string.ascii
-  val BOOL: Parsley[String] = lexer.lexeme("true" | "false")
-  val PAIRLITER: Parsley[String] = lexer.lexeme("null")
-  val IDENT: Parsley[String] = lexer.lexeme.names.identifier
-  val BASETYPE: Parsley[String] = lexer.lexeme("int" | "bool" | "char" | "string")
-
-  val OPENSQUARE: Parsley[Unit] = lexer.lexeme.symbol.openSquare
-  val CLOSESQUARE: Parsley[Unit] = lexer.lexeme.symbol.closingSquare
-
-  val PAIR: Parsley[Unit] = lexer.lexeme.symbol("pair")
+  val int: Parsley[BigInt] = lexer.lexeme.integer.decimal
+  val char: Parsley[Char] = lexer.lexeme.character.ascii
+  val str: Parsley[String] = lexer.lexeme.string.ascii
+  val bool: Parsley[String] = lexer.lexeme("true" | "false")
+  val pairLiter: Parsley[String] = lexer.lexeme("null")
+  val ident: Parsley[String] = lexer.lexeme.names.identifier
+  val baseType: Parsley[String] = lexer.lexeme("int" | "bool" | "char" | "string" | "pair")
 
   val implicits: ImplicitSymbol = lexer.lexeme.symbol.implicits
   def fully[A](p: Parsley[A]): Parsley[A] = lexer.fully(p)
-
-  def symbol(s: String) = lexer.lexeme.symbol(s)
 }

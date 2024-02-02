@@ -138,7 +138,6 @@ object ASTNodes {
       return valid
     }
   }
-
   sealed trait Type {
     def check(): Boolean
   }
@@ -150,7 +149,7 @@ object ASTNodes {
       return (str == "int" || str == "bool" || str == "char" || str == "string")
     }
   }
-  case class ArrayT(_type: Type) extends Type with PairElemT {
+  case class ArrayT(_type: Type, dim: Int) extends Type with PairElemT {
     def check(): Boolean = {
       return _type.check()
     }
@@ -284,5 +283,4 @@ object ASTNodes {
       return valid
     }
   }
-
 }
