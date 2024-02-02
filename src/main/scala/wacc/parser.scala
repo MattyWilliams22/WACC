@@ -125,7 +125,7 @@ object parser {
       atomic(expr) |
       atomic(pairElem).map(x => PairElem(x._1, x._2)) |
       ("[" ~> option(expr <+:> many("," ~> expr)) <~ "]").map {
-        case Some(x: List[Expr]) => ArrayLiter(x)
+        case Some(x: Seq[Expr]) => ArrayLiter(x.toList)
         case None => ArrayLiter(List())
       }
   }
