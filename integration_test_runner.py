@@ -46,8 +46,13 @@ for directory in list_directories_in_directory(base):
         tests[directory + "-" + subdirectory[:-3] + "-" + subsubdirectory] = \
           list_files_in_directory(base + directory + "/" + subdirectory + "/" + subsubdirectory + "/")
 
-passes = 0
 total = 0
+validTotal = 0
+syntaxTotal = 0
+semanticTotal = 0
+syntaxPasses = 0
+semanticPasses = 0
+validPasses = 0
 runningTests = []
 
 print("Running tests...")
@@ -69,9 +74,29 @@ for test in runningTests:
     actual = proc.returncode
     expected = get_return_code(fname)
     total += 1
+
+    if fname.startswith("wacc_examples/in"):
+      if "syntax" in fname:
+        syntaxTotal++
+      elif "semantic" in fname:
+        semanticTotal++
+    else:
+      valid++
+
     if actual == expected:
-      passes += 1
+      if fname.startswith("wacc_examples/in"):
+        if "syntax" in fname:
+          syntaxPasses++
+        elif "semantic" in fname:
+          semanticPasses++
+      else:
+        validPasses++
     else:
       print(f"Failed test {fname}. Expected exit code {expected} but got {actual}")
 
-print(f"Finished running tests. {passes} / {total} tests passed.")
+print("Finished running tests. Results: ")
+print(f"Valid: {validPasses} / {validTotal}")
+print(f"Invalid: {syntaxPasses + semanticPasses} / {syntaxTotal + semanticTotal}")
+print(f"    Syntax: {syntaxPasses} / {syntaxTotal}")
+print(f"    Semantic: {semanticPasses} / {semanticTotal}")
+print(f"Total: {validPasses + syntaxPasses + semanticPasses} / {validTotal + syntaxTotal + semanticTotal}")
