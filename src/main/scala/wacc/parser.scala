@@ -69,7 +69,7 @@ object parser {
       }
 
   private lazy val prog: Parsley[Prog] =
-    (begin ~> some(atomic(func)) <~> stmt <~ end).map(x => Prog(x._1, x._2))
+    (begin ~> many(atomic(func)) <~> stmt <~ end).map(x => Prog(x._1, x._2))
 
   private lazy val func: Parsley[Func] =
     (((types <~> ident <~ "(" <~> option(paramList) <~ ")") <~ is) <~> stmt <~ end).map {
@@ -84,17 +84,17 @@ object parser {
 
   private lazy val stmt: Parsley[Stmt] = {
     ((atomic(skip).map(_ => Skip()) |
-      atomic(declare) |
-      (lvalue <~> ("=" ~> rvalue)).map(x => Assign(x._1, x._2)) |
-      (read ~> lvalue).map(Read) |
-      (free <~> expr).map(x => Action(x._1, x._2)) |
-      (ret <~> expr).map(x => Action(x._1, x._2)) |
-      (exit <~> expr).map(x => Action(x._1, x._2)) |
+      atomic(read ~> lvalue).map(Read) |
+      atomic(free <~> expr).map(x => Action(x._1, x._2)) |
+      atomic(ret <~> expr).map(x => Action(x._1, x._2)) |
+      atomic(exit <~> expr).map(x => Action(x._1, x._2)) |
       atomic(println <~> expr).map(x => Action(x._1, x._2)) |
       atomic(print <~> expr).map(x => Action(x._1, x._2)) |
-      ifElse |
-      ((WHILE ~> expr <~ DO) <~> stmt <~ done).map(x => While(x._1, x._2)) |
-      (begin ~> stmt <~ end).map(Scope)) <~> many(";" ~> stmt)).map(x => Stmts(x._1 :: x._2))
+      atomic(ifElse) |
+      atomic(declare) |
+      atomic(lvalue <~> ("=" ~> rvalue)).map(x => Assign(x._1, x._2)) |
+      atomic((WHILE ~> expr <~ DO) <~> stmt <~ done).map(x => While(x._1, x._2)) |
+      atomic(begin ~> stmt <~ end).map(Scope)) <~> many(";" ~> stmt)).map(x => Stmts(x._1 :: x._2))
   }
 
   private lazy val declare: Parsley[Declare] = {
@@ -112,13 +112,13 @@ object parser {
   private lazy val pairElem: Parsley[(String, LValue)] = fst <~> lvalue | snd <~> lvalue
 
   private lazy val lvalue: Parsley[LValue] = {
-    ident.map(Ident) | atomic(arrayElem).map(x => ArrayElem(Ident(x._1), x._2)) |
-      atomic(pairElem).map(x => PairElem(x._1, x._2))
+    atomic(arrayElem).map(x => ArrayElem(Ident(x._1), x._2)) |
+      atomic(pairElem).map(x => PairElem(x._1, x._2)) | atomic(ident).map(Ident)
   }
 
   private lazy val rvalue: Parsley[RValue] = {
     atomic("newpair(" ~> expr <~ "," <~> expr <~ ")").map(x => NewPair(x._1, x._2)) |
-      ((call ~> ident <~ "(") <~> option(sepBy(expr, ",")) <~ ")").map {
+      atomic((call ~> ident <~ "(") <~> option(sepBy(expr, ",")) <~ ")").map {
         case (name: String, Some(x: List[Expr])) => Call(Ident(name), x)
         case (name: String, None) => Call(Ident(name), List())
       } |
