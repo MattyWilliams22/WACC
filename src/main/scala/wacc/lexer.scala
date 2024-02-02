@@ -87,7 +87,8 @@ object lexer {
   val bool: Parsley[String] = lexer.lexeme("true" | "false")
   val pairLiter: Parsley[String] = lexer.lexeme("null")
   val ident: Parsley[String] = lexer.lexeme.names.identifier
-  val baseType: Parsley[String] = lexer.lexeme("int" | "bool" | "char" | "string" | "pair")
+  val baseType: Parsley[String] = "int" | "bool" | "char" | "string" | "pair"
+  val arrayBraces: Parsley[String] = "[]"
 
   val implicits: ImplicitSymbol = lexer.lexeme.symbol.implicits
   def fully[A](p: Parsley[A]): Parsley[A] = lexer.fully(p)

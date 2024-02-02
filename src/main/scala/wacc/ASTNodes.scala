@@ -38,22 +38,22 @@ object ASTNodes {
   case class PairT(pet_1: PairElemT, pet_2: PairElemT) extends Type
   case class PairNull() extends PairElemT
 
-  case class Prog(funcs: List[Func], stat: Stmt)
+  case class Prog(funcs: List[Function], stat: Statement)
 
-  case class Func(_type: Type, ident: Ident, param_list: List[Param], body: Stmt)
+  case class Function(_type: Type, ident: Ident, param_list: List[Param], body: Statement)
 
   case class Param(_type: Type, ident: Ident)
 
-  sealed trait Stmt
-  case class Skip() extends Stmt
-  case class Declare(_type: Type, ident: Ident, value: RValue) extends Stmt
-  case class Assign(lvalue: LValue, rvalue: RValue) extends Stmt
-  case class Read(lvalue: LValue) extends Stmt
-  case class Action(action: String, exp: Expr) extends Stmt
-  case class If(cond: Expr, thenS: Stmt, elseS: Stmt) extends Stmt
-  case class While(cond: Expr, body: Stmt) extends Stmt
-  case class Scope(body: Stmt) extends Stmt
-  case class Stmts(stmts: List[Stmt]) extends Stmt
+  sealed trait Statement
+  case class Skip() extends Statement
+  case class Declare(_type: Type, ident: Ident, value: RValue) extends Statement
+  case class Assign(lvalue: LValue, rvalue: RValue) extends Statement
+  case class Read(lvalue: LValue) extends Statement
+  case class Action(action: String, exp: Expr) extends Statement
+  case class If(cond: Expr, thenS: Statement, elseS: Statement) extends Statement
+  case class While(cond: Expr, body: Statement) extends Statement
+  case class Scope(body: Statement) extends Statement
+  case class Statements(stmts: List[Statement]) extends Statement
 
   sealed trait LValue
 

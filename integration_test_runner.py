@@ -65,6 +65,7 @@ else :
     runningTests = tests[tag]
   else:
     print(f"Test tag {tag} not found")
+    sys.exit(1)
 
 for test in runningTests:
   for fname in glob.glob(test):

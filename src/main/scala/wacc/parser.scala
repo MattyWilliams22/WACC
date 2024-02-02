@@ -4,6 +4,7 @@ import parsley.Parsley.{atomic, many, some}
 import parsley.combinator.{option, sepBy}
 import parsley.expr._
 import parsley.{Parsley, Result}
+import parsley.character.whitespace
 import wacc.ASTNodes._
 import wacc.lexer._
 import wacc.lexer.implicits.implicitSymbol
@@ -14,6 +15,35 @@ object parser {
 
   private lazy val parserTest = fully(expr)
   private val parser = fully(prog)
+
+  private lazy val prog: Parsley[Prog] =
+    (begin ~> many(atomic(func)) <~> statement <~ end).map(x => Prog(x._1, x._2))
+
+  private lazy val func: Parsley[Function] =
+    (((types <~> ident <~ "(" <~> option(paramList) <~ ")") <~ is) <~> statement <~ end).map {
+      case (((t, i), Some(ps)), s) => Function(t, Ident(i), ps, s)
+      case (((t, i), None), s) => Function(t, Ident(i), List(), s)
+    }
+
+  private lazy val statement: Parsley[Statement] = {
+    ((atomic(skip).map(_ => Skip()) |
+      atomic(read ~> lvalue).map(Read) |
+      atomic(free <~> expr).map(x => Action(x._1, x._2)) |
+      atomic(ret <~> expr).map(x => Action(x._1, x._2)) |
+      atomic(exit <~> expr).map(x => Action(x._1, x._2)) |
+      atomic(println <~> expr).map(x => Action(x._1, x._2)) |
+      atomic(print <~> expr).map(x => Action(x._1, x._2)) |
+      atomic(ifElse) |
+      atomic(declare) |
+      atomic(lvalue <~> ("=" ~> rvalue)).map(x => Assign(x._1, x._2)) |
+      atomic((WHILE ~> expr <~ DO) <~> statement <~ done).map(x => While(x._1, x._2)) |
+      atomic(begin ~> statement <~ end).map(Scope)) <~> many(";" ~> statement)).map(x => Statements(x._1 :: x._2))
+  }
+
+  private lazy val paramList: Parsley[List[Param]] =
+    (param <~> many("," ~> param)).map(x => x._1 :: x._2)
+
+  private lazy val param: Parsley[Param] = (types <~> ident).map(x => Param(x._1, Ident(x._2)))
 
   private lazy val expr: Parsley[Expr] = {
     precedence(atom)(
@@ -41,13 +71,13 @@ object parser {
   private lazy val arrayElem = ident <~> some("[" ~> expr <~ "]")
 
   private lazy val types: Parsley[Type] = {
-    (pairType <~> many("[]")).map {
-      case (base: PairT, arr: List[Unit]) if arr.isEmpty => base
-      case (base: PairT, arr: List[Unit]) => ArrayT(base, arr.length)
+    (pairType <~> many(arrayBraces)).map {
+      case (base: PairT, arr: List[String]) if arr.isEmpty => base
+      case (base: PairT, arr: List[String]) => ArrayT(base, arr.length)
     } |
-      (baseTypes <~> many("[]")).map {
-        case (base: BaseT, arr: List[Unit]) if arr.isEmpty => base
-        case (base: BaseT, arr: List[Unit]) => ArrayT(base, arr.length)
+      (baseTypes <~> many(arrayBraces) <~ some(whitespace)).map {
+        case (base: BaseT, arr: List[String]) if arr.isEmpty => base
+        case (base: BaseT, arr: List[String]) => ArrayT(base, arr.length)
       }
   }
 
@@ -59,43 +89,14 @@ object parser {
     ("pair(" ~> pairElemType <~ "," <~> pairElemType <~ ")").map(x => PairT(x._1, x._2))
 
   private lazy val pairElemType: Parsley[PairElemT] =
-    atomic(pairType <~> some("[]")).map {
-      case (base: PairT, arr: List[Unit]) => ArrayT(base, arr.length)
+    atomic(pairType <~> some(arrayBraces)).map {
+      case (base: PairT, arr: List[String]) => ArrayT(base, arr.length)
     } |
       atomic("pair").map(_ => PairNull()) |
-      (baseTypes <~> many("[]")).map {
-        case (base: BaseT, arr: List[Unit]) if arr.isEmpty => base
-        case (base: BaseT, arr: List[Unit]) => ArrayT(base, arr.length)
+      (baseTypes <~> many(arrayBraces)).map {
+        case (base: BaseT, arr: List[String]) if arr.isEmpty => base
+        case (base: BaseT, arr: List[String]) => ArrayT(base, arr.length)
       }
-
-  private lazy val prog: Parsley[Prog] =
-    (begin ~> many(atomic(func)) <~> stmt <~ end).map(x => Prog(x._1, x._2))
-
-  private lazy val func: Parsley[Func] =
-    (((types <~> ident <~ "(" <~> option(paramList) <~ ")") <~ is) <~> stmt <~ end).map {
-      case (((t, i), Some(ps)), s) => Func(t, Ident(i), ps, s)
-      case (((t, i), None), s) => Func(t, Ident(i), List(), s)
-  }
-
-  private lazy val paramList: Parsley[List[Param]] =
-    (param <~> many("," ~> param)).map(x => x._1 :: x._2)
-
-  private lazy val param: Parsley[Param] = (types <~> ident).map(x => Param(x._1, Ident(x._2)))
-
-  private lazy val stmt: Parsley[Stmt] = {
-    ((atomic(skip).map(_ => Skip()) |
-      atomic(read ~> lvalue).map(Read) |
-      atomic(free <~> expr).map(x => Action(x._1, x._2)) |
-      atomic(ret <~> expr).map(x => Action(x._1, x._2)) |
-      atomic(exit <~> expr).map(x => Action(x._1, x._2)) |
-      atomic(println <~> expr).map(x => Action(x._1, x._2)) |
-      atomic(print <~> expr).map(x => Action(x._1, x._2)) |
-      atomic(ifElse) |
-      atomic(declare) |
-      atomic(lvalue <~> ("=" ~> rvalue)).map(x => Assign(x._1, x._2)) |
-      atomic((WHILE ~> expr <~ DO) <~> stmt <~ done).map(x => While(x._1, x._2)) |
-      atomic(begin ~> stmt <~ end).map(Scope)) <~> many(";" ~> stmt)).map(x => Stmts(x._1 :: x._2))
-  }
 
   private lazy val declare: Parsley[Declare] = {
     ((types <~> ident) <~> ("=" ~> rvalue)).map {
@@ -104,7 +105,7 @@ object parser {
   }
 
   private lazy val ifElse: Parsley[If] = {
-    (((IF ~> expr <~ THEN) <~> stmt <~ ELSE) <~> stmt <~ fi).map {
+    (((IF ~> expr <~ THEN) <~> statement <~ ELSE) <~> statement <~ fi).map {
       case ((cond, thenS), elseS) => If(cond, thenS, elseS)
     }
   }
