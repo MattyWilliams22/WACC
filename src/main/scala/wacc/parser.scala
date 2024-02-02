@@ -66,32 +66,31 @@ object parser {
         case (base: BaseT, _: List[Unit]) => ArrayT(base)
       }
 
-      // private lazy val prog: Parsley[Prog] = ("begin" ~> many(func) <~> stmt <~ "end").map(x => Prog(x._1, x._2))
+  private lazy val prog: Parsley[Prog] = ("begin" ~> many(atomic(func)) <~> stmt <~ "end").map(x => Prog(x._1, x._2))
 
-  /*
-    private lazy val func: Parsley[Func] = ((((types <~> IDENT <~ "(") <~> option(paramList) <~ ")") <~ "is") <~> stmt <~ "end").map {
-      case (((t, i), Some(ps)), s) => Func(t, Ident(i), ps, s)
-      case (((t, i), None), s) => Func(t, Ident(i), List(), s)
-    }*/
+  private lazy val func: Parsley[Func] = ((((types <~> IDENT <~ "(") <~> option(paramList) <~ ")") <~ "is") <~> stmt <~ "end").map {
+    case (((t, i), Some(ps)), s) => Func(t, Ident(i), ps, s)
+    case (((t, i), None), s) => Func(t, Ident(i), List(), s)
+  }
 
   private lazy val paramList: Parsley[List[Param]] = (param <~> many("," ~> param)).map(x => x._1 :: x._2)
 
   private lazy val param: Parsley[Param] = (types <~> IDENT).map(x => Param(x._1, Ident(x._2)))
 
   private lazy val stmt: Parsley[Stmt] = {
-    string("skip").map(x => Skip()) |
+    atomic("skip").map(x => Skip()) |
       declare |
       (lvalue <~> ("=" ~> rvalue)).map(x => Assign(x._1, x._2)) |
       (string("read") ~> lvalue).map(Read) |
       (string("free") <~> expr).map(x => Action(x._1, x._2)) |
       (string("return") <~> expr).map(x => Action(x._1, x._2)) |
       (string("exit") <~> expr).map(x => Action(x._1, x._2)) |
-      (string("print") <~> expr).map(x => Action(x._1, x._2)) |
-      (string("println") <~> expr).map(x => Action(x._1, x._2)) |
+      atomic(string("print") <~> expr).map(x => Action(x._1, x._2)) |
+      atomic(string("println") <~> expr).map(x => Action(x._1, x._2)) |
       ifelse |
       (("while" ~> expr <~ "do") <~> stmt <~ "done").map(x => While(x._1, x._2)) |
-      ("begin" ~> stmt <~ "end").map(Scope) |
-      stmts
+      ("begin" ~> stmt <~ "end").map(Scope)
+      //stmts
   }
 
   private lazy val declare: Parsley[Declare] = {
