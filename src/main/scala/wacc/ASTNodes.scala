@@ -415,7 +415,16 @@ object ASTNodes {
   }
   case class Free(exp: Expr) extends Stmt {
     def check(): Boolean = {
-      return exp.check()
+      if (!exp.check()) {
+        return false
+      }
+      def t: Type = exp.getType()
+      def valid: Boolean = t match {
+        case ArrayT(_, n) if n > 0 => true
+        case PairT(_, _) => true
+        case _ => false
+      }
+      return valid
     }
   }
   case class Return(exp: Expr) extends Stmt {
@@ -440,12 +449,24 @@ object ASTNodes {
   }
   case class If(cond: Expr, thenS: Stmt, elseS: Stmt) extends Stmt {
     def check(): Boolean = {
-      return (cond.check() && thenS.check() && elseS.check())
+      if (!cond.check() || !thenS.check() || !elseS.check()) {
+        return false
+      }
+      if (cond.getType() != BaseT("bool")) {
+        return false
+      }
+      return true
     }
   }
   case class While(cond: Expr, body: Stmt) extends Stmt {
     def check(): Boolean = {
-      return (cond.check() && body.check())
+      if (!cond.check() || !body.check()) {
+        return false
+      }
+      if (cond.getType() != BaseT("bool")) {
+        return false
+      }
+      return true
     }
   }
   case class Scope(body: Stmt) extends Stmt {
@@ -478,6 +499,14 @@ object ASTNodes {
       var valid: Boolean = true
       for (elem <- elems) {
         valid = valid && elem.check()
+      }
+      var t1: Type = elems.head.getType()
+      for (elem <- elems) {
+        def tn: Type = elem.getType()
+        // MUST CONSIDER [char[], string] CASE
+        if (tn != t1) {
+          return false
+        }
       }
       return valid
     }
