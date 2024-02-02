@@ -85,14 +85,14 @@ object parser {
 
   private lazy val stmt: Parsley[Stmt] = {
     ((atomic("skip").map(_ => Skip()) |
-      declare |
+      atomic(declare) |
       (lvalue <~> ("=" ~> rvalue)).map(x => Assign(x._1, x._2)) |
-      (string("read") ~> lvalue).map(Read) |
-      (string("free") <~> expr).map(x => Action(x._1, x._2)) |
-      (string("return") <~> expr).map(x => Action(x._1, x._2)) |
-      (string("exit") <~> expr).map(x => Action(x._1, x._2)) |
-      atomic(string("print") <~> expr).map(x => Action(x._1, x._2)) |
-      atomic(string("println") <~> expr).map(x => Action(x._1, x._2)) |
+      (read ~> lvalue).map(Read) |
+      (free <~> expr).map(x => Action(x._1, x._2)) |
+      (ret <~> expr).map(x => Action(x._1, x._2)) |
+      (exit <~> expr).map(x => Action(x._1, x._2)) |
+      atomic(println <~> expr).map(x => Action(x._1, x._2)) |
+      atomic(print <~> expr).map(x => Action(x._1, x._2)) |
       ifElse |
       (("while" ~> expr <~ "do") <~> stmt <~ "done").map(x => While(x._1, x._2)) |
       ("begin" ~> stmt <~ "end").map(Scope)) <~> many(";" ~> stmt)).map(x => Stmts(x._1 :: x._2))
@@ -133,7 +133,7 @@ object parser {
 
   private lazy val atom: Parsley[Expr] = {
     "(" ~> expr <~ ")" | atomic(arrayElem).map(x => ArrayElem(Ident(x._1), x._2)) |
-      int.map(Num) | ident.map(Ident) | bool.map(Bool) | char.map(Ch) | str.map(Str) |
-      pairLiter.map(PairLiter)
+      int.map(Num) | ident.map(Ident) | bool.map(Bool) |
+      char.map(Ch) | str.map(Str) | pairLiter.map(PairLiter)
   }
 }

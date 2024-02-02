@@ -64,6 +64,12 @@ object lexer {
 
   val fst: Parsley[String] = lexer.lexeme("fst")
   val snd: Parsley[String] = lexer.lexeme("snd")
+  val print: Parsley[String] = lexer.lexeme("print")
+  val println: Parsley[String] = lexer.lexeme("println")
+  val read: Parsley[String] = lexer.lexeme("read")
+  val free: Parsley[String] = lexer.lexeme("free")
+  val ret: Parsley[String] = lexer.lexeme("return")
+  val exit: Parsley[String] = lexer.lexeme("exit")
 
   val int: Parsley[BigInt] = lexer.lexeme.integer.decimal
   val char: Parsley[Char] = lexer.lexeme.character.ascii
