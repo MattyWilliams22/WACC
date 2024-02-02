@@ -77,16 +77,16 @@ for test in runningTests:
 
     if fname.startswith("wacc_examples/in"):
       if "syntax" in fname:
-        syntaxTotal++
+        syntaxTotal += 1
       elif "semantic" in fname:
         semanticTotal += 1
     else:
-      valid++
+      validTotal += 1
 
     if actual == expected:
       if fname.startswith("wacc_examples/in"):
         if "syntax" in fname:
-          syntaxPasses++
+          syntaxPasses += 1
         elif "semantic" in fname:
           semanticPasses += 1
       else:
