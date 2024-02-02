@@ -14,5 +14,3 @@ test-integration:
   stage: test
   script:
     - python3 integration_test.py
-  tags:
-    - Integration
