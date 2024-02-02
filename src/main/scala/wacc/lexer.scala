@@ -81,6 +81,7 @@ object lexer {
   val fi: Parsley[String] = lexer.lexeme("fi")
   val call: Parsley[String] = lexer.lexeme("call")
   val skip: Parsley[String] = lexer.lexeme("skip")
+  val is: Parsley[String] = lexer.lexeme("is")
 
   val int: Parsley[BigInt] = lexer.lexeme.integer.decimal
   val char: Parsley[Char] = lexer.lexeme.character.ascii

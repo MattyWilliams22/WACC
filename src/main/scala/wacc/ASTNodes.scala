@@ -34,7 +34,7 @@ object ASTNodes {
   sealed trait Type
   sealed trait PairElemT extends Type
   case class BaseT(str: String) extends Type with PairElemT
-  case class ArrayT(_type: Type) extends Type with PairElemT
+  case class ArrayT(_type: Type, dim: Int) extends Type with PairElemT
   case class PairT(pet_1: PairElemT, pet_2: PairElemT) extends Type
   case class PairNull() extends PairElemT
 

@@ -43,11 +43,11 @@ object parser {
   private lazy val types: Parsley[Type] = {
     (pairType <~> many("[]")).map {
       case (base: PairT, arr: List[Unit]) if arr.isEmpty => base
-      case (base: PairT, _: List[Unit]) => ArrayT(base)
+      case (base: PairT, arr: List[Unit]) => ArrayT(base, arr.length)
     } |
       (baseTypes <~> many("[]")).map {
         case (base: BaseT, arr: List[Unit]) if arr.isEmpty => base
-        case (base: BaseT, _: List[Unit]) => ArrayT(base)
+        case (base: BaseT, arr: List[Unit]) => ArrayT(base, arr.length)
       }
   }
 
@@ -60,19 +60,19 @@ object parser {
 
   private lazy val pairElemType: Parsley[PairElemT] =
     atomic(pairType <~> some("[]")).map {
-      case (base: PairT, _: List[Unit]) => ArrayT(base)
+      case (base: PairT, arr: List[Unit]) => ArrayT(base, arr.length)
     } |
       atomic("pair").map(_ => PairNull()) |
       (baseTypes <~> many("[]")).map {
         case (base: BaseT, arr: List[Unit]) if arr.isEmpty => base
-        case (base: BaseT, _: List[Unit]) => ArrayT(base)
+        case (base: BaseT, arr: List[Unit]) => ArrayT(base, arr.length)
       }
 
   private lazy val prog: Parsley[Prog] =
-    (begin ~> many(atomic(func)) <~> stmt <~ end).map(x => Prog(x._1, x._2))
+    (begin ~> some(atomic(func)) <~> stmt <~ end).map(x => Prog(x._1, x._2))
 
   private lazy val func: Parsley[Func] =
-    ((((types <~> ident <~ "(") <~> option(paramList) <~ ")") <~ "is") <~> stmt <~ "end").map {
+    (((types <~> ident <~ "(" <~> option(paramList) <~ ")") <~ is) <~> stmt <~ end).map {
       case (((t, i), Some(ps)), s) => Func(t, Ident(i), ps, s)
       case (((t, i), None), s) => Func(t, Ident(i), List(), s)
   }

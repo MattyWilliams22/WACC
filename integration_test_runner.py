@@ -1,12 +1,18 @@
 import glob
 import re
 import subprocess
+import os
 
-tests = ["valid/basic/skip/comment.wacc",
-         "invalid/syntaxErr/basic/badComment.wacc",
-         "invalid/syntaxErr/if/*"]
+base = "wacc_examples/"
 
-base = "wacc_examples/integration/"
+def list_files_in_directory(base):
+    file_paths = []
+    for root, dirs, files in os.walk(base):
+        for file in files:
+            file_paths.append(os.path.join(root, file))
+    return file_paths
+
+tests = list_files_in_directory(base + "valid/")
 
 def get_return_code(fname):
   with open(fname) as f:
@@ -17,11 +23,11 @@ def get_return_code(fname):
   return 0
 
 passes = 0
-total = len(tests)
+total = 0
 
 print("Running tests...")
 for test in tests:
-  for fname in glob.glob(base + test):
+  for fname in glob.glob(test):
     print(f"sh compile {fname}")
     proc = subprocess.run(["sh", "compile", fname], stdout=subprocess.DEVNULL)
 
