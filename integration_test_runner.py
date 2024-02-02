@@ -13,11 +13,13 @@ def get_return_code(fname):
   return 0
 
 def list_directories_in_directory(base):
-    return [name for name in os.listdir(base) if (os.path.isdir(os.path.join(base, name)) and name != "whack")]
+  result = [name for name in os.listdir(base) if (os.path.isdir(os.path.join(base, name)) and name != 'whack')]
+  return result
 
 def list_files_in_directory(base):
     file_paths = []
     for root, dirs, files in os.walk(base):
+        dirs[:] = [d for d in dirs if d.lower() != 'whack']
         for file in files:
             file_paths.append(os.path.join(root, file))
     return file_paths
