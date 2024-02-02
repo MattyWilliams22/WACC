@@ -13,4 +13,4 @@ test:
 test-integration:
   stage: test
   script:
-    - python3 integration_test.py
+    - python3 integration_test_runner.py
