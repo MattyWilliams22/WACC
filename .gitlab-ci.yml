@@ -13,4 +13,5 @@ test:
 test-integration:
   stage: test
   script:
+    - git submodule update --init --recursive
     - python3 integration_test_runner.py
