@@ -20,7 +20,7 @@ class ParserSpec extends AnyFlatSpec with Matchers {
 
   it should "parse nested expressions" in {
     val result: Result[String, Expr] = parseTest("(1 + 2) * (3 - 4)")
-    result shouldBe Success(Mul(Add(Num(BigInt(1)), Num(BigInt(2))), Sub(Num(BigInt(3)), Num(BigInt(4)))))
+    result shouldBe Success(Mul(Add(Num(1), Num(2)), Sub(Num(3), Num(4))))
   }
 }
 
