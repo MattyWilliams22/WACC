@@ -39,7 +39,6 @@ object parser {
     )
   }
 
-
   private lazy val arrayElem = IDENT <~> some("[" ~> expr <~ "]")
 
   private lazy val types: Parsley[Type] = {
@@ -81,7 +80,7 @@ object parser {
   private lazy val param: Parsley[Param] = (types <~> IDENT).map(x => Param(x._1, Ident(x._2)))
 
   private lazy val stmt: Parsley[Stmt] = {
-    atomic("skip").map(x => Skip()) |
+    ((atomic("skip").map(_ => Skip()) |
       declare |
       (lvalue <~> ("=" ~> rvalue)).map(x => Assign(x._1, x._2)) |
       (string("read") ~> lvalue).map(Read) |
@@ -92,8 +91,7 @@ object parser {
       atomic(string("println") <~> expr).map(x => Action(x._1, x._2)) |
       ifelse |
       (("while" ~> expr <~ "do") <~> stmt <~ "done").map(x => While(x._1, x._2)) |
-      ("begin" ~> stmt <~ "end").map(Scope)
-      //stmts
+      ("begin" ~> stmt <~ "end").map(Scope)) <~> many(";" ~> stmt)).map(x => Stmts(x._1 :: x._2))
   }
 
   private lazy val declare: Parsley[Declare] = {
@@ -107,8 +105,6 @@ object parser {
       case ((cond, thenS), elseS) => If(cond, thenS, elseS)
     }
   }
-
-  private lazy val stmts: Parsley[Stmts] = (stmt <~> many(";" ~> stmt)).map(x => Stmts(x._1 :: x._2))
 
   private lazy val pairElem: Parsley[(String, LValue)] = FST <~> lvalue | SND <~> lvalue
 
