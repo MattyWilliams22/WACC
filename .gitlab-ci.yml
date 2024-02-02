@@ -1,11 +1,4 @@
-image: openjdk:11
-
-before_script:
-  - apt-get update -y
-  - apt-get install make -y
-  - curl -fL https://github.com/Virtuslab/scala-cli/releases/latest/download/scala-cli-x86_64-pc-linux.gz | gzip -d > scala-cli
-  - chmod +x scala-cli
-  - mv scala-cli /usr/local/bin/scala-cli
+image: kryptos12/wacc-04:0.0.3
 
 build:
   stage: build
@@ -16,3 +9,10 @@ test:
   stage: test
   script:
     - scala-cli test .
+
+test-integration:
+  stage: test
+  script:
+    - python3 integration_test.py
+  tags:
+    - Integration
