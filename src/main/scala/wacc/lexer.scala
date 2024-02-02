@@ -81,7 +81,7 @@ object lexer {
   val skip: Parsley[String] = lexer.lexeme("skip")
   val is: Parsley[String] = lexer.lexeme("is")
 
-  val int: Parsley[BigInt] = lexer.lexeme.integer.decimal
+  val int: Parsley[Int] = lexer.lexeme.integer.decimal32
   val char: Parsley[Char] = lexer.lexeme.character.ascii
   val str: Parsley[String] = lexer.lexeme.string.ascii
   val bool: Parsley[String] = lexer.lexeme("true" | "false")

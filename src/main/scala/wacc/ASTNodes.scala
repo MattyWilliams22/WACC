@@ -23,7 +23,7 @@ object ASTNodes {
   case class Chr(exp: Expr) extends Expr
 
   sealed trait Atom extends Expr
-  case class Num(value: BigInt) extends Atom
+  case class Num(value: Int) extends Atom
   case class Bool(bool: String) extends Atom
   case class Ch(chr: Char) extends Atom
   case class Str(str: String) extends Atom
