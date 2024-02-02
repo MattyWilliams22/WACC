@@ -70,6 +70,17 @@ object lexer {
   val free: Parsley[String] = lexer.lexeme("free")
   val ret: Parsley[String] = lexer.lexeme("return")
   val exit: Parsley[String] = lexer.lexeme("exit")
+  val begin: Parsley[String] = lexer.lexeme("begin")
+  val end: Parsley[String] = lexer.lexeme("end")
+  val WHILE: Parsley[String] = lexer.lexeme("while")
+  val DO: Parsley[String] = lexer.lexeme("do")
+  val done: Parsley[String] = lexer.lexeme("done")
+  val IF: Parsley[String] = lexer.lexeme("if")
+  val THEN: Parsley[String] = lexer.lexeme("then")
+  val ELSE: Parsley[String] = lexer.lexeme("else")
+  val fi: Parsley[String] = lexer.lexeme("fi")
+  val call: Parsley[String] = lexer.lexeme("call")
+  val skip: Parsley[String] = lexer.lexeme("skip")
 
   val int: Parsley[BigInt] = lexer.lexeme.integer.decimal
   val char: Parsley[Char] = lexer.lexeme.character.ascii

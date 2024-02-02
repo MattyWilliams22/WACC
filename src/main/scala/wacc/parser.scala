@@ -1,7 +1,6 @@
 package wacc
 
 import parsley.Parsley.{atomic, many, some}
-import parsley.character.string
 import parsley.combinator.{option, sepBy}
 import parsley.expr._
 import parsley.{Parsley, Result}
@@ -70,7 +69,7 @@ object parser {
       }
 
   private lazy val prog: Parsley[Prog] =
-    ("begin" ~> many(atomic(func)) <~> stmt <~ "end").map(x => Prog(x._1, x._2))
+    (begin ~> many(atomic(func)) <~> stmt <~ end).map(x => Prog(x._1, x._2))
 
   private lazy val func: Parsley[Func] =
     ((((types <~> ident <~ "(") <~> option(paramList) <~ ")") <~ "is") <~> stmt <~ "end").map {
@@ -84,7 +83,7 @@ object parser {
   private lazy val param: Parsley[Param] = (types <~> ident).map(x => Param(x._1, Ident(x._2)))
 
   private lazy val stmt: Parsley[Stmt] = {
-    ((atomic("skip").map(_ => Skip()) |
+    ((atomic(skip).map(_ => Skip()) |
       atomic(declare) |
       (lvalue <~> ("=" ~> rvalue)).map(x => Assign(x._1, x._2)) |
       (read ~> lvalue).map(Read) |
@@ -94,8 +93,8 @@ object parser {
       atomic(println <~> expr).map(x => Action(x._1, x._2)) |
       atomic(print <~> expr).map(x => Action(x._1, x._2)) |
       ifElse |
-      (("while" ~> expr <~ "do") <~> stmt <~ "done").map(x => While(x._1, x._2)) |
-      ("begin" ~> stmt <~ "end").map(Scope)) <~> many(";" ~> stmt)).map(x => Stmts(x._1 :: x._2))
+      ((WHILE ~> expr <~ DO) <~> stmt <~ done).map(x => While(x._1, x._2)) |
+      (begin ~> stmt <~ end).map(Scope)) <~> many(";" ~> stmt)).map(x => Stmts(x._1 :: x._2))
   }
 
   private lazy val declare: Parsley[Declare] = {
@@ -105,7 +104,7 @@ object parser {
   }
 
   private lazy val ifElse: Parsley[If] = {
-    ((("if" ~> expr <~ "then") <~> stmt <~ "else") <~> stmt <~ "fi").map {
+    (((IF ~> expr <~ THEN) <~> stmt <~ ELSE) <~> stmt <~ fi).map {
       case ((cond, thenS), elseS) => If(cond, thenS, elseS)
     }
   }
@@ -119,7 +118,7 @@ object parser {
 
   private lazy val rvalue: Parsley[RValue] = {
     atomic("newpair(" ~> expr <~ "," <~> expr <~ ")").map(x => NewPair(x._1, x._2)) |
-      (("call" ~> ident <~ "(") <~> option(sepBy(expr, ",")) <~ ")").map {
+      ((call ~> ident <~ "(") <~> option(sepBy(expr, ",")) <~ ")").map {
         case (name: String, Some(x: List[Expr])) => Call(Ident(name), x)
         case (name: String, None) => Call(Ident(name), List())
       } |
