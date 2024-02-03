@@ -1,6 +1,8 @@
 package wacc
 
 import parsley.Parsley
+import parsley.Parsley.{atomic, notFollowedBy}
+import parsley.character.digit
 import parsley.token.Lexer
 import parsley.token.descriptions._
 import parsley.token.descriptions.text.EscapeDesc
@@ -40,7 +42,7 @@ object lexer {
     textDesc = text.TextDesc.plain.copy(
       escapeSequences = EscapeDesc.plain.copy(
         escBegin = '\\',
-        literals = Set('\'', '\"', '\\'),
+        literals = Set.empty,
         mapping = Map(
           "0" -> 0x0000,
           "b" -> 0x0008,
@@ -48,6 +50,9 @@ object lexer {
           "n" -> 0x000a,
           "f" -> 0x000c,
           "r" -> 0x000d,
+          "\"" -> 0x0022,
+          "\'" -> 0x0027,
+          "\\" -> 0x005c
         ),
         gapsSupported = false
       ),
@@ -89,6 +94,8 @@ object lexer {
   val ident: Parsley[String] = lexer.lexeme.names.identifier
   val baseType: Parsley[String] = "int" | "bool" | "char" | "string" | "pair"
   val arrayBraces: Parsley[String] = "[]"
+  val rBracket: Parsley[String] = ")"
+  val negate: Parsley[Unit] = atomic("-" ~> notFollowedBy(digit))
 
   val implicits: ImplicitSymbol = lexer.lexeme.symbol.implicits
   def fully[A](p: Parsley[A]): Parsley[A] = lexer.fully(p)

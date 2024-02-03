@@ -81,7 +81,7 @@ object parser {
   }
 
   private lazy val types: Parsley[Type] = {
-    (pairType <~> many(arrayBraces)).map {
+    (pairType <~> many(arrayBraces) <~ some(whitespace)).map {
       case (base: PairT, arr: List[String]) if arr.isEmpty => base
       case (base: PairT, arr: List[String]) => ArrayT(base, arr.length)
     } |
@@ -92,7 +92,7 @@ object parser {
   }
 
   private lazy val pairType: Parsley[PairT] =
-    ("pair(" ~> pairElemType <~ "," <~> pairElemType <~ ")").map(x => PairT(x._1, x._2))
+    ("pair(" ~> pairElemType <~ "," <~> pairElemType <~ rBracket).map(x => PairT(x._1, x._2))
 
   private lazy val pairElemType: Parsley[PairElemT] =
     atomic(pairType <~> some(arrayBraces)).map {
@@ -109,25 +109,25 @@ object parser {
   }
 
   private lazy val expr: Parsley[Expr] = {
-    precedence(atom)(
+     precedence(atom)(
       Ops(Prefix)("!" as Not),
-      Ops(Prefix)("-" as Neg),
-      Ops(Prefix)("len" as Len),
-      Ops(Prefix)("ord" as Ord),
-      Ops(Prefix)("chr" as Chr),
-      Ops(InfixL)("*" as Mul),
-      Ops(InfixL)("%" as Mod),
-      Ops(InfixL)("/" as Div),
-      Ops(InfixL)("+" as Add),
-      Ops(InfixL)("-" as Sub),
-      Ops(InfixN)(">" as GT),
-      Ops(InfixN)(">=" as GTEQ),
-      Ops(InfixN)("<" as LT),
-      Ops(InfixN)("<=" as LTEQ),
-      Ops(InfixN)("==" as EQ),
-      Ops(InfixN)("!=" as NEQ),
-      Ops(InfixR)("&&" as And),
-      Ops(InfixR)("||" as Or)
+       Ops(Prefix)(negate as Neg),
+       Ops(Prefix)("len" as Len),
+       Ops(Prefix)("ord" as Ord),
+       Ops(Prefix)("chr" as Chr),
+       Ops(InfixL)("*" as Mul),
+       Ops(InfixL)("%" as Mod),
+       Ops(InfixL)("/" as Div),
+       Ops(InfixL)("+" as Add),
+       Ops(InfixL)("-" as Sub),
+       Ops(InfixN)(">" as GT),
+       Ops(InfixN)(">=" as GTEQ),
+       Ops(InfixN)("<" as LT),
+       Ops(InfixN)("<=" as LTEQ),
+       Ops(InfixN)("==" as EQ),
+       Ops(InfixN)("!=" as NEQ),
+       Ops(InfixR)("&&" as And),
+       Ops(InfixR)("||" as Or)
     )
   }
 
