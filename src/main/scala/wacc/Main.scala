@@ -13,6 +13,7 @@ object Main {
   def main(args: Array[String]): Unit = {
     println("Hello WACC!")
 
+    /* Exits if arguments are not defined */
     if (args.length < 1) {
       println("Please enter an expression!")
       System.exit(FILE_ERR_CODE)
@@ -21,10 +22,7 @@ object Main {
     var input = ""
     val arg = args(0)
 
-    if (arg.contains("invalid/semantic")) {
-      System.exit(SEMANTIC_ERR_CODE)
-    }
-
+    /* Parses files only if argument ends with ".wacc" */
     if(arg.endsWith(".wacc")) {
       val inputFile = new File(args(0))
 
@@ -46,9 +44,11 @@ object Main {
       input = fileContents
     }
     else {
+      /* Parses string instead */
       input = arg
     }
 
+    /* To be able to run tests */
     if (args.length > 1) {
       parser.parseTest(input) match {
         case Success(x) => println(s"$arg = $x")

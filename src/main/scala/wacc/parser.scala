@@ -13,18 +13,23 @@ object parser {
   def parse(input: String): Result[String, Program] = parser.parse(input)
   private [wacc] def parseTest(input: String): Result[String, Expr] = parserTest.parse(input)
 
+  /* To be able to run tests only on expression */
   private lazy val parserTest = fully(expr)
   private val parser = fully(prog)
 
+  /* ‘begin’ ⟨func⟩* ⟨stmt⟩ ‘end’ */
   private lazy val prog: Parsley[Program] =
     (begin ~> many(atomic(func)) <~> statement <~ end).map(x => Program(x._1, x._2))
 
+  /* ⟨type⟩ ⟨ident⟩ ‘(’ ⟨param-list⟩? ‘)’ ‘is’ ⟨stmt⟩ ‘end’ */
   private lazy val func: Parsley[Function] =
-    (((types <~> ident <~ "(" <~> option(paramList) <~ ")") <~ is) <~> statement.filter(bodyHasReturnOrExit) <~ end).map {
+    (((types <~> ident <~ "(" <~> option(paramList) <~ ")") <~ is) <~>
+      statement.filter(bodyHasReturnOrExit) <~ end).map {
       case (((t, i), Some(ps)), s) => Function(t, Ident(i), ps, s)
       case (((t, i), None), s) => Function(t, Ident(i), List(), s)
     }
 
+  /* Checks if the body of a function has a return or exit statement */
   private def bodyHasReturnOrExit(s: Statement): Boolean = s match {
     case Statements(x) => bodyHasReturnOrExit(x.last)
     case If(_, thenS, elseS) => bodyHasReturnOrExit(thenS) && bodyHasReturnOrExit(elseS)
@@ -34,11 +39,24 @@ object parser {
     case _ => false
   }
 
+  /* ⟨param⟩ ( ‘,’ ⟨param⟩ )* */
   private lazy val paramList: Parsley[List[Param]] =
     (param <~> many("," ~> param)).map(x => x._1 :: x._2)
 
+  /* ⟨type⟩ ⟨ident⟩ */
   private lazy val param: Parsley[Param] = (types <~> ident).map(x => Param(x._1, Ident(x._2)))
 
+  /* ‘skip’
+  | ⟨lvalue⟩ ‘=’ ⟨rvalue⟩
+  | ‘read’ ⟨lvalue⟩
+  | ‘free’ ⟨expr⟩
+  | ‘return’ ⟨expr⟩
+  | ‘exit’ ⟨expr⟩
+  | ‘print’ ⟨expr⟩
+  | ‘println’ ⟨expr⟩
+  | ‘while’ ⟨expr⟩ ‘do’ ⟨stmt⟩ ‘done’
+  | ‘begin’ ⟨stmt⟩ ‘end’
+  | ⟨stmt⟩ ‘;’ ⟨stmt⟩ */
   private lazy val statement: Parsley[Statement] = {
     ((atomic(skip).map(_ => Skip()) |
       atomic(read ~> lvalue).map(Read) |
@@ -54,11 +72,31 @@ object parser {
       atomic(begin ~> statement <~ end).map(Scope)) <~> many(";" ~> statement)).map(x => Statements(x._1 :: x._2))
   }
 
+  /* ‘if’ ⟨expr⟩ ‘then’ ⟨stmt⟩ ‘else’ ⟨stmt⟩ ‘fi’ */
+  private lazy val ifElse: Parsley[If] = {
+    (((IF ~> expr <~ THEN) <~> statement <~ ELSE) <~> statement <~ fi).map {
+      case ((cond, thenS), elseS) => If(cond, thenS, elseS)
+    }
+  }
+
+  /* ⟨type⟩ ⟨ident⟩ ‘=’ ⟨rvalue⟩ */
+  private lazy val declare: Parsley[Declare] = {
+    ((types <~> ident) <~> ("=" ~> rvalue)).map {
+      case ((t, i), r) => Declare(t, Ident(i), r)
+    }
+  }
+
+  /* ⟨ident⟩ | ⟨array-elem⟩ | ⟨pair-elem⟩ */
   private lazy val lvalue: Parsley[LValue] = {
     atomic(arrayElem).map(x => ArrayElem(Ident(x._1), x._2)) |
       atomic(pairElem).map(x => PairElem(x._1, x._2)) | atomic(ident).map(Ident)
   }
 
+  /* ⟨expr⟩
+  | ⟨array-liter⟩
+  | ‘newpair’ ‘(’ ⟨expr⟩ ‘,’ ⟨expr⟩ ‘)’
+  | ⟨pair-elem⟩
+  | ‘call’ ⟨ident⟩ ‘(’ ⟨⟨expr⟩ (‘,’ ⟨expr⟩ )*⟩? ‘)’ */
   private lazy val rvalue: Parsley[RValue] = {
     atomic("newpair(" ~> expr <~ "," <~> expr <~ ")").map(x => NewPair(x._1, x._2)) |
       atomic((call ~> ident <~ "(") <~> option(sepBy(expr, ",")) <~ ")").map {
@@ -73,22 +111,13 @@ object parser {
       }
   }
 
+  /* ⟨ident⟩ (‘[’ ⟨expr⟩ ‘]’)+ */
   private lazy val arrayElem = ident <~> some("[" ~> expr <~ "]")
 
+  /* ‘fst’ ⟨lvalue⟩ | ‘snd’ ⟨lvalue⟩ */
   private lazy val pairElem: Parsley[(String, LValue)] = fst <~> lvalue | snd <~> lvalue
 
-  private lazy val ifElse: Parsley[If] = {
-    (((IF ~> expr <~ THEN) <~> statement <~ ELSE) <~> statement <~ fi).map {
-      case ((cond, thenS), elseS) => If(cond, thenS, elseS)
-    }
-  }
-
-  private lazy val declare: Parsley[Declare] = {
-    ((types <~> ident) <~> ("=" ~> rvalue)).map {
-      case ((t, i), r) => Declare(t, Ident(i), r)
-    }
-  }
-
+  /* ⟨base-type⟩ | ⟨⟨type⟩ ‘[’ ‘]’⟩ | ⟨pair-type⟩ */
   private lazy val types: Parsley[Type] = {
     (pairType <~> many(arrayBraces) <~ some(whitespace)).map {
       case (base: PairT, arr: List[String]) if arr.isEmpty => base
@@ -100,9 +129,11 @@ object parser {
       }
   }
 
+  /* ‘pair’ ‘(’ ⟨pair-elem-type⟩ ‘,’ ⟨pair-elem-type⟩ ‘)’ */
   private lazy val pairType: Parsley[PairT] =
     ("pair(" ~> pairElemType <~ "," <~> pairElemType <~ rBracket).map(x => PairT(x._1, x._2))
 
+  /* = ⟨base-type⟩ | ⟨⟨type⟩ ‘[’ ‘]’⟩ | ‘pair’ */
   private lazy val pairElemType: Parsley[PairElemT] =
     atomic(pairType <~> some(arrayBraces)).map {
       case (base: PairT, arr: List[String]) => ArrayT(base, arr.length)
@@ -113,10 +144,14 @@ object parser {
         case (base: BaseT, arr: List[String]) => ArrayT(base, arr.length)
       }
 
+  /* ‘int’ | ‘bool’ | ‘char’ | ‘string’ */
   private lazy val baseTypes: Parsley[BaseT] = {
     baseType.map(BaseT)
   }
 
+  /* ⟨unary-oper⟩ ⟨expr⟩
+  | ⟨expr⟩ ⟨binary-oper⟩ ⟨expr⟩
+  | ⟨atom⟩ */
   private lazy val expr: Parsley[Expr] = {
      precedence(atom)(
       Ops(Prefix)("!" as Not),
@@ -140,6 +175,14 @@ object parser {
     )
   }
 
+  /* ⟨int-liter⟩
+  | ⟨bool-liter⟩
+  | ⟨char-liter⟩
+  | ⟨str-liter⟩
+  | ⟨pair-liter⟩
+  | ⟨ident⟩
+  | ⟨array-elem⟩
+  | ‘(’ ⟨expr⟩ ‘)’ */
   private lazy val atom: Parsley[Expr] = {
     "(" ~> expr <~ ")" | atomic(arrayElem).map(x => ArrayElem(Ident(x._1), x._2)) |
       int.map(Num) | ident.map(Ident) | bool.map(Bool) |
