@@ -1,7 +1,7 @@
 package wacc
 
 import parsley.Parsley.{atomic, many, some}
-import parsley.combinator.{option, sepBy}
+import parsley.combinator.{option, sepBy, sepBy1}
 import parsley.expr._
 import parsley.{Parsley, Result}
 import parsley.character.whitespace
@@ -19,14 +19,13 @@ object parser {
 
   /* ‘begin’ ⟨func⟩* ⟨stmt⟩ ‘end’ */
   private lazy val prog: Parsley[Program] =
-    (begin ~> many(atomic(func)) <~> statement <~ end).map(x => Program(x._1, x._2))
+    (begin ~> many(func) <~> statement <~ end).map(x => Program(x._1, x._2))
 
   /* ⟨type⟩ ⟨ident⟩ ‘(’ ⟨param-list⟩? ‘)’ ‘is’ ⟨stmt⟩ ‘end’ */
   private lazy val func: Parsley[Function] =
-    (((types <~> ident <~ "(" <~> option(paramList) <~ ")") <~ is) <~>
+    ((atomic(types <~> ident <~ "(") <~> paramList <~ ")" <~ is) <~>
       statement.filter(bodyHasReturnOrExit) <~ end).map {
-      case (((t, i), Some(ps)), s) => Function(t, Ident(i), ps, s)
-      case (((t, i), None), s) => Function(t, Ident(i), List(), s)
+      case (((t, i), ps), s) => Function(t, Ident(i), ps, s)
     }
 
   /* Checks if the body of a function has a return or exit statement */
@@ -41,7 +40,7 @@ object parser {
 
   /* ⟨param⟩ ( ‘,’ ⟨param⟩ )* */
   private lazy val paramList: Parsley[List[Param]] =
-    (param <~> many("," ~> param)).map(x => x._1 :: x._2)
+    sepBy(param, ",")
 
   /* ⟨type⟩ ⟨ident⟩ */
   private lazy val param: Parsley[Param] = (types <~> ident).map(x => Param(x._1, Ident(x._2)))
@@ -58,7 +57,7 @@ object parser {
   | ‘begin’ ⟨stmt⟩ ‘end’
   | ⟨stmt⟩ ‘;’ ⟨stmt⟩ */
   private lazy val statement: Parsley[Statement] = {
-    ((atomic(skip).map(_ => Skip()) |
+    sepBy1(atomic(skip).map(_ => Skip()) |
       atomic(read ~> lvalue).map(Read) |
       atomic(free <~> expr).map(x => Action(x._1, x._2)) |
       atomic(ret <~> expr).map(x => Action(x._1, x._2)) |
@@ -69,7 +68,7 @@ object parser {
       atomic(declare) |
       atomic(lvalue <~> ("=" ~> rvalue)).map(x => Assign(x._1, x._2)) |
       atomic((WHILE ~> expr <~ DO) <~> statement <~ done).map(x => While(x._1, x._2)) |
-      atomic(begin ~> statement <~ end).map(Scope)) <~> many(";" ~> statement)).map(x => Statements(x._1 :: x._2))
+      atomic(begin ~> statement <~ end).map(Scope), ";").map(Statements)
   }
 
   /* ‘if’ ⟨expr⟩ ‘then’ ⟨stmt⟩ ‘else’ ⟨stmt⟩ ‘fi’ */
