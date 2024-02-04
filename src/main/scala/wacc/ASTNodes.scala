@@ -2,25 +2,23 @@ package wacc
 
 object ASTNodes {
 
-  case class Program(funcs: List[Function], stat: Statement) {
+  case class Program(funcs: List[Function], statement: Statement) {
     def check(): Boolean = {
       var valid: Boolean = true
       for (func <- funcs) {
         valid = valid && func.check()
       }
-      return (valid && stat.check())
+      return valid && statement.check()
     }
   }
 
   case class Function(_type: Type, ident: Ident, param_list: List[Param], body: Statement) {
     def check(): Boolean = {
-      var valid: Boolean = true
-      valid = valid && _type.check()
-      valid = valid && ident.check()
+      var valid: Boolean = _type.check() && ident.check()
       for (param <- param_list) {
         valid = valid && param.check()
       }
-      return (valid && body.check())
+      return valid && body.check()
     }
 
     def getType(): Type = {
@@ -30,7 +28,7 @@ object ASTNodes {
 
   case class Param(_type: Type, ident: Ident) {
     def check(): Boolean = {
-      return (_type.check() && ident.check())
+      return _type.check() && ident.check()
     }
 
     def getType(): Type = {
@@ -50,13 +48,13 @@ object ASTNodes {
 
   case class Declare(_type: Type, ident: Ident, value: RValue) extends Statement {
     def check(): Boolean = {
-      return (_type.check() && ident.check() && value.check())
+      return _type.check() && ident.check() && value.check()
     }
   }
 
   case class Assign(lvalue: LValue, rvalue: RValue) extends Statement {
     def check(): Boolean = {
-      return (lvalue.check() && rvalue.check())
+      return lvalue.check() && rvalue.check()
     }
   }
 
@@ -67,7 +65,7 @@ object ASTNodes {
   }
 
   case class Action(action: String, exp: Expr) extends Statement {
-    override def check(): Boolean = ???
+    def check(): Boolean = ???
   }
 
   case class If(cond: Expr, thenS: Statement, elseS: Statement) extends Statement {
@@ -154,7 +152,7 @@ object ASTNodes {
 
   case class BaseT(str: String) extends Type with PairElemT {
     def check(): Boolean = {
-      return (str == "int" || str == "bool" || str == "char" || str == "string")
+      return str == "int" || str == "bool" || str == "char" || str == "string"
     }
 
     def getType(): Type = {
@@ -174,7 +172,7 @@ object ASTNodes {
 
   case class PairT(pet1: PairElemT, pet2: PairElemT) extends Type {
     def check(): Boolean = {
-      return (pet1.check() && pet2.check())
+      return pet1.check() && pet2.check()
     }
 
     def getType(): Type = {
@@ -371,7 +369,8 @@ object ASTNodes {
 
       def type2: Type = exp2.getType()
 
-      if ((type1 != BaseT("int") && type1 != BaseT("char")) || (type2 != BaseT("int") && type2 != BaseT("char"))) {
+      if ((type1 != BaseT("int") && type1 != BaseT("char")) ||
+        (type2 != BaseT("int") && type2 != BaseT("char"))) {
         return false
       }
       return true
@@ -392,7 +391,8 @@ object ASTNodes {
 
       def type2: Type = exp2.getType()
 
-      if ((type1 != BaseT("int") && type1 != BaseT("char")) || (type2 != BaseT("int") && type2 != BaseT("char"))) {
+      if ((type1 != BaseT("int") && type1 != BaseT("char")) ||
+        (type2 != BaseT("int") && type2 != BaseT("char"))) {
         return false
       }
       return true
@@ -413,7 +413,8 @@ object ASTNodes {
 
       def type2: Type = exp2.getType()
 
-      if ((type1 != BaseT("int") && type1 != BaseT("char")) || (type2 != BaseT("int") && type2 != BaseT("char"))) {
+      if ((type1 != BaseT("int") && type1 != BaseT("char")) ||
+        (type2 != BaseT("int") && type2 != BaseT("char"))) {
         return false
       }
       return true
@@ -434,7 +435,8 @@ object ASTNodes {
 
       def type2: Type = exp2.getType()
 
-      if ((type1 != BaseT("int") && type1 != BaseT("char")) || (type2 != BaseT("int") && type2 != BaseT("char"))) {
+      if ((type1 != BaseT("int") && type1 != BaseT("char")) ||
+        (type2 != BaseT("int") && type2 != BaseT("char"))) {
         return false
       }
       return true
@@ -590,7 +592,7 @@ object ASTNodes {
 
   case class Bool(bool: String) extends Atom {
     def check(): Boolean = {
-      return (bool == "true" || bool == "false")
+      return bool == "true" || bool == "false"
     }
 
     def getType(): Type = {
