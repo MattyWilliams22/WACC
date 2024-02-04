@@ -59,11 +59,11 @@ object parser {
   private lazy val statement: Parsley[Statement] = {
     sepBy1(atomic(skip).map(_ => Skip()) |
       atomic(read ~> lvalue).map(Read) |
-      atomic(free <~> expr).map(x => Action(x._1, x._2)) |
-      atomic(ret <~> expr).map(x => Action(x._1, x._2)) |
-      atomic(exit <~> expr).map(x => Action(x._1, x._2)) |
-      atomic(println <~> expr).map(x => Action(x._1, x._2)) |
-      atomic(print <~> expr).map(x => Action(x._1, x._2)) |
+      atomic(free ~> expr).map(Free) |
+      atomic(ret ~> expr).map(Return) |
+      atomic(exit ~> expr).map(Exit) |
+      atomic(println ~> expr).map(Println) |
+      atomic(print ~> expr).map(Print) |
       atomic(ifElse) |
       atomic(declare) |
       atomic(lvalue <~> ("=" ~> rvalue)).map(x => Assign(x._1, x._2)) |
@@ -152,25 +152,25 @@ object parser {
   | ⟨expr⟩ ⟨binary-oper⟩ ⟨expr⟩
   | ⟨atom⟩ */
   private lazy val expr: Parsley[Expr] = {
-     precedence(atom)(
+    precedence(atom)(
       Ops(Prefix)("!" as Not),
-       Ops(Prefix)(negate as Neg),
-       Ops(Prefix)("len" as Len),
-       Ops(Prefix)("ord" as Ord),
-       Ops(Prefix)("chr" as Chr),
-       Ops(InfixL)("*" as Mul),
-       Ops(InfixL)("%" as Mod),
-       Ops(InfixL)("/" as Div),
-       Ops(InfixL)("+" as Add),
-       Ops(InfixL)("-" as Sub),
-       Ops(InfixN)(">" as GT),
-       Ops(InfixN)(">=" as GTEQ),
-       Ops(InfixN)("<" as LT),
-       Ops(InfixN)("<=" as LTEQ),
-       Ops(InfixN)("==" as EQ),
-       Ops(InfixN)("!=" as NEQ),
-       Ops(InfixR)("&&" as And),
-       Ops(InfixR)("||" as Or)
+      Ops(Prefix)(negate as Neg),
+      Ops(Prefix)("len" as Len),
+      Ops(Prefix)("ord" as Ord),
+      Ops(Prefix)("chr" as Chr),
+      Ops(InfixL)("*" as Mul),
+      Ops(InfixL)("%" as Mod),
+      Ops(InfixL)("/" as Div),
+      Ops(InfixL)("+" as Add),
+      Ops(InfixL)("-" as Sub),
+      Ops(InfixN)(">" as GT),
+      Ops(InfixN)(">=" as GTEQ),
+      Ops(InfixN)("<" as LT),
+      Ops(InfixN)("<=" as LTEQ),
+      Ops(InfixN)("==" as EQ),
+      Ops(InfixN)("!=" as NEQ),
+      Ops(InfixR)("&&" as And),
+      Ops(InfixR)("||" as Or)
     )
   }
 
