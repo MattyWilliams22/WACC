@@ -20,10 +20,19 @@ object parser {
     (begin ~> many(atomic(func)) <~> statement <~ end).map(x => Program(x._1, x._2))
 
   private lazy val func: Parsley[Function] =
-    (((types <~> ident <~ "(" <~> option(paramList) <~ ")") <~ is) <~> statement <~ end).map {
+    (((types <~> ident <~ "(" <~> option(paramList) <~ ")") <~ is) <~> statement.filter(bodyHasReturnOrExit) <~ end).map {
       case (((t, i), Some(ps)), s) => Function(t, Ident(i), ps, s)
       case (((t, i), None), s) => Function(t, Ident(i), List(), s)
     }
+
+  private def bodyHasReturnOrExit(s: Statement): Boolean = s match {
+    case Statements(x) => bodyHasReturnOrExit(x.last)
+    case If(_, thenS, elseS) => bodyHasReturnOrExit(thenS) && bodyHasReturnOrExit(elseS)
+    case While(_, body) => bodyHasReturnOrExit(body)
+    case Scope(body) => bodyHasReturnOrExit(body)
+    case Action("return", _) | Action("exit", _) => true
+    case _ => false
+  }
 
   private lazy val paramList: Parsley[List[Param]] =
     (param <~> many("," ~> param)).map(x => x._1 :: x._2)
