@@ -34,7 +34,7 @@ object parser {
     case If(_, thenS, elseS) => bodyHasReturnOrExit(thenS) && bodyHasReturnOrExit(elseS)
     case While(_, body) => bodyHasReturnOrExit(body)
     case Scope(body) => bodyHasReturnOrExit(body)
-    case Action("return", _) | Action("exit", _) => true
+    case Return(_) | Exit(_) => true
     case _ => false
   }
 
