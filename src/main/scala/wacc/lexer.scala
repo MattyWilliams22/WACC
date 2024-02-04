@@ -1,6 +1,8 @@
 package wacc
 
 import parsley.Parsley
+import parsley.Parsley.{atomic, notFollowedBy}
+import parsley.character.digit
 import parsley.token.Lexer
 import parsley.token.descriptions._
 import parsley.token.descriptions.text.EscapeDesc
@@ -13,16 +15,14 @@ import scala.language.postfixOps
 
 object lexer {
 
-  val escapes = Set('\\', '\u0000', '\b', '\t', '\n', '\f', '\r', '\"', '\'')
-
   private val desc = LexicalDesc.plain.copy(
     symbolDesc = SymbolDesc.plain.copy(
-       hardKeywords = Set[String]("true", "false", "null", "if", "else", "int",
-       "bool", "char", "string", "pair", "begin", "end", "is", "skip",
-       "read", "free", "return", "exit", "print", "println", "then", "fi",
-       "while", "do", "done", "newpair", "call", "fst", "snd"),
+      hardKeywords = Set[String]("true", "false", "null", "if", "else", "int",
+        "bool", "char", "string", "pair", "begin", "end", "is", "skip",
+        "read", "free", "return", "exit", "print", "println", "then", "fi",
+        "while", "do", "done", "newpair", "call", "fst", "snd"),
       hardOperators = Set("len", "ord", "chr", "+", "*", "/", "%", "-",
-      ">", ">=", "<", "<=", "==", "!=", "&&", "||"),
+        ">", ">=", "<", "<=", "==", "!=", "&&", "||"),
       caseSensitive = true,
     ),
     nameDesc = NameDesc.plain.copy(
@@ -42,7 +42,7 @@ object lexer {
     textDesc = text.TextDesc.plain.copy(
       escapeSequences = EscapeDesc.plain.copy(
         escBegin = '\\',
-        literals = Set('\'', '\"', '\\'),
+        literals = Set.empty,
         mapping = Map(
           "0" -> 0x0000,
           "b" -> 0x0008,
@@ -50,13 +50,16 @@ object lexer {
           "n" -> 0x000a,
           "f" -> 0x000c,
           "r" -> 0x000d,
+          "\"" -> 0x0022,
+          "\'" -> 0x0027,
+          "\\" -> 0x005c
         ),
         gapsSupported = false
       ),
       characterLiteralEnd = '\'',
       stringEnds = Set(("\"", "\"")),
       graphicCharacter = predicate.Basic(c =>
-        c >= ' ' && !Set('\\', '\'', '\"').contains(c) || escapes.contains(c)
+        c >= ' ' && !Set('\\', '\'', '\"').contains(c)
       )
     )
   )
@@ -83,13 +86,16 @@ object lexer {
   val skip: Parsley[String] = lexer.lexeme("skip")
   val is: Parsley[String] = lexer.lexeme("is")
 
-  val int: Parsley[BigInt] = lexer.lexeme.integer.decimal
+  val int: Parsley[Int] = lexer.lexeme.integer.decimal32
   val char: Parsley[Char] = lexer.lexeme.character.ascii
   val str: Parsley[String] = lexer.lexeme.string.ascii
   val bool: Parsley[String] = lexer.lexeme("true" | "false")
   val pairLiter: Parsley[String] = lexer.lexeme("null")
   val ident: Parsley[String] = lexer.lexeme.names.identifier
-  val baseType: Parsley[String] = lexer.lexeme("int" | "bool" | "char" | "string" | "pair")
+  val baseType: Parsley[String] = "int" | "bool" | "char" | "string" | "pair"
+  val arrayBraces: Parsley[String] = "[]"
+  val rBracket: Parsley[String] = ")"
+  val negate: Parsley[Unit] = atomic("-" ~> notFollowedBy(digit))
 
   val implicits: ImplicitSymbol = lexer.lexeme.symbol.implicits
   def fully[A](p: Parsley[A]): Parsley[A] = lexer.fully(p)
