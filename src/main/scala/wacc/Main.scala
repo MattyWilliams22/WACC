@@ -6,9 +6,9 @@ import java.io.File
 import scala.io.Source
 
 object Main {
-  private val FILE_ERR_CODE = 150
-  private val SYNTAX_ERR_CODE = 100
-  private val SEMANTIC_ERR_CODE = 200
+  val FILE_ERR_CODE = 150
+  val SYNTAX_ERR_CODE = 100
+  val SEMANTIC_ERR_CODE = 200
 
   def main(args: Array[String]): Unit = {
     println("Hello WACC!")
