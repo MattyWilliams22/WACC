@@ -63,6 +63,10 @@ print("Running tests...")
 # If no arguments are given, run all tests
 if len(sys.argv) < 2:
   runningTests = tests["valid"] + tests["invalid"]
+elif sys.argv[1] == "--syntax":
+  runningTests = tests["invalid-syntax"] + tests["valid"]
+elif sys.argv[1] == "--semantic":
+  runningTests = tests["invalid-semantic"] + tests["valid"]
 else :
   tag = '-'.join(sys.argv[1:])
   if tag in tests:
@@ -109,6 +113,16 @@ if len(sys.argv) < 2:
   print(f"Valid: {validPasses} / {validTotal}")
   print(f"Invalid: {syntaxPasses + semanticPasses} / {syntaxTotal + semanticTotal}")
   print(f"    Syntax: {syntaxPasses} / {syntaxTotal}")
+  print(f"    Semantic: {semanticPasses} / {semanticTotal}")
+  print(f"Total: {totalPasses} / {total}")
+elif sys.argv[1] == "--syntax":
+  print(f"Finished running tests. Results: ")
+  print(f"    Valid: {validPasses} / {validTotal}")
+  print(f"    Syntax: {syntaxPasses} / {syntaxTotal}")
+  print(f"Total: {totalPasses} / {total}")
+elif sys.argv[1] == "--semantic":
+  print(f"Finished running tests. Results: ")
+  print(f"    Valid: {validPasses} / {validTotal}")
   print(f"    Semantic: {semanticPasses} / {semanticTotal}")
   print(f"Total: {totalPasses} / {total}")
 else:
