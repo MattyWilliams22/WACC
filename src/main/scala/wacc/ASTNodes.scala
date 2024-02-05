@@ -64,10 +64,6 @@ object ASTNodes {
     }
   }
 
-  case class Action(action: String, exp: Expr) extends Statement {
-    def check(): Boolean = ???
-  }
-
   case class If(cond: Expr, thenS: Statement, elseS: Statement) extends Statement {
     def check(): Boolean = {
       if (!cond.check() || !thenS.check() || !elseS.check()) {
