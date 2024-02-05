@@ -2,8 +2,8 @@ package wacc
 
 import scala.collection.mutable
 
-class SymbolTable[A](val parent: Option[Table[A]],
-                     val map: mutable.Map[String, A] = mutable.Map.empty[String, A]) extends Table[A] {
+class SymbolTable[A](val parent: Option[SymbolTable[A]],
+                     val map: mutable.Map[String, A] = mutable.Map.empty[String, A]) {
 
   var topLevelSize = 0
 
@@ -15,7 +15,7 @@ class SymbolTable[A](val parent: Option[Table[A]],
   def lookup(name: String): Option[A] = map.get(name)
 
   def lookupInterative(name: String): Option[A] = {
-    var table: Option[Table[A]] = Option(this)
+    var table: Option[SymbolTable[A]] = Option(this)
 
     while (table.isDefined) {
       val res = table.get.lookup(name)
@@ -27,14 +27,14 @@ class SymbolTable[A](val parent: Option[Table[A]],
     None
   }
 
-  def getParent(): Option[Table[A]] = parent
+  def getParent(): Option[SymbolTable[A]] = parent
 
   def incrementCount(): Unit = topLevelSize += 1
 
   def getCount(): Int = topLevelSize
 
   def incrementTotalCount(): Unit = {
-    var table: Option[Table[A]] = Option(this)
+    var table: Option[SymbolTable[A]] = Option(this)
     while (table.get.getParent().isDefined) {
       table = table.get.getParent()
     }
@@ -42,7 +42,7 @@ class SymbolTable[A](val parent: Option[Table[A]],
   }
 
   def getTotalCount(): Int = {
-    var table: Option[Table[A]] = Option(this)
+    var table: Option[SymbolTable[A]] = Option(this)
     while (table.get.getParent().isDefined) {
       table = table.get.getParent()
     }
