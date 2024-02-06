@@ -1,6 +1,7 @@
 package wacc
 
 import wacc.ASTNodes._
+import wacc.Main.SEMANTIC_ERR_CODE
 
 import scala.collection.mutable
 
@@ -19,6 +20,9 @@ class SymbolTable(var parent: Option[SymbolTable],
     node match {
       case prog: Program =>
         for (func <- prog.funcs) {
+          if (lookup(func.ident.str).isDefined) {
+            System.exit(SEMANTIC_ERR_CODE)
+          }
           add(func.ident.str, func)
           val symbolTable = func.symbolTable
           symbolTable.parent = Option(this)
@@ -31,6 +35,9 @@ class SymbolTable(var parent: Option[SymbolTable],
         symbolTable.parent = Option(this)
 
         for (param <- func.param_list) {
+          if (lookup(param.ident.str).isDefined) {
+            System.exit(SEMANTIC_ERR_CODE)
+          }
           symbolTable.add(func.ident.str, param)
         }
 
@@ -40,6 +47,9 @@ class SymbolTable(var parent: Option[SymbolTable],
         stmts.foreach(generateSymbolTable)
 
       case Declare(_, ident, _) =>
+        if (lookup(ident.str).isDefined) {
+          System.exit(SEMANTIC_ERR_CODE)
+        }
         add(ident.str, node)
 
       case ifStatement: If =>
@@ -79,13 +89,13 @@ class SymbolTable(var parent: Option[SymbolTable],
     None
   }
 
-  def getParent(): Option[SymbolTable] = parent
+  private def getParent(): Option[SymbolTable] = parent
 
-  def incrementCount(): Unit = topLevelSize += 1
+  private def incrementCount(): Unit = topLevelSize += 1
 
-  def getCount(): Int = topLevelSize
+  private def getCount(): Int = topLevelSize
 
-  def incrementTotalCount(): Unit = {
+  private def incrementTotalCount(): Unit = {
     var table: Option[SymbolTable] = Option(this)
     while (table.get.getParent().isDefined) {
       table = table.get.getParent()
