@@ -9,6 +9,7 @@ object Main {
   val FILE_ERR_CODE = 150
   val SYNTAX_ERR_CODE = 100
   val SEMANTIC_ERR_CODE = 200
+  val SUCCESS_CODE = 0
 
   def main(args: Array[String]): Unit = {
     println("Hello WACC!")
@@ -60,7 +61,7 @@ object Main {
         case Success(x) => {
           // Semantic Analysis
           println(s"$arg = $x")
-          System.exit(0)
+          System.exit(SUCCESS_CODE)
         }
         case Failure(msg) => {
           println(msg)
