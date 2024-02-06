@@ -3,6 +3,7 @@ package wacc
 import parsley.Parsley
 import parsley.Parsley.{atomic, notFollowedBy}
 import parsley.character.digit
+import parsley.errors.combinator.ErrorMethods
 import parsley.token.Lexer
 import parsley.token.descriptions._
 import parsley.token.descriptions.text.EscapeDesc
@@ -86,12 +87,12 @@ object lexer {
   val skip: Parsley[String] = lexer.lexeme("skip")
   val is: Parsley[String] = lexer.lexeme("is")
 
-  val int: Parsley[Int] = lexer.lexeme.integer.decimal32
-  val char: Parsley[Char] = lexer.lexeme.character.ascii
-  val str: Parsley[String] = lexer.lexeme.string.ascii
-  val bool: Parsley[String] = lexer.lexeme("true" | "false")
+  val int: Parsley[Int] = lexer.lexeme.integer.decimal32.label("integer literal")
+  val char: Parsley[Char] = lexer.lexeme.character.ascii.label("character literal")
+  val str: Parsley[String] = lexer.lexeme.string.ascii.label("string literal")
+  val bool: Parsley[String] = lexer.lexeme("true" | "false").label("boolean literal")
   val pairLiter: Parsley[String] = lexer.lexeme("null")
-  val ident: Parsley[String] = lexer.lexeme.names.identifier
+  val ident: Parsley[String] = lexer.lexeme.names.identifier.label("identifier")
   val baseType: Parsley[String] = "int" | "bool" | "char" | "string" | "pair"
   val arrayBraces: Parsley[String] = "[]"
   val rBracket: Parsley[String] = ")"
