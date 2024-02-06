@@ -4,48 +4,89 @@ import wacc.ASTNodes._
 
 import scala.collection.mutable
 
-class SymbolTable[Type](val parent: Option[SymbolTable[Type]],
-                     val map: mutable.Map[String, Type] = mutable.Map.empty[String, Type]) {
+class SymbolTable(var parent: Option[SymbolTable],
+                     val map: mutable.Map[String, ASTNode] =
+                     mutable.Map.empty[String, ASTNode]) {
 
   var topLevelSize = 0
 
-  def add(name: String, _type: Type): Unit = {
-    map.addOne(name, _type)
+  def add(name: String, node: ASTNode): Unit = {
+    map.put(name, node)
     incrementTotalCount()
-
-//    _type match {
-//      case function: Function => {
-//        val newSymbolTable = new SymbolTable[Type](Option(this), map)
-//        for (param <- function.param_list) {
-//          newSymbolTable.add(param.ident.str, param._type)
-//        }
-//      }
-//    }
   }
 
-  def lookup(name: String): Option[Type] = map.get(name)
+  def generateSymbolTable(node: ASTNode): Unit = {
+    node match {
+      case prog: Program =>
+        for (func <- prog.funcs) {
+          add(func.ident.str, func)
+          val symbolTable = func.symbolTable
+          symbolTable.parent = Option(this)
+          generateSymbolTable(func)
+        }
+        generateSymbolTable(prog.statement)
 
-  def lookupInterative(name: String): Option[Type] = {
-    var table: Option[SymbolTable[Type]] = Option(this)
+      case func: Function =>
+        val symbolTable = func.symbolTable
+        symbolTable.parent = Option(this)
+
+        for (param <- func.param_list) {
+          symbolTable.add(func.ident.str, param)
+        }
+
+        symbolTable.generateSymbolTable(func.body)
+
+      case Statements(stmts) =>
+        stmts.foreach(generateSymbolTable)
+
+      case Declare(_, ident, _) =>
+        add(ident.str, node)
+
+      case ifStatement: If =>
+        val thenBlockSymbolTable = ifStatement.thenSymbolTable
+        val elseBlockSymbolTable = ifStatement.elseSymbolTable
+        thenBlockSymbolTable.parent = Option(this)
+        elseBlockSymbolTable.parent = Option(this)
+        thenBlockSymbolTable.generateSymbolTable(ifStatement.thenS)
+        elseBlockSymbolTable.generateSymbolTable(ifStatement.elseS)
+
+      case whileLoop: While =>
+        val whileBlockSymbolTable = whileLoop.symbolTable
+        whileBlockSymbolTable.parent = Option(this)
+        whileBlockSymbolTable.generateSymbolTable(whileLoop.body)
+
+      case scope: Scope =>
+        val symbolTable = scope.symbolTable
+        symbolTable.parent = Option(this)
+        symbolTable.generateSymbolTable(scope.body)
+
+      case _ =>
+    }
+  }
+
+  def lookup(name: String): Option[ASTNode] = map.get(name)
+
+  def lookupAll(name: String): Option[ASTNode] = {
+    var table: Option[SymbolTable] = Option(this)
 
     while (table.isDefined) {
       val res = table.get.lookup(name)
       if (res.isDefined) {
         return res
       }
-      table = table.get.getParent()
+      table = getParent()
     }
     None
   }
 
-  def getParent(): Option[SymbolTable[Type]] = parent
+  def getParent(): Option[SymbolTable] = parent
 
   def incrementCount(): Unit = topLevelSize += 1
 
   def getCount(): Int = topLevelSize
 
   def incrementTotalCount(): Unit = {
-    var table: Option[SymbolTable[Type]] = Option(this)
+    var table: Option[SymbolTable] = Option(this)
     while (table.get.getParent().isDefined) {
       table = table.get.getParent()
     }
@@ -53,7 +94,7 @@ class SymbolTable[Type](val parent: Option[SymbolTable[Type]],
   }
 
   def getTotalCount(): Int = {
-    var table: Option[SymbolTable[Type]] = Option(this)
+    var table: Option[SymbolTable] = Option(this)
     while (table.get.getParent().isDefined) {
       table = table.get.getParent()
     }

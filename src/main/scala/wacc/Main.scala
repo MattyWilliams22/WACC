@@ -60,6 +60,8 @@ object Main {
       parser.parse(input) match {
         case Success(x) => {
           // Semantic Analysis
+          val semanticAnalyser = new SemanticAnalyser(x)
+          semanticAnalyser.analyse()
           println(s"$arg = $x")
           System.exit(SUCCESS_CODE)
         }

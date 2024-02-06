@@ -1,6 +1,7 @@
 package wacc
 
 import wacc.Main.{SUCCESS_CODE, SEMANTIC_ERR_CODE}
+import wacc.SymbolTable
 
 object ASTNodes {
 
@@ -10,14 +11,15 @@ object ASTNodes {
     }
   }
 
-  case class Program(funcs: List[Function], statement: Statement) {
+  sealed trait ASTNode
+  case class Program(funcs: List[Function], statement: Statement) extends ASTNode {
+    val symbolTable: SymbolTable = new SymbolTable(None)
 
     def check(): Unit = {
-//      val symbolTable: SymbolTable[Program] = new SymbolTable[Program](None)
-
       var valid: Boolean = true
       for (func <- funcs) {
         valid = valid && func.check()
+        checkValid(valid)
       }
       if (valid && statement.check()) {
         System.exit(SUCCESS_CODE)
@@ -27,7 +29,9 @@ object ASTNodes {
     }
   }
 
-  case class Function(_type: Type, ident: Ident, param_list: List[Param], body: Statement) {
+  case class Function(_type: Type, ident: Ident, param_list: List[Param], body: Statement) extends ASTNode {
+    val symbolTable: SymbolTable = new SymbolTable(None)
+
     def check(): Boolean = {
       var valid: Boolean = _type.check() && ident.check()
       checkValid(valid)
@@ -45,7 +49,7 @@ object ASTNodes {
     }
   }
 
-  case class Param(_type: Type, ident: Ident) {
+  case class Param(_type: Type, ident: Ident) extends ASTNode {
     def check(): Boolean = {
       _type.check() && ident.check()
     }
@@ -55,7 +59,7 @@ object ASTNodes {
     }
   }
 
-  sealed trait Statement {
+  sealed trait Statement extends ASTNode {
     def check(): Boolean
   }
 
@@ -84,6 +88,9 @@ object ASTNodes {
   }
 
   case class If(cond: Expr, thenS: Statement, elseS: Statement) extends Statement {
+    val thenSymbolTable: SymbolTable = new SymbolTable(None)
+    val elseSymbolTable: SymbolTable = new SymbolTable(None)
+
     def check(): Boolean = {
       if (!cond.check() || !thenS.check() || !elseS.check()) {
         false
@@ -96,6 +103,8 @@ object ASTNodes {
   }
 
   case class While(cond: Expr, body: Statement) extends Statement {
+    val symbolTable: SymbolTable = new SymbolTable(None)
+
     def check(): Boolean = {
       if (!cond.check() || !body.check()) {
         false
@@ -108,6 +117,8 @@ object ASTNodes {
   }
 
   case class Scope(body: Statement) extends Statement {
+    val symbolTable: SymbolTable = new SymbolTable(None)
+
     def check(): Boolean = {
       body.check()
     }
@@ -165,7 +176,7 @@ object ASTNodes {
   }
 
 
-  sealed trait Type {
+  sealed trait Type extends ASTNode {
     def check(): Boolean
 
     def getType(): Type
@@ -217,13 +228,13 @@ object ASTNodes {
     }
   }
 
-  sealed trait LValue {
+  sealed trait LValue extends ASTNode {
     def check(): Boolean
 
     def getType(): Type
   }
 
-  sealed trait RValue {
+  sealed trait RValue extends ASTNode {
     def check(): Boolean
 
     def getType(): Type

@@ -1,12 +1,21 @@
 package wacc
 
-class SemanticAnalyser {
-    def analyse(): Unit = {
-      println("Semantic Analysis")
-    }
+import wacc.ASTNodes._
 
-    def run(): Unit = {
-      println("Running Semantic Analyser")
-      analyse()
+import scala.collection.mutable
+
+class SemanticAnalyser(program: Program) {
+  val symbolTable: SymbolTable = program.symbolTable
+
+  def analyse(): Unit = {
+    println("Running Semantic Analysis...")
+    symbolTable.generateSymbolTable(program)
+    //printMap(symbolTable.map)
+  }
+
+  def printMap[K, V](map: mutable.Map[K, V]): Unit = {
+    for ((key, value) <- map) {
+      println(s"Key: $key, Value: $value")
     }
+  }
 }
