@@ -17,7 +17,12 @@ class ParserSpec extends AnyFlatSpec with Matchers {
         |end
       """.stripMargin.trim
 
-    parse(input) shouldBe a[Success[_]]
+    parse(input) shouldBe 
+      Success(
+        Program(
+          List(),
+          Statements(List(
+            Declare(BaseT("int"),Ident("x"),Num(5)),Print(Ident("x"))))))
   }
 
   it should "fail for a program with a missing 'end'" in {
@@ -42,7 +47,25 @@ class ParserSpec extends AnyFlatSpec with Matchers {
         |end
       """.stripMargin.trim
 
-    parse(input) shouldBe a[Success[_]]
+    parse(input) shouldBe 
+      Success(
+        Program(
+          List(
+            Function(
+              BaseT("int"), 
+              Ident("add"), 
+              List(
+                Param(BaseT("int"), Ident("a")), 
+                Param(BaseT("int"), Ident("b"))
+              ), 
+              Statements(List(
+                Return(Add(Ident("a"), Ident("b")))
+              ))
+            )
+          ),
+          Statements(List(Skip()))
+        )
+      )
   }
 
   it should "fail for a function without 'end'" in {
@@ -69,7 +92,22 @@ class ParserSpec extends AnyFlatSpec with Matchers {
         |end
       """.stripMargin.trim
 
-    parse(input) shouldBe a[Success[_]]
+    parse(input) shouldBe 
+      Success(
+        Program(
+          List(), 
+          Statements(List(
+            If(Bool("true"), 
+            Statements(List(
+              Print(Str("true"))
+            )), 
+            Statements(List(
+              Print(Str("false"))
+            ))
+            )
+          ))
+        )
+      )
   }
 
   it should "parse a while loop" in {
@@ -82,7 +120,18 @@ class ParserSpec extends AnyFlatSpec with Matchers {
         |end
       """.stripMargin.trim
 
-    parse(input) shouldBe a[Success[_]]
+    parse(input) shouldBe 
+      Success(
+        Program(
+          List(), 
+          Statements(List(
+            While(
+              GT(Ident("x"), Num(0)), 
+              Statements(List(Print(Ident("x"))))
+            )
+          ))
+        )
+      )
   }
 
   it should "parse a declaration and assignment" in {
@@ -94,7 +143,16 @@ class ParserSpec extends AnyFlatSpec with Matchers {
         |end
       """.stripMargin.trim
 
-    parse(input) shouldBe a[Success[_]]
+    parse(input) shouldBe 
+      Success(
+        Program(
+          List(), 
+          Statements(List(
+            Declare(BaseT("int"), Ident("x"), Num(5)), 
+            Assign(Ident("x"), Add(Ident("x"), Num(1)))
+          ))
+        )
+      )
   }
 
   it should "parse a complex expression" in {
@@ -107,7 +165,21 @@ class ParserSpec extends AnyFlatSpec with Matchers {
         |end
       """.stripMargin.trim
 
-    parse(input) shouldBe a[Success[_]]
+    parse(input) shouldBe 
+      Success(
+        Program(
+          List(), 
+          Statements(List(
+            Declare(BaseT("int"), Ident("x"), Num(5)), 
+            Declare(BaseT("int"), Ident("y"), Num(10)), 
+            Declare(
+              BaseT("int"), 
+              Ident("z"), 
+              Mul(Add(Ident("x"), Ident("y")), Num(2))
+            )
+          ))
+        )
+      )
   }
 
   it should "parse an array literal" in {
@@ -118,7 +190,19 @@ class ParserSpec extends AnyFlatSpec with Matchers {
         |end
       """.stripMargin.trim
 
-    parse(input) shouldBe a[Success[_]]
+    parse(input) shouldBe 
+      Success(
+        Program(
+          List(), 
+          Statements(List(
+            Declare(
+              ArrayT(BaseT("int"), 1), 
+              Ident("arr"), 
+              ArrayLiter(List(Num(1), Num(2), Num(3)))
+            )
+          ))
+        )
+      )
   }
 
   it should "parse a new pair" in {
@@ -129,7 +213,19 @@ class ParserSpec extends AnyFlatSpec with Matchers {
         |end
       """.stripMargin.trim
 
-    parse(input) shouldBe a[Success[_]]
+    parse(input) shouldBe 
+      Success(
+        Program(
+          List(), 
+          Statements(List(
+            Declare(
+              PairT(BaseT("int"), BaseT("string")), 
+              Ident("p"), 
+              NewPair(Num(1), Str("hello"))
+            )
+          ))
+        )
+      )
   }
 
   it should "parse a call statement with arguments" in {
@@ -140,7 +236,19 @@ class ParserSpec extends AnyFlatSpec with Matchers {
         |end
       """.stripMargin.trim
 
-    parse(input) shouldBe a[Success[_]]
+    parse(input) shouldBe 
+      Success(
+        Program(
+          List(), 
+          Statements(List(
+            Declare(
+              BaseT("int"), 
+              Ident("result"), 
+              Call(Ident("add"), List(Num(3), Num(4)))
+            )
+          ))
+        )
+      )
   }
 
   it should "fail for an invalid statement" in {
@@ -170,7 +278,29 @@ class ParserSpec extends AnyFlatSpec with Matchers {
         |end
       """.stripMargin.trim
 
-    parse(input) shouldBe a[Success[_]]
+    parse(input) shouldBe 
+      Success(
+        Program(
+          List(), 
+          Statements(List(
+            If(
+              GT(Ident("x"), Num(0)), 
+              Statements(List(
+                If(
+                  GT(Ident("y"), Num(0)), 
+                  Statements(List(
+                    Print(Str("x and y are positive"))
+                  )), 
+                  Statements(List(
+                    Print(Str("x is positive, y is non-positive"))
+                  ))
+                )
+              )), 
+              Statements(List(Print(Str("x is non-positive"))))
+            )
+          ))
+        )
+      )
   }
 
   it should "parse nested while loops" in {
@@ -186,7 +316,26 @@ class ParserSpec extends AnyFlatSpec with Matchers {
         |end
       """.stripMargin.trim
 
-    parse(input) shouldBe a[Success[_]]
+    parse(input) shouldBe 
+      Success(
+        Program(
+          List(), 
+          Statements(List(
+            While(
+              GT(Ident("x"), Num(0)), 
+              Statements(List(
+                While(
+                  GT(Ident("y"), Num(0)), 
+                  Statements(List(
+                    Print(Str("nested while loop"))
+                  ))
+                ), 
+                Assign(Ident("x"), Sub(Ident("x"), Num(1)))
+              ))
+            )
+          ))
+        )
+      )
   }
 
   it should "fail for an incomplete if-else statement" in {
@@ -212,9 +361,25 @@ class ParserSpec extends AnyFlatSpec with Matchers {
         |end
       """.stripMargin.trim
 
-    parse(input) shouldBe a[Success[_]]
+    parse(input) shouldBe 
+      Success(
+        Program(
+          List(
+            Function(
+              BaseT("int"), 
+              Ident("simpleFunc"), 
+              List(), 
+              Statements(List(
+                Return(Num(42))
+              ))
+            )
+          ), 
+          Statements(List(Skip()))
+        )
+      )
   }
 
+  // This is syntactically correct but semantically incorrect
   it should "parse a string concatenation expression" in {
     val input =
       """
@@ -223,7 +388,18 @@ class ParserSpec extends AnyFlatSpec with Matchers {
         |end
       """.stripMargin.trim
 
-    parse(input) shouldBe a[Success[_]]
+    parse(input) shouldBe 
+      Success(
+        Program(
+          List(), 
+          Statements(List(
+            Assign(
+              Ident("stringConcat"),
+              Add(Str("Hello, "), Str("World!"))
+            )
+          ))
+        )
+      )
   }
 
   it should "fail for a program with a missing semicolon between statements" in {
@@ -254,7 +430,29 @@ class ParserSpec extends AnyFlatSpec with Matchers {
         |end
       """.stripMargin.trim
 
-    parse(input) shouldBe a[Success[_]]
+    parse(input) shouldBe 
+      Success(
+        Program(
+          List(), 
+          Statements(List(
+            Declare(BaseT("int"), Ident("x"), Num(5)), 
+            Scope(
+              Statements(List(
+                Declare(BaseT("bool"), Ident("flag"), Bool("true")), 
+                If(
+                  Ident("flag"), 
+                  Statements(List(
+                    Print(Str("Flag is true"))
+                  )), 
+                  Statements(List(
+                    Print(Str("Flag is false"))
+                  ))
+                )
+              ))
+            )
+          ))
+        )
+      )
   }
 
   it should "fail for an invalid pair type declaration" in {
@@ -276,7 +474,25 @@ class ParserSpec extends AnyFlatSpec with Matchers {
         |end
       """.stripMargin.trim
 
-    parse(input) shouldBe a[Success[_]]
+    parse(input) shouldBe 
+      Success(
+        Program(
+          List(), 
+          Statements(List(
+            Declare(
+              BaseT("bool"), 
+              Ident("result"), 
+              Or(
+                And(
+                  GT(Ident("x"), Num(0)), 
+                  LTEQ(Ident("y"), Num(10))
+                ), 
+                EQ(Ident("z"), Num(42))
+              )
+            )
+          ))
+        )
+      )
   }
 
   it should "fail for an invalid if-else statement" in {
