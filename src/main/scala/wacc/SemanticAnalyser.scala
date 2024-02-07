@@ -10,7 +10,7 @@ class SemanticAnalyser(program: Program) {
   def analyse(): Unit = {
     println("Running Semantic Analysis...")
     symbolTable.generateSymbolTable(program)
-    //printMap(symbolTable.map)
+    program.check()
   }
 
   def printMap[K, V](map: mutable.Map[K, V]): Unit = {

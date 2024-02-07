@@ -1,12 +1,15 @@
 package wacc
 
 import wacc.Main.{SUCCESS_CODE, SEMANTIC_ERR_CODE}
-import wacc.SymbolTable
 
 object ASTNodes {
 
-  def checkValid(valid: Boolean): Unit = {
+  var currentSymbolTable: SymbolTable = new SymbolTable(None)
+
+  def checkValid(valid: Boolean, str: String, node: ASTNode): Unit = {
     if (!valid) {
+      println(s"Invalid $str")
+      println(node)
       System.exit(SEMANTIC_ERR_CODE)
     }
   }
@@ -16,10 +19,11 @@ object ASTNodes {
     val symbolTable: SymbolTable = new SymbolTable(None)
 
     def check(): Unit = {
+      symbolTable.generateSymbolTable(this)
       var valid: Boolean = true
       for (func <- funcs) {
         valid = valid && func.check()
-        checkValid(valid)
+        checkValid(valid, "function", func)
       }
       if (valid && statement.check()) {
         System.exit(SUCCESS_CODE)
@@ -33,25 +37,23 @@ object ASTNodes {
     val symbolTable: SymbolTable = new SymbolTable(None)
 
     def check(): Boolean = {
-      var valid: Boolean = _type.check() && ident.check()
-      checkValid(valid)
+      var valid: Boolean = _type == ident.getType()
+      checkValid(valid, "identifier type", ident)
       for (param <- param_list) {
         valid = valid && param.check()
-        checkValid(valid)
+        checkValid(valid, "wrong param type", param)
       }
+      val tempSymbolTable: SymbolTable = currentSymbolTable
       valid = valid && body.check()
-      checkValid(valid)
+      checkValid(valid, "body", body)
+      currentSymbolTable = tempSymbolTable
       valid
-    }
-
-    def getType(): Type = {
-      _type.getType()
     }
   }
 
   case class Param(_type: Type, ident: Ident) extends ASTNode {
     def check(): Boolean = {
-      _type.check() && ident.check()
+      _type == ident.getType()
     }
 
     def getType(): Type = {
@@ -94,11 +96,16 @@ object ASTNodes {
     def check(): Boolean = {
       if (!cond.check() || !thenS.check() || !elseS.check()) {
         false
-      }
-      if (cond.getType() != BaseT("bool")) {
+      } else if (cond.getType() != BaseT("bool")) {
         false
+      } else {
+        val tempSymbolTable = currentSymbolTable
+        thenS.check()
+        currentSymbolTable = elseSymbolTable
+        elseS.check()
+        currentSymbolTable = tempSymbolTable
+        true
       }
-      true
     }
   }
 
@@ -106,13 +113,11 @@ object ASTNodes {
     val symbolTable: SymbolTable = new SymbolTable(None)
 
     def check(): Boolean = {
-      if (!cond.check() || !body.check()) {
-        false
-      }
-      if (cond.getType() != BaseT("bool")) {
-        false
-      }
-      true
+      val tempSymbolTable: SymbolTable = currentSymbolTable
+      currentSymbolTable = symbolTable
+      val valid = cond.check() && body.check() && cond.getType() == BaseT("bool")
+      currentSymbolTable = tempSymbolTable
+      valid
     }
   }
 
@@ -120,7 +125,11 @@ object ASTNodes {
     val symbolTable: SymbolTable = new SymbolTable(None)
 
     def check(): Boolean = {
+      val tempSymbolTable: SymbolTable = currentSymbolTable
+      currentSymbolTable = symbolTable
       body.check()
+      currentSymbolTable = tempSymbolTable
+      true
     }
   }
 
@@ -129,6 +138,7 @@ object ASTNodes {
       var valid: Boolean = true
       for (stat <- stmts) {
         valid = valid && stat.check()
+        checkValid(valid, "statement", stat)
       }
       valid
     }
@@ -136,19 +146,13 @@ object ASTNodes {
 
   case class Free(exp: Expr) extends Statement {
     def check(): Boolean = {
-      if (!exp.check()) {
-        false
-      }
+      val t: Type = exp.getType()
 
-      def t: Type = exp.getType()
-
-      def valid: Boolean = t match {
+      exp.check() && (t match {
         case ArrayT(_, n) if n > 0 => true
         case PairT(_, _) => true
         case _ => false
-      }
-
-      valid
+      })
     }
   }
 
@@ -245,6 +249,7 @@ object ASTNodes {
       var valid: Boolean = true
       for (elem <- elems) {
         valid = valid && elem.check()
+        checkValid(valid, "array elem", elem)
       }
       var t1: Type = elems.head.getType()
       for (elem <- elems) {
@@ -264,13 +269,7 @@ object ASTNodes {
 
   case class NewPair(exp1: Expr, exp2: Expr) extends RValue {
     def check(): Boolean = {
-      if (!exp1.check() || !exp2.check()) {
-        false
-      }
-      if (exp1.getType() != BaseT("int") || exp2.getType() != BaseT("int")) {
-        false
-      }
-      true
+      exp1.check() && exp2.check() && exp1.getType() == BaseT("int") && exp2.getType() == BaseT("int")
     }
 
     def getType(): Type = {
@@ -299,15 +298,16 @@ object ASTNodes {
     def check(): Boolean = {
       var valid: Boolean = true
       valid = valid && funcName.check()
+      checkValid(valid, "function name", funcName)
       for (arg <- args) {
         valid = valid && arg.check()
+        checkValid(valid, "argument", arg)
       }
       valid
     }
 
     def getType(): Type = {
-      // GET TYPE OF FUNC FROM SYMBOL TABLE
-      BaseT("ERROR")
+      funcName.getType()
     }
   }
 
@@ -319,13 +319,7 @@ object ASTNodes {
 
   case class Mul(exp1: Expr, exp2: Expr) extends Expr {
     def check(): Boolean = {
-      if (!exp1.check() || !exp2.check()) {
-        false
-      }
-      if (exp1.getType() != BaseT("int") || exp2.getType() != BaseT("int")) {
-        false
-      }
-      true
+      exp1.check() && exp2.check() && exp1.getType() == BaseT("int") && exp2.getType() == BaseT("int")
     }
 
     def getType(): Type = {
@@ -335,13 +329,7 @@ object ASTNodes {
 
   case class Div(exp1: Expr, exp2: Expr) extends Expr {
     def check(): Boolean = {
-      if (!exp1.check() || !exp2.check()) {
-        false
-      }
-      if (exp1.getType() != BaseT("int") || exp2.getType() != BaseT("int")) {
-        false
-      }
-      true
+      exp1.check() && exp2.check() && exp1.getType() == BaseT("int") && exp2.getType() == BaseT("int")
     }
 
     def getType(): Type = {
@@ -351,13 +339,7 @@ object ASTNodes {
 
   case class Mod(exp1: Expr, exp2: Expr) extends Expr {
     def check(): Boolean = {
-      if (!exp1.check() || !exp2.check()) {
-        false
-      }
-      if (exp1.getType() != BaseT("int") || exp2.getType() != BaseT("int")) {
-        false
-      }
-      true
+      exp1.check() && exp2.check() && exp1.getType() == BaseT("int") && exp2.getType() == BaseT("int")
     }
 
     def getType(): Type = {
@@ -367,13 +349,7 @@ object ASTNodes {
 
   case class Add(exp1: Expr, exp2: Expr) extends Expr {
     def check(): Boolean = {
-      if (!exp1.check() || !exp2.check()) {
-        false
-      }
-      if (exp1.getType() != BaseT("int") || exp2.getType() != BaseT("int")) {
-        false
-      }
-      true
+      exp1.check() && exp2.check() && exp1.getType() == BaseT("int") && exp2.getType() == BaseT("int")
     }
 
     def getType(): Type = {
@@ -383,13 +359,7 @@ object ASTNodes {
 
   case class Sub(exp1: Expr, exp2: Expr) extends Expr {
     def check(): Boolean = {
-      if (!exp1.check() || !exp2.check()) {
-        false
-      }
-      if (exp1.getType() != BaseT("int") || exp2.getType() != BaseT("int")) {
-        false
-      }
-      true
+      exp1.check() && exp2.check() && exp1.getType() == BaseT("int") && exp2.getType() == BaseT("int")
     }
 
     def getType(): Type = {
@@ -399,19 +369,12 @@ object ASTNodes {
 
   case class GT(exp1: Expr, exp2: Expr) extends Expr {
     def check(): Boolean = {
-      if (!exp1.check() || !exp2.check()) {
-        false
-      }
+      val type1: Type = exp1.getType()
+      val type2: Type = exp2.getType()
 
-      def type1: Type = exp1.getType()
-
-      def type2: Type = exp2.getType()
-
-      if ((type1 != BaseT("int") && type1 != BaseT("char")) ||
-        (type2 != BaseT("int") && type2 != BaseT("char"))) {
-        false
-      }
-      true
+      exp1.check() && exp2.check() &&
+        ((type1 == BaseT("int") || type1 == BaseT("char")) &&
+          (type2 == BaseT("int") || type2 == BaseT("char")))
     }
 
     def getType(): Type = {
@@ -421,19 +384,12 @@ object ASTNodes {
 
   case class GTEQ(exp1: Expr, exp2: Expr) extends Expr {
     def check(): Boolean = {
-      if (!exp1.check() || !exp2.check()) {
-        false
-      }
+      val type1: Type = exp1.getType()
+      val type2: Type = exp2.getType()
 
-      def type1: Type = exp1.getType()
-
-      def type2: Type = exp2.getType()
-
-      if ((type1 != BaseT("int") && type1 != BaseT("char")) ||
-        (type2 != BaseT("int") && type2 != BaseT("char"))) {
-        false
-      }
-      true
+      exp1.check() && exp2.check() &&
+        ((type1 == BaseT("int") || type1 == BaseT("char")) &&
+          (type2 == BaseT("int") || type2 == BaseT("char")))
     }
 
     def getType(): Type = {
@@ -443,19 +399,12 @@ object ASTNodes {
 
   case class LT(exp1: Expr, exp2: Expr) extends Expr {
     def check(): Boolean = {
-      if (!exp1.check() || !exp2.check()) {
-        false
-      }
+      val type1: Type = exp1.getType()
+      val type2: Type = exp2.getType()
 
-      def type1: Type = exp1.getType()
-
-      def type2: Type = exp2.getType()
-
-      if ((type1 != BaseT("int") && type1 != BaseT("char")) ||
-        (type2 != BaseT("int") && type2 != BaseT("char"))) {
-        false
-      }
-      true
+      exp1.check() && exp2.check() &&
+        ((type1 == BaseT("int") || type1 == BaseT("char")) &&
+          (type2 == BaseT("int") || type2 == BaseT("char")))
     }
 
     def getType(): Type = {
@@ -465,19 +414,12 @@ object ASTNodes {
 
   case class LTEQ(exp1: Expr, exp2: Expr) extends Expr {
     def check(): Boolean = {
-      if (!exp1.check() || !exp2.check()) {
-        false
-      }
+      val type1: Type = exp1.getType()
+      val type2: Type = exp2.getType()
 
-      def type1: Type = exp1.getType()
-
-      def type2: Type = exp2.getType()
-
-      if ((type1 != BaseT("int") && type1 != BaseT("char")) ||
-        (type2 != BaseT("int") && type2 != BaseT("char"))) {
-        false
-      }
-      true
+      exp1.check() && exp2.check() &&
+        ((type1 == BaseT("int") || type1 == BaseT("char")) &&
+          (type2 == BaseT("int") || type2 == BaseT("char")))
     }
 
     def getType(): Type = {
@@ -487,10 +429,7 @@ object ASTNodes {
 
   case class EQ(exp1: Expr, exp2: Expr) extends Expr {
     def check(): Boolean = {
-      if (!exp1.check() || !exp2.check()) {
-        false
-      }
-      true
+      exp1.check() && exp2.check()
     }
 
     def getType(): Type = {
@@ -500,10 +439,7 @@ object ASTNodes {
 
   case class NEQ(exp1: Expr, exp2: Expr) extends Expr {
     def check(): Boolean = {
-      if (!exp1.check() || !exp2.check()) {
-        false
-      }
-      true
+      exp1.check() && exp2.check()
     }
 
     def getType(): Type = {
@@ -513,13 +449,7 @@ object ASTNodes {
 
   case class And(exp1: Expr, exp2: Expr) extends Expr {
     def check(): Boolean = {
-      if (!exp1.check() || !exp2.check()) {
-        false
-      }
-      if (exp1.getType() != BaseT("bool") || exp2.getType() != BaseT("bool")) {
-        false
-      }
-      true
+      exp1.check() && exp2.check() && exp1.getType() == BaseT("bool") && exp2.getType() == BaseT("bool")
     }
 
     def getType(): Type = {
@@ -529,13 +459,7 @@ object ASTNodes {
 
   case class Or(exp1: Expr, exp2: Expr) extends Expr {
     def check(): Boolean = {
-      if (!exp1.check() || !exp2.check()) {
-        false
-      }
-      if (exp1.getType() != BaseT("bool") || exp2.getType() != BaseT("bool")) {
-        false
-      }
-      true
+      exp1.check() && exp2.check() && exp1.getType() == BaseT("bool") && exp2.getType() == BaseT("bool")
     }
 
     def getType(): Type = {
@@ -545,10 +469,7 @@ object ASTNodes {
 
   case class Not(exp: Expr) extends Expr {
     def check(): Boolean = {
-      if (!exp.check() || !(exp.getType() == BaseT("bool"))) {
-        false
-      }
-      true
+      exp.check() && exp.getType() == BaseT("bool")
     }
 
     def getType(): Type = {
@@ -558,10 +479,7 @@ object ASTNodes {
 
   case class Neg(exp: Expr) extends Expr {
     def check(): Boolean = {
-      if (!exp.check() || !(exp.getType() == BaseT("int"))) {
-        false
-      }
-      true
+      exp.check() && exp.getType() == BaseT("int")
     }
 
     def getType(): Type = {
@@ -571,18 +489,12 @@ object ASTNodes {
 
   case class Len(exp: Expr) extends Expr {
     def check(): Boolean = {
-      if (!exp.check()) {
-        false
-      }
+      val arrT: Type = exp.getType()
 
-      def arrT: Type = exp.getType()
-
-      def valid = arrT match {
+      exp.check() && (arrT match {
         case ArrayT(_, n) if n > 0 => true
         case _ => false
-      }
-
-      valid
+      })
     }
 
     def getType(): Type = {
@@ -592,10 +504,7 @@ object ASTNodes {
 
   case class Ord(exp: Expr) extends Expr {
     def check(): Boolean = {
-      if (!exp.check() || !(exp.getType() == BaseT("char"))) {
-        false
-      }
-      true
+      exp.check() && exp.getType() == BaseT("char")
     }
 
     def getType(): Type = {
@@ -605,10 +514,7 @@ object ASTNodes {
 
   case class Chr(exp: Expr) extends Expr {
     def check(): Boolean = {
-      if (!exp.check() || !(exp.getType() == BaseT("int"))) {
-        false
-      }
-      true
+      exp.check() && exp.getType() == BaseT("int")
     }
 
     def getType(): Type = {
@@ -660,7 +566,7 @@ object ASTNodes {
 
   case class PairLiter(str: String) extends Atom with Type {
     def check(): Boolean = {
-      true;
+      true
     }
 
     def getType(): Type = {
@@ -669,14 +575,20 @@ object ASTNodes {
   }
 
   case class Ident(str: String) extends Atom with LValue {
+    val node: Option[ASTNode] = currentSymbolTable.lookupAll(str)
+
     def check(): Boolean = {
-      // Need symbol table code
-      false
+      node.isDefined
     }
 
     def getType(): Type = {
-      // MUST FIND FROM SYMBOL TABLE
-      BaseT("ERROR")
+      node match {
+        case Some(x) => x match {
+          case param: Param => param.getType()
+          case _ => BaseT("ERROR")
+        }
+        case None => BaseT("ERROR")
+      }
     }
   }
 
@@ -685,7 +597,8 @@ object ASTNodes {
       var valid: Boolean = true
       valid = valid && ident.check()
       for (arg <- args) {
-        valid = valid && arg.check()
+        valid = valid && (arg.getType() == ident.getType())
+        checkValid(valid, "array elem", arg)
       }
       valid
     }
