@@ -19,11 +19,20 @@ object ASTNodes {
     val symbolTable: SymbolTable = new SymbolTable(None)
 
     def check(): Unit = {
-      symbolTable.generateSymbolTable(this)
       var valid: Boolean = true
       for (func <- funcs) {
         valid = valid && func.check()
         checkValid(valid, "function", func)
+      }
+      statement match {
+        case statements: Statements =>
+          for (stat <- statements.stmts) {
+            stat match {
+              case Return(_) => System.exit(SEMANTIC_ERR_CODE)
+              case _ =>
+            }
+          }
+        case _ =>
       }
       if (valid && statement.check()) {
         System.exit(SUCCESS_CODE)
@@ -44,6 +53,7 @@ object ASTNodes {
         checkValid(valid, "wrong param type", param)
       }
       val tempSymbolTable: SymbolTable = currentSymbolTable
+      currentSymbolTable = symbolTable
       valid = valid && body.check()
       checkValid(valid, "body", body)
       currentSymbolTable = tempSymbolTable
@@ -73,7 +83,11 @@ object ASTNodes {
 
   case class Declare(_type: Type, ident: Ident, value: RValue) extends Statement {
     def check(): Boolean = {
-      _type.check() && ident.check() && value.check()
+      var valid: Boolean = value.check()
+      checkValid(valid, "Rvalue", value)
+      valid = valid && _type == value.getType()
+      checkValid(valid, "type not same as Rvalue type", ident)
+      valid
     }
   }
 
@@ -100,11 +114,34 @@ object ASTNodes {
         false
       } else {
         val tempSymbolTable = currentSymbolTable
-        thenS.check()
+        var valid: Boolean = true
+        thenS match {
+          case statements: Statements =>
+            for (stat <- statements.stmts) {
+              stat match {
+                case Return(_) => System.exit(SEMANTIC_ERR_CODE)
+                case _ =>
+              }
+            }
+          case _ =>
+        }
+        valid = thenS.check()
+        checkValid(valid, "then statement", thenS)
         currentSymbolTable = elseSymbolTable
-        elseS.check()
+        elseS match {
+          case statements: Statements =>
+            for (stat <- statements.stmts) {
+              stat match {
+                case Return(_) => System.exit(SEMANTIC_ERR_CODE)
+                case _ =>
+              }
+            }
+          case _ =>
+        }
+        valid = elseS.check()
+        checkValid(valid, "else statement", elseS)
         currentSymbolTable = tempSymbolTable
-        true
+        valid
       }
     }
   }
@@ -115,7 +152,18 @@ object ASTNodes {
     def check(): Boolean = {
       val tempSymbolTable: SymbolTable = currentSymbolTable
       currentSymbolTable = symbolTable
+      body match {
+        case statements: Statements =>
+          for (stat <- statements.stmts) {
+            stat match {
+              case Return(_) => System.exit(SEMANTIC_ERR_CODE)
+              case _ =>
+            }
+          }
+        case _ =>
+      }
       val valid = cond.check() && body.check() && cond.getType() == BaseT("bool")
+      checkValid(valid, "while statement", body)
       currentSymbolTable = tempSymbolTable
       valid
     }
@@ -164,7 +212,7 @@ object ASTNodes {
 
   case class Exit(exp: Expr) extends Statement {
     def check(): Boolean = {
-      exp.check()
+      exp.check() && exp.getType() == BaseT("int")
     }
   }
 
@@ -251,19 +299,28 @@ object ASTNodes {
         valid = valid && elem.check()
         checkValid(valid, "array elem", elem)
       }
-      var t1: Type = elems.head.getType()
-      for (elem <- elems) {
-        def tn: Type = elem.getType()
-        // MUST CONSIDER [char[], string] CASE
-        if (tn != t1) {
-          false
+      if (elems.isEmpty) {
+        valid = true
+      } else {
+        var t1: Type = elems.head.getType()
+        for (elem <- elems) {
+          def tn: Type = elem.getType()
+          // MUST CONSIDER [char[], string] CASE
+          if (tn != t1) {
+            false
+          }
         }
       }
       valid
     }
 
     def getType(): Type = {
-      ArrayT(elems.head.getType(), 1)
+      if (elems.isEmpty) {
+        /* Need to fix type */
+        ArrayT(BaseT("ERROR"), 0)
+      } else {
+        ArrayT(elems.head.getType(), 1)
+      }
     }
   }
 

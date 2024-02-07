@@ -59,6 +59,7 @@ object Main {
       /* Parsing of expression */
       parser.parse(input) match {
         case Success(x) => {
+          println(s"$arg = $x")
           // Semantic Analysis
           val semanticAnalyser = new SemanticAnalyser(x)
           semanticAnalyser.analyse()
