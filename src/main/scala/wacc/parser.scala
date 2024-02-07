@@ -8,10 +8,11 @@ import parsley.character.whitespace
 import wacc.ASTNodes._
 import wacc.lexer._
 import wacc.lexer.implicits.implicitSymbol
+import wacc.Main._
 
 object parser {
-  def parse(input: String): Result[String, Program] = parser.parse(input)
-  private [wacc] def parseTest(input: String): Result[String, Expr] = parserTest.parse(input)
+  def parse(input: String): Result[SyntaxError, Program] = parser.parse(input)
+  private [wacc] def parseTest(input: String): Result[SyntaxError, Expr] = parserTest.parse(input)
 
   /* To be able to run tests only on expression */
   private lazy val parserTest = fully(expr)

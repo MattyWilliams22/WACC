@@ -131,7 +131,7 @@ object lexer {
   val baseType: Parsley[String] = ("int" | "bool" | "char" | "string").label("base type")
   val arrayBraces: Parsley[String] = "[]"
   val rBracket: Parsley[String] = ")"
-  val negate: Parsley[Unit] = atomic("-" ~> notFollowedBy(digit)).label("negation")
+  val negate: Parsley[Unit] = atomic("-" ~> notFollowedBy(digit)).label("unary operator")
 
   val implicits: ImplicitSymbol = lexer.lexeme.symbol.implicits
   def fully[A](p: Parsley[A]): Parsley[A] = lexer.fully(p)
