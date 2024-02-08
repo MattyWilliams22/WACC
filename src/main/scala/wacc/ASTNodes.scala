@@ -128,7 +128,7 @@ object ASTNodes {
 
   case class Read(lvalue: LValue) extends Statement {
     def check(): Boolean = {
-      lvalue.check()
+      lvalue.check() && (lvalue.getType() == BaseT("int") || lvalue.getType() == BaseT("char"))
     }
   }
 
