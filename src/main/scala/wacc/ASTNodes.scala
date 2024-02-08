@@ -50,8 +50,10 @@ object ASTNodes {
       var valid: Boolean = true
       val tempSymbolTable: SymbolTable = currentSymbolTable
       currentSymbolTable = symbolTable
+
       valid = valid && body.check()
       checkValid(valid, "body", body)
+
       currentSymbolTable = tempSymbolTable
       valid
     }
@@ -361,14 +363,17 @@ object ASTNodes {
     }
 
     def getType(): Type = {
-      def parentT: PairT = lvalue.getType().asInstanceOf[PairT]
-
-      def childT: PairElemT = func match {
-        case "fst" => parentT.pet1
-        case "snd" => parentT.pet2
+      def parentT: Type = lvalue.getType()
+      if (parentT.isInstanceOf[PairT]) {
+        def pairT: PairT = parentT.asInstanceOf[PairT]
+        def childT: PairElemT = func match {
+          case "fst" => pairT.pet1
+          case "snd" => pairT.pet2
+        }
+        childT
+      } else {
+        BaseT("ERROR")
       }
-
-      childT
     }
   }
 
@@ -654,22 +659,24 @@ object ASTNodes {
 
   case class Ident(str: String) extends Atom with LValue {
     def check(): Boolean = {
-      currentSymbolTable.lookupAll(str).isDefined
+      currentSymbolTable.lookupAllVariables(str).isDefined ||
+      currentSymbolTable.lookupAllFunctions(str).isDefined
     }
 
     def getType(): Type = {
-      currentSymbolTable.lookupAll(str) match {
+      currentSymbolTable.lookupAllVariables(str) match {
         case Some(x) => x match {
           case param: Param =>
-            param.getType()
+            param._type
           case declare: Declare =>
             declare._type
-          case function: Function =>
-            function._type
           case _ =>
             BaseT("ERROR")
         }
-        case None => BaseT("ERROR")
+        case None => currentSymbolTable.lookupAllFunctions(str) match {
+          case Some(x) => x._type
+          case None => BaseT("ERROR")
+        }
       }
     }
   }

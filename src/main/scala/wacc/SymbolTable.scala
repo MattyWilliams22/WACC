@@ -6,13 +6,18 @@ import wacc.Main.SEMANTIC_ERR_CODE
 import scala.collection.mutable
 
 class SymbolTable(var parent: Option[SymbolTable],
-                     val map: mutable.Map[String, ASTNode] =
-                     mutable.Map.empty[String, ASTNode]) {
+                  val funcMap: mutable.Map[String, Function] = mutable.Map.empty[String, Function],
+                  val varMap: mutable.Map[String, ASTNode] = mutable.Map.empty[String, ASTNode]) {
 
   var topLevelSize = 0
 
-  def add(name: String, node: ASTNode): Unit = {
-    map.put(name, node)
+  def addFunction(name: String, node: Function): Unit = {
+    funcMap.put(name, node)
+    incrementTotalCount()
+  }
+
+  def addVariable(name: String, node: ASTNode): Unit = {
+    varMap.put(name, node)
     incrementTotalCount()
   }
 
@@ -20,34 +25,33 @@ class SymbolTable(var parent: Option[SymbolTable],
     node match {
       case prog: Program =>
         for (func <- prog.funcs) {
-          if (lookup(func.ident.str).isDefined) {
+          if (lookupFunction(func.ident.str).isDefined) {
             System.exit(SEMANTIC_ERR_CODE)
           }
-          add(func.ident.str, func)
           val symbolTable = func.symbolTable
           symbolTable.parent = Option(this)
+          addFunction(func.ident.str, func)
           symbolTable.generateSymbolTable(func)
         }
         generateSymbolTable(prog.statement)
 
       case func: Function =>
         for (param <- func.param_list) {
-          if (lookup(param.ident.str).isDefined) {
+          if (lookupVariable(param.ident.str).isDefined) {
             System.exit(SEMANTIC_ERR_CODE)
           }
-          add(param.ident.str, param)
+          addVariable(param.ident.str, param)
         }
-
         generateSymbolTable(func.body)
 
       case Statements(stmts) =>
         stmts.foreach(generateSymbolTable)
 
       case Declare(_, ident, _) =>
-        if (lookup(ident.str).isDefined) {
+        if (lookupVariable(ident.str).isDefined) {
           System.exit(SEMANTIC_ERR_CODE)
         }
-        add(ident.str, node)
+        addVariable(ident.str, node)
 
       case ifStatement: If =>
         val thenBlockSymbolTable = ifStatement.thenSymbolTable
@@ -71,13 +75,27 @@ class SymbolTable(var parent: Option[SymbolTable],
     }
   }
 
-  def lookup(name: String): Option[ASTNode] = map.get(name)
+  def lookupFunction(name: String): Option[Function] = funcMap.get(name)
+  def lookupVariable(name: String): Option[ASTNode] = varMap.get(name)
 
-  def lookupAll(name: String): Option[ASTNode] = {
+  def lookupAllVariables(name: String): Option[ASTNode] = {
     var table: Option[SymbolTable] = Option(this)
 
     while (table.isDefined) {
-      val res = table.get.lookup(name)
+      val res = table.get.lookupVariable(name)
+      if (res.isDefined) {
+        return res
+      }
+      table = table.get.getParent()
+    }
+    None
+  }
+
+  def lookupAllFunctions(name: String): Option[Function] = {
+    var table: Option[SymbolTable] = Option(this)
+
+    while (table.isDefined) {
+      val res = table.get.lookupFunction(name)
       if (res.isDefined) {
         return res
       }
