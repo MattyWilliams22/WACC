@@ -35,7 +35,7 @@ class SymbolTable(var parent: Option[SymbolTable],
           if (lookup(param.ident.str).isDefined) {
             System.exit(SEMANTIC_ERR_CODE)
           }
-          add(func.ident.str, param)
+          add(param.ident.str, param)
         }
 
         generateSymbolTable(func.body)

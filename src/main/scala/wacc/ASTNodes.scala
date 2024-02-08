@@ -116,31 +116,13 @@ object ASTNodes {
         val tempSymbolTable = currentSymbolTable
         currentSymbolTable = thenSymbolTable
         var valid: Boolean = true
-        thenS match {
-          case statements: Statements =>
-            for (stat <- statements.stmts) {
-              stat match {
-                case Return(_) => System.exit(SEMANTIC_ERR_CODE)
-                case _ =>
-              }
-            }
-          case _ =>
-        }
         valid = thenS.check()
         checkValid(valid, "then statement", thenS)
+
         currentSymbolTable = elseSymbolTable
-        elseS match {
-          case statements: Statements =>
-            for (stat <- statements.stmts) {
-              stat match {
-                case Return(_) => System.exit(SEMANTIC_ERR_CODE)
-                case _ =>
-              }
-            }
-          case _ =>
-        }
         valid = elseS.check()
         checkValid(valid, "else statement", elseS)
+
         currentSymbolTable = tempSymbolTable
         valid
       }
@@ -153,16 +135,6 @@ object ASTNodes {
     def check(): Boolean = {
       val tempSymbolTable: SymbolTable = currentSymbolTable
       currentSymbolTable = symbolTable
-      body match {
-        case statements: Statements =>
-          for (stat <- statements.stmts) {
-            stat match {
-              case Return(_) => System.exit(SEMANTIC_ERR_CODE)
-              case _ =>
-            }
-          }
-        case _ =>
-      }
       val valid = cond.check() && body.check() && cond.getType() == BaseT("bool")
       checkValid(valid, "while statement", body)
       currentSymbolTable = tempSymbolTable
