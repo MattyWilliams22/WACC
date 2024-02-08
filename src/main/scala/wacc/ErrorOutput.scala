@@ -12,16 +12,16 @@ object ErrorOutput {
   val SEMANTIC_ERR_CODE = 200
   val SUCCESS_CODE = 0
 
-  // def output(log: ListBuffer[SemanticError], syntaxError: Option[SyntaxError], file: String, exitStatus: Int): Unit = {
-  //   if (exitStatus == SUCCESS_CODE) {
-  //     println("Program compiled successfully")
-  //     return
-  //   }
+  def output(log: ListBuffer[SemanticError], syntaxError: Option[SyntaxError], file: String, exitStatus: Int): Unit = {
+    if (exitStatus == SUCCESS_CODE) {
+      println("Program compiled successfully")
+      return
+    }
 
-  //   val sb = new StringBuilder()
+    val sb = new StringBuilder()
 
 
-  // }
+  }
 
   sealed trait ErrorParser {
     def parseError(): String
@@ -65,6 +65,5 @@ object ErrorOutput {
       sb.append("Lines after: \n" + line.linesAfter.mkString("\n ") + "\n")
       sb.toString()
     }
-
   }
 }
