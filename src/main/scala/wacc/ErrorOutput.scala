@@ -20,6 +20,12 @@ object ErrorOutput {
 
     val sb = new StringBuilder()
 
+    if (exitStatus == SYNTAX_ERR_CODE) {
+      sb.append("Syntax Error: " + file + "\n")
+      val parser = new SyntaxErrorParser(syntaxError.get, file)
+      sb.append(parser.parseError())
+      return
+    }
 
   }
 

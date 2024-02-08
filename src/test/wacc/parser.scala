@@ -125,7 +125,7 @@ class ParserSpec extends AnyFlatSpec with Matchers {
     val input =
       """
         |begin
-        | pair p = newpair(1, "hello")
+        | pair(int, string) p = newpair(1, "hello")
         |end
       """.stripMargin.trim
 
