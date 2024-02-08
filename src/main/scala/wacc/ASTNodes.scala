@@ -86,7 +86,13 @@ object ASTNodes {
         case PairT(_, _) => true
         case _ => false
       }
-      valid = valid && (_type == tValue || isPair && (tValue == PairLiter("null") || tValue == PairNull()))
+      val isEmptyArrayLiteral = tValue match {
+        case ArrayT(BaseT("Empty"), _) => true
+        case _ => false
+      }
+      valid = valid &&
+        (_type == tValue || isPair && (tValue == PairLiter("null") || tValue == PairNull()) ||
+          isEmptyArrayLiteral && _type.isInstanceOf[ArrayT])
       checkValid(valid, "type not same as Rvalue type", ident)
       valid
     }
@@ -293,12 +299,12 @@ object ASTNodes {
       if (elems.isEmpty) {
         valid = true
       } else {
-        var t1: Type = elems.head.getType()
+        val t1: Type = elems.head.getType()
         for (elem <- elems) {
           def tn: Type = elem.getType()
           // MUST CONSIDER [char[], string] CASE
-          if (tn != t1) {
-            false
+          if (t1 != tn) {
+            valid = false
           }
         }
       }
@@ -307,8 +313,7 @@ object ASTNodes {
 
     def getType(): Type = {
       if (elems.isEmpty) {
-        /* Need to fix type */
-        ArrayT(BaseT("ERROR"), 0)
+        ArrayT(BaseT("Empty"), 0)
       } else {
         ArrayT(elems.head.getType(), 1)
       }
@@ -674,14 +679,25 @@ object ASTNodes {
       var valid: Boolean = true
       valid = valid && ident.check()
       for (arg <- args) {
-        valid = valid && (arg.getType() == ident.getType())
+        valid = valid && (arg.getType() == getElemType())
         checkValid(valid, "array elem", arg)
       }
+      valid = valid && getType().asInstanceOf[ArrayT].dim == args.length
       valid
     }
 
     def getType(): Type = {
-      ident.getType()
+      ident.getType() match {
+        case ArrayT(_, _) => ident.getType()
+        case _ => BaseT("ERROR")
+      }
+    }
+
+    def getElemType(): Type = {
+      ident.getType() match {
+        case ArrayT(t, _) => t
+        case _ => BaseT("ERROR")
+      }
     }
   }
 }
