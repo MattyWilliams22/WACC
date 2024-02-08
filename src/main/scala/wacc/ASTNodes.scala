@@ -93,8 +93,9 @@ object ASTNodes {
         case _ => false
       }
       valid = valid &&
-        (_type == tValue || isPair && (tValue == PairLiter("null") || tValue == PairNull()) ||
-          isEmptyArrayLiteral && _type.isInstanceOf[ArrayT])
+        (_type == tValue || isPair && (tValue == PairLiter("null") || 
+         tValue == PairNull()) ||
+         isEmptyArrayLiteral && _type.isInstanceOf[ArrayT])
       checkValid(valid, "type not same as Rvalue type", ident)
       valid
     }
@@ -686,15 +687,22 @@ object ASTNodes {
       var valid: Boolean = true
       valid = valid && ident.check()
       for (arg <- args) {
-        valid = valid && (arg.getType() == getElemType())
+        valid = valid && (arg.getType() == BaseT("int"))
         checkValid(valid, "array elem", arg)
       }
-      valid = valid && getType().asInstanceOf[ArrayT].dim == args.length
+      val tident = ident.getType()
+      if (tident.isInstanceOf[ArrayT]) {
+        valid = valid && tident.asInstanceOf[ArrayT].dim == args.length
+      } else {
+        System.exit(SEMANTIC_ERR_CODE)
+      }
       valid
     }
 
     def getType(): Type = {
       ident.getType() match {
+        case ArrayT(t, n) if n > args.length => ArrayT(t, n - args.length)
+        case ArrayT(t, n) if n == args.length => t
         case ArrayT(_, _) => ident.getType()
         case _ => BaseT("ERROR")
       }
@@ -702,6 +710,7 @@ object ASTNodes {
 
     def getElemType(): Type = {
       ident.getType() match {
+        case ArrayT(t, n) if n > 1 => ArrayT(t, n-1)
         case ArrayT(t, _) => t
         case _ => BaseT("ERROR")
       }
