@@ -299,17 +299,22 @@ object ASTNodes {
         valid = valid && elem.check()
         checkValid(valid, "array elem", elem)
       }
-      if (elems.isEmpty) {
-        valid = true
-      } else {
-        val t1: Type = elems.head.getType()
-        for (elem <- elems) {
-          def tn: Type = elem.getType()
-          // MUST CONSIDER [char[], string] CASE
-          if (t1 != tn) {
-            valid = false
+
+      def isStringOrCharArray(t: Type): Boolean = t match {
+        case BaseT("string") => true
+        case ArrayT(BaseT("char"), _) => true
+        case _ => false
+      }
+
+      valid = elems match {
+        case head :: tail =>
+          val firstType = head.getType()
+          firstType match {
+            case BaseT("string") | ArrayT(BaseT("char"), _) =>
+              tail.forall(elem => isStringOrCharArray(elem.getType()))
+            case _ => tail.forall(elem => elem.getType() == firstType)
           }
-        }
+        case _ => true
       }
       valid
     }
@@ -320,9 +325,14 @@ object ASTNodes {
       } else {
         // Must use strongest type in list not just head
         // e.g. string not char[]
-        elems.head.getType() match {
-          case ArrayT(t, n) => ArrayT(t, n+1)
-          case t => ArrayT(t, 1)
+        if (elems.exists(elem => elem.getType() == BaseT("string"))) {
+          ArrayT(BaseT("string"), 1)
+        } else {
+          // If there's no string, use the type of the head
+          elems.head.getType() match {
+            case ArrayT(t, n) => ArrayT(t, n + 1)
+            case t => ArrayT(t, 1)
+          }
         }
       }
     }
