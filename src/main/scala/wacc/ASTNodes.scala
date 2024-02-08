@@ -81,7 +81,13 @@ object ASTNodes {
     def check(): Boolean = {
       var valid: Boolean = value.check()
       checkValid(valid, "Rvalue", value)
-      valid = valid && _type == value.getType()
+      valid = valid
+      valid = valid && (_type match {
+        case PairT(_, _) => value.getType() == PairNull() ||
+          value.getType() == PairLiter("null") ||
+          value.getType() == _type
+        case _ => value.getType() == _type
+      })
       checkValid(valid, "type not same as Rvalue type", ident)
       valid
     }
@@ -91,7 +97,18 @@ object ASTNodes {
     def check(): Boolean = {
       var valid: Boolean = lvalue.check() && rvalue.check()
       checkValid(valid, "lvalue and rvalue", lvalue)
-      valid = valid && lvalue.getType() == rvalue.getType()
+      valid = valid && (lvalue.getType() match {
+        case PairT(_, _) => rvalue.getType() == PairNull() ||
+          rvalue.getType() == PairLiter("null") ||
+          rvalue.getType() == lvalue.getType()
+        case PairNull() => rvalue.getType() match {
+          case PairT(_, _) => true
+          case PairNull() => true
+          case PairLiter("null") => true
+          case _ => false
+        }
+        case _ => rvalue.getType() == lvalue.getType()
+      })
       checkValid(valid, "lvalue and rvalue type", lvalue)
       valid
     }
@@ -108,9 +125,7 @@ object ASTNodes {
     val elseSymbolTable: SymbolTable = new SymbolTable(None)
 
     def check(): Boolean = {
-      if (!cond.check() || !thenS.check() || !elseS.check()) {
-        false
-      } else if (cond.getType() != BaseT("bool")) {
+      if (!cond.check() || cond.getType() != BaseT("bool")) {
         false
       } else {
         val tempSymbolTable = currentSymbolTable
@@ -299,11 +314,20 @@ object ASTNodes {
 
   case class NewPair(exp1: Expr, exp2: Expr) extends RValue {
     def check(): Boolean = {
-      exp1.check() && exp2.check() && exp1.getType() == BaseT("int") && exp2.getType() == BaseT("int")
+      exp1.check() && exp2.check()
     }
 
     def getType(): Type = {
-      PairT(exp1.getType().asInstanceOf[PairElemT], exp2.getType().asInstanceOf[PairElemT])
+      val type1 = exp1.getType() match {
+        case PairT(_, _) => PairNull()
+        case _ => exp1.getType()
+      }
+
+      val type2 = exp2.getType() match {
+        case PairT(_, _) => PairNull()
+        case _ => exp2.getType()
+      }
+      PairT(type1.asInstanceOf[PairElemT], type2.asInstanceOf[PairElemT])
     }
   }
 
@@ -594,13 +618,13 @@ object ASTNodes {
     }
   }
 
-  case class PairLiter(str: String) extends Atom with Type {
+  case class PairLiter(str: String) extends Atom with PairElemT {
     def check(): Boolean = {
       true
     }
 
     def getType(): Type = {
-      PairLiter(str)
+      PairNull()
     }
   }
 
