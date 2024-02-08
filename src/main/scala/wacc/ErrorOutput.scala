@@ -1,6 +1,7 @@
 package wacc
 
 import Error._
+import ASTNodes._
 
 import scala.collection.mutable.ListBuffer
 import scala.io.BufferedSource
@@ -141,6 +142,36 @@ object ErrorOutput {
         }
       }
       sb.toString()
+    }
+
+    def typeErrorParser(pos: (Int, Int), expected: Set[Type], actual: Type, context: Option[String]): String = {
+      val sb = new StringBuilder()
+      sb.append("Type Error: Expected " + convertTypeToString(expected) + 
+          " but got " + convertTypeToString(actual) + " at line " + pos._1 + " at column " + pos._2 + "\n")
+      if (context.isDefined) {
+        sb.append("Context: " + context.get + "\n")
+      }
+      sb.toString()
+    }
+
+    def convertTypeToString(t: Type): String = {
+      t match {
+        // NON-EXHAUSTIVE, ADD TYPES
+        case BaseT("int") => "int"
+        case BaseT("bool") => "bool"
+        case BaseT("char") => "char"
+        case BaseT("string") => "string"
+        // case PairT(p1, p2) => {
+        //   if (p1 == PairElemT && p2 == PairElemT) {
+        //     "pair type"
+        //   } else {
+        //     "pair(" + convertTypeToString(p1) + ", " + convertTypeToString(p2) + ")"
+        //   }
+        // }
+        // case PairElemT => "pair"
+        case ArrayT(_,_) => "array [ " + convertTypeToString(t) + " ]"
+        case _ => "undefined type"
+      }
     }
   }
 }
