@@ -1,14 +1,18 @@
 package wacc
 
-import parsley.{Failure, Success}
+import parsley.{Failure, Success, Result}
 
 import java.io.File
 import scala.io.Source
+import parsley.errors.ErrorBuilder
+import parsley.errors.tokenextractors.MatchParserDemand
+import wacc.ASTNodes._
+import scala.collection.mutable.ListBuffer
+
+import ErrorOutput._
+import Error._
 
 object Main {
-  val FILE_ERR_CODE = 150
-  val SYNTAX_ERR_CODE = 100
-  val SEMANTIC_ERR_CODE = 200
 
   def main(args: Array[String]): Unit = {
     println("Hello WACC!")
@@ -48,22 +52,27 @@ object Main {
       input = arg
     }
 
-    /* To be able to run tests */
+
+    /* To be able to run Tests */
     if (args.length > 1) {
-      parser.parseTest(input) match {
+      // Invoke your parser's parse method
+      val result: Result[SyntaxError, Expr] = parser.parseTest(input)
+      result match {
         case Success(x) => println(s"$arg = $x")
         case Failure(msg) => println(msg)
       }
     } else {
+      // Invoke your parser's parse method
+      val result: Result[SyntaxError, Program] = parser.parse(input)
       /* Parsing of expression */
-      parser.parse(input) match {
+      result match {
         case Success(x) => {
           // Semantic Analysis
           println(s"$arg = $x")
           System.exit(0)
         }
         case Failure(msg) => {
-          println(msg)
+          output(ListBuffer.empty[Error.SemanticError], Some(msg), args(0), SYNTAX_ERR_CODE)
           System.exit(SYNTAX_ERR_CODE)
         }
       }
