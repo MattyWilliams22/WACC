@@ -318,7 +318,12 @@ object ASTNodes {
       if (elems.isEmpty) {
         ArrayT(BaseT("Empty"), 0)
       } else {
-        ArrayT(elems.head.getType(), 1)
+        // Must use strongest type in list not just head
+        // e.g. string not char[]
+        elems.head.getType() match {
+          case ArrayT(t, n) => ArrayT(t, n+1)
+          case t => ArrayT(t, 1)
+        }
       }
     }
   }
@@ -692,7 +697,7 @@ object ASTNodes {
       }
       val tident = ident.getType()
       if (tident.isInstanceOf[ArrayT]) {
-        valid = valid && tident.asInstanceOf[ArrayT].dim == args.length
+        valid = valid && tident.asInstanceOf[ArrayT].dim >= args.length
       } else {
         System.exit(SEMANTIC_ERR_CODE)
       }
