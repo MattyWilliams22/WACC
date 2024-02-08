@@ -122,6 +122,7 @@ object ASTNodes {
 //          case _ => false
 //        }
 //      })
+
       checkValid(valid, "lvalue and rvalue type", lvalue)
       valid
     }
@@ -383,9 +384,20 @@ object ASTNodes {
       def parentT: Type = lvalue.getType()
       if (parentT.isInstanceOf[PairT]) {
         def pairT: PairT = parentT.asInstanceOf[PairT]
-        def childT: PairElemT = func match {
+        var childT: Type = func match {
           case "fst" => pairT.pet1
           case "snd" => pairT.pet2
+        }
+        if (childT == PairNull()) {
+          childT = lvalue match {
+            case Ident(str) => {
+              currentSymbolTable.lookupAllVariables(str) match {
+                case Some(Declare(t,_,_)) => t
+                case _ => childT
+              }
+            }
+            case _ => childT
+          }
         }
         childT
       } else {
