@@ -65,30 +65,30 @@ object Error {
         linesBefore: Seq[String],
         linesAfter: Seq[String],
         errorPointsAt: Int, errorWidth: Int
-      ): Unit = ()
+      ): LineInfo = LineInfo(line, linesBefore, linesAfter, errorPointsAt, errorWidth)
   }
 
   // Semantic Error
 
-  sealed trait SemanticErrorType extends ErrorType
+  // sealed trait SemanticError extends ErrorType
 
-  case class UnknownIdentifierError(pos: (Int, Int), ident: String, context: Option[String]) extends SemanticErrorType
-  case class TypeError(pos: (Int, Int), expected: Set[Type], found: Type, context: Option[String])(var offset: Int) extends SemanticErrorType
-  case class TypeErasureError(pos: (Int, Int), context: Option[String]) extends SemanticErrorType
-  case class UnknownObjectError(pos: (Int, Int), context: Option[String]) extends SemanticErrorType
-  case class InvalidScopeError(pos: (Int, Int), member : String, context: Option[String]) extends SemanticErrorType
-  case class ArityMismatch(pos: (Int, Int), expected: Int, found: Int, context: Option[String]) extends SemanticErrorType
-  case class ArrayError(pos: (Int, Int), name: String, maxDim: Int, context: Option[String]) extends SemanticErrorType
-  case class DuplicateIdentifier(pos: (Int, Int), ident: String, context: Option[String]) extends SemanticErrorType
-  case class InvalidReturnError(pos: (Int, Int), context: Option[String]) extends SemanticErrorType
+  // case class UnknownIdentifierError(pos: (Int, Int), ident: String, context: Option[String]) extends SemanticError
+  // case class TypeError(pos: (Int, Int), expected: Set[Type], found: Type, context: Option[String])(var offset: Int) extends SemanticError
+  // case class TypeErasureError(pos: (Int, Int), context: Option[String]) extends SemanticError
+  // case class UnknownObjectError(pos: (Int, Int), context: Option[String]) extends SemanticError
+  // case class InvalidScopeError(pos: (Int, Int), member : String, context: Option[String]) extends SemanticError
+  // case class ArityMismatch(pos: (Int, Int), expected: Int, found: Int, context: Option[String]) extends SemanticError
+  // case class ArrayError(pos: (Int, Int), name: String, maxDim: Int, context: Option[String]) extends SemanticError
+  // case class DuplicateIdentifier(pos: (Int, Int), ident: String, context: Option[String]) extends SemanticError
+  // case class InvalidReturnError(pos: (Int, Int), context: Option[String]) extends SemanticError
 
-  object TypeError {
-    def apply(pos: (Int, Int), value: Set[Type], typeof: Type, context: Option[String])(offset: Int): TypeError = {
-      new TypeError(pos, value, typeof, context)(offset)
-    }
+  // object TypeError {
+  //   def apply(pos: (Int, Int), value: Set[Type], typeof: Type, context: Option[String])(offset: Int): TypeError = {
+  //     new TypeError(pos, value, typeof, context)(offset)
+  //   }
 
-    def apply(pos: (Int, Int), expected: Set[Type], found: Type, context: Option[String]): TypeError = {
-      new TypeError(pos, expected, found, context)(0)
-    }
-  }
+  //   def apply(pos: (Int, Int), expected: Set[Type], found: Type, context: Option[String]): TypeError = {
+  //     new TypeError(pos, expected, found, context)(0)
+  //   }
+  // }
 }
