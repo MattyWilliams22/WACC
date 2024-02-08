@@ -81,13 +81,12 @@ object ASTNodes {
     def check(): Boolean = {
       var valid: Boolean = value.check()
       checkValid(valid, "Rvalue", value)
-      valid = valid
-      valid = valid && (_type match {
-        case PairT(_, _) => value.getType() == PairNull() ||
-          value.getType() == PairLiter("null") ||
-          value.getType() == _type
-        case _ => value.getType() == _type
-      })
+      val tValue = value.getType()
+      val isPair = _type match {
+        case PairT(_, _) => true
+        case _ => false
+      }
+      valid = valid && (_type == tValue || isPair && (tValue == PairLiter("null") || tValue == PairNull()))
       checkValid(valid, "type not same as Rvalue type", ident)
       valid
     }
@@ -97,18 +96,22 @@ object ASTNodes {
     def check(): Boolean = {
       var valid: Boolean = lvalue.check() && rvalue.check()
       checkValid(valid, "lvalue and rvalue", lvalue)
-      valid = valid && (lvalue.getType() match {
-        case PairT(_, _) => rvalue.getType() == PairNull() ||
-          rvalue.getType() == PairLiter("null") ||
-          rvalue.getType() == lvalue.getType()
-        case PairNull() => rvalue.getType() match {
-          case PairT(_, _) => true
-          case PairNull() => true
-          case PairLiter("null") => true
-          case _ => false
-        }
-        case _ => rvalue.getType() == lvalue.getType()
-      })
+      val tlvalue = lvalue.getType()
+      val trvalue = rvalue.getType()
+      val isPair = tlvalue match {
+        case PairT(_, _) => true
+        case _ => false
+      }
+      valid = valid && (tlvalue == trvalue || isPair && (trvalue == PairLiter("null") || trvalue == PairNull()))
+
+//      valid = valid && (lvalue.getType() match {
+//        case PairNull() => rvalue.getType() match {
+//          case PairT(_, _) => true
+//          case PairNull() => true
+//          case PairLiter("null") => true
+//          case _ => false
+//        }
+//      })
       checkValid(valid, "lvalue and rvalue type", lvalue)
       valid
     }
@@ -318,16 +321,32 @@ object ASTNodes {
     }
 
     def getType(): Type = {
-      val type1 = exp1.getType() match {
-        case PairT(_, _) => PairNull()
-        case _ => exp1.getType()
-      }
+      val type1: Type = exp1.getType()
+      val type2: Type = exp2.getType()
 
-      val type2 = exp2.getType() match {
-        case PairT(_, _) => PairNull()
-        case _ => exp2.getType()
+      val vtype1 = if (type1.isInstanceOf[PairElemT]) {
+        type1.asInstanceOf[PairElemT]
+      } else if (type1.isInstanceOf[PairLiter]) {
+        PairNull()
+      } else if (type1.isInstanceOf[PairT]) {
+        PairNull()
+      } else {
+        BaseT("ERROR")
       }
-      PairT(type1.asInstanceOf[PairElemT], type2.asInstanceOf[PairElemT])
+      val vtype2 = if (type2.isInstanceOf[PairElemT]) {
+        type2.asInstanceOf[PairElemT]
+      } else if (type2.isInstanceOf[PairLiter]) {
+        PairNull()
+      } else if (type2.isInstanceOf[PairT]) {
+        PairNull()
+      } else {
+        BaseT("ERROR")
+      }
+      if (vtype1 != BaseT("ERROR") && vtype2 != BaseT("ERROR")) {
+        PairT(vtype1, vtype2)
+      } else {
+        BaseT("ERROR")
+      }
     }
   }
 
@@ -618,13 +637,13 @@ object ASTNodes {
     }
   }
 
-  case class PairLiter(str: String) extends Atom with PairElemT {
+  case class PairLiter(str: String) extends Atom with Type {
     def check(): Boolean = {
       true
     }
 
     def getType(): Type = {
-      PairNull()
+      PairLiter(str)
     }
   }
 
