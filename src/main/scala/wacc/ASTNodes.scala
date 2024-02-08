@@ -97,6 +97,10 @@ object ASTNodes {
          isPair && (tValue == PairLiter("null") || tValue == PairNull()) ||
          isEmptyArrayLiteral && _type.isInstanceOf[ArrayT] ||
          _type == BaseT("string") && tValue == ArrayT(BaseT("char"), 1))
+
+      println("_type is: " + _type)
+      println("tvalue is: " + tValue) 
+      
       checkValid(valid, "type not same as Rvalue type", ident)
       valid
     }
@@ -105,14 +109,22 @@ object ASTNodes {
   case class Assign(lvalue: LValue, rvalue: RValue) extends Statement {
     def check(): Boolean = {
       var valid: Boolean = lvalue.check() && rvalue.check()
+      println("lvalue is: " + lvalue + " which is: " + lvalue.check())
+      println("rvalue is: " + rvalue + " which is: " + rvalue.check())
       checkValid(valid, "lvalue and rvalue", lvalue)
       val tlvalue = lvalue.getType()
-      val trvalue = rvalue.getType()
+      var trvalue = rvalue.getType()
+      trvalue = trvalue match {
+        case ArrayT(BaseT("Empty"),0) => PairNull()
+        case _ => trvalue
+      }
       val isPair = tlvalue match {
         case PairT(_, _) => true
         case _ => false
       }
-      valid = valid && (tlvalue == trvalue || isPair && (trvalue == PairLiter("null") || trvalue == PairNull()))
+      valid = valid && (tlvalue == trvalue || 
+                        isPair && (trvalue == PairLiter("null") || 
+                        trvalue == PairNull()))
 
 //      valid = valid && (lvalue.getType() match {
 //        case PairNull() => rvalue.getType() match {
@@ -122,6 +134,9 @@ object ASTNodes {
 //          case _ => false
 //        }
 //      })
+
+      println("tlvalue is: " + tlvalue)
+      println("trvalue is: " + trvalue)
 
       checkValid(valid, "lvalue and rvalue type", lvalue)
       valid
@@ -187,6 +202,7 @@ object ASTNodes {
     def check(): Boolean = {
       var valid: Boolean = true
       for (stat <- stmts) {
+        println("Starting statement: " + stat)
         valid = valid && stat.check()
         checkValid(valid, "statement", stat)
       }
@@ -381,16 +397,20 @@ object ASTNodes {
     }
 
     def getType(): Type = {
+      println("func is: " + func)
       def parentT: Type = lvalue.getType()
+      println("parentT is: " + parentT)
       if (parentT.isInstanceOf[PairT]) {
         def pairT: PairT = parentT.asInstanceOf[PairT]
         var childT: Type = func match {
           case "fst" => pairT.pet1
           case "snd" => pairT.pet2
         }
+        println("childT before is: " + childT)
         if (childT == PairNull()) {
           childT = lvalue match {
             case Ident(str) => {
+              println("Ident has string: " + str)
               currentSymbolTable.lookupAllVariables(str) match {
                 case Some(Declare(t,_,_)) => t
                 case _ => childT
@@ -399,6 +419,7 @@ object ASTNodes {
             case _ => childT
           }
         }
+        println("childT after is: " + childT)
         childT
       } else {
         BaseT("ERROR")
