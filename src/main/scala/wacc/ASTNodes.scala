@@ -48,10 +48,6 @@ object ASTNodes {
 
     def check(): Boolean = {
       var valid: Boolean = true
-      for (param <- param_list) {
-        valid = valid && param.check()
-        checkValid(valid, "wrong param type", param)
-      }
       val tempSymbolTable: SymbolTable = currentSymbolTable
       currentSymbolTable = symbolTable
       valid = valid && body.check()
@@ -648,6 +644,8 @@ object ASTNodes {
             param.getType()
           case declare: Declare =>
             declare._type
+          case function: Function =>
+            function._type
           case _ =>
             BaseT("ERROR")
         }

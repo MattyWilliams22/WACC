@@ -52,8 +52,6 @@ class SymbolTable(var parent: Option[SymbolTable],
       case ifStatement: If =>
         val thenBlockSymbolTable = ifStatement.thenSymbolTable
         val elseBlockSymbolTable = ifStatement.elseSymbolTable
-        println("If:" + thenBlockSymbolTable)
-        println("Else:" + elseBlockSymbolTable)
         thenBlockSymbolTable.parent = Option(this)
         elseBlockSymbolTable.parent = Option(this)
         thenBlockSymbolTable.generateSymbolTable(ifStatement.thenS)
@@ -61,7 +59,6 @@ class SymbolTable(var parent: Option[SymbolTable],
 
       case whileLoop: While =>
         val whileBlockSymbolTable = whileLoop.symbolTable
-        println("While:" + whileBlockSymbolTable)
         whileBlockSymbolTable.parent = Option(this)
         whileBlockSymbolTable.generateSymbolTable(whileLoop.body)
 
