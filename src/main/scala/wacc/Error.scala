@@ -67,4 +67,28 @@ object Error {
         errorPointsAt: Int, errorWidth: Int
       ): Unit = ()
   }
+
+  // Semantic Error
+
+  sealed trait SemanticErrorType extends ErrorType
+
+  case class UnknownIdentifierError(pos: (Int, Int), ident: String, context: Option[String]) extends SemanticErrorType
+  case class TypeError(pos: (Int, Int), expected: Set[Type], found: Type, context: Option[String])(var offset: Int) extends SemanticErrorType
+  case class TypeErasureError(pos: (Int, Int), context: Option[String]) extends SemanticErrorType
+  case class UnknownObjectError(pos: (Int, Int), context: Option[String]) extends SemanticErrorType
+  case class InvalidScopeError(pos: (Int, Int), member : String, context: Option[String]) extends SemanticErrorType
+  case class ArityMismatch(pos: (Int, Int), expected: Int, found: Int, context: Option[String]) extends SemanticErrorType
+  case class ArrayError(pos: (Int, Int), name: String, maxDim: Int, context: Option[String]) extends SemanticErrorType
+  case class DuplicateIdentifier(pos: (Int, Int), ident: String, context: Option[String]) extends SemanticErrorType
+  case class InvalidReturnError(pos: (Int, Int), context: Option[String]) extends SemanticErrorType
+
+  object TypeError {
+    def apply(pos: (Int, Int), value: Set[Type], typeof: Type, context: Option[String])(offset: Int): TypeError = {
+      new TypeError(pos, value, typeof, context)(offset)
+    }
+
+    def apply(pos: (Int, Int), expected: Set[Type], found: Type, context: Option[String]): TypeError = {
+      new TypeError(pos, expected, found, context)(0)
+    }
+  }
 }
