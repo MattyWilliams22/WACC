@@ -25,8 +25,11 @@ object ErrorOutput {
       sb.append("Syntax Error: " + file + "\n")
       val parser = new SyntaxErrorParser(syntaxError.get, file)
       sb.append(parser.parseError())
+      println(sb.toString())
       return
     }
+
+    println(sb.toString())
 
   }
 
