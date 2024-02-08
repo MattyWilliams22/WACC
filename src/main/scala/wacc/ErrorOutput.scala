@@ -140,6 +140,7 @@ object ErrorOutput {
           }
         }
       }
+      sb.toString()
     }
   }
 }
