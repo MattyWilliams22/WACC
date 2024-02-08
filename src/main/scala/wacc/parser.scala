@@ -9,10 +9,13 @@ import wacc.ASTNodes._
 import wacc.lexer._
 import wacc.lexer.implicits.implicitSymbol
 import wacc.Main._
+import wacc.Error._
 
 object parser {
-  def parse(input: String): Result[String, Program] = parser.parse(input)
-  private [wacc] def parseTest(input: String): Result[String, Expr] = parserTest.parse(input)
+  implicit val errorHandler: SyntaxErrorBuilder = new SyntaxErrorBuilder
+
+  def parse(input: String): Result[SyntaxError, Program] = parser.parse(input)
+  private [wacc] def parseTest(input: String): Result[SyntaxError, Expr] = parserTest.parse(input)
 
   /* To be able to run tests only on expression */
   private lazy val parserTest = fully(expr)

@@ -7,6 +7,7 @@ import scala.io.Source
 import parsley.errors.ErrorBuilder
 import parsley.errors.tokenextractors.MatchParserDemand
 import wacc.ASTNodes._
+import scala.collection.mutable.ListBuffer
 
 import ErrorOutput._
 import Error._
@@ -51,19 +52,18 @@ object Main {
       input = arg
     }
 
+
     /* To be able to run Tests */
     if (args.length > 1) {
       // Invoke your parser's parse method
-      implicit val errorBuilder: ErrorBuilder[SyntaxError] = new SyntaxErrorBuilder
-      val result: Result[String, Expr] = parser.parseTest(input)
+      val result: Result[SyntaxError, Expr] = parser.parseTest(input)
       result match {
         case Success(x) => println(s"$arg = $x")
         case Failure(msg) => println(msg)
       }
     } else {
       // Invoke your parser's parse method
-      implicit val errorBuilder: ErrorBuilder[SyntaxError] = new SyntaxErrorBuilder
-      val result: Result[String, Program] = parser.parse(input)
+      val result: Result[SyntaxError, Program] = parser.parse(input)
       /* Parsing of expression */
       result match {
         case Success(x) => {
@@ -72,7 +72,7 @@ object Main {
           System.exit(0)
         }
         case Failure(msg) => {
-          println(msg)
+          output(ListBuffer.empty[Error.SemanticError], Some(msg), args(0), SYNTAX_ERR_CODE)
           System.exit(SYNTAX_ERR_CODE)
         }
       }
