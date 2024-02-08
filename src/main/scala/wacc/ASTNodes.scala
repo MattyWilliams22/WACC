@@ -46,8 +46,7 @@ object ASTNodes {
     val symbolTable: SymbolTable = new SymbolTable(None)
 
     def check(): Boolean = {
-      var valid: Boolean = _type == ident.getType()
-      checkValid(valid, "identifier type", ident)
+      var valid: Boolean = true
       for (param <- param_list) {
         valid = valid && param.check()
         checkValid(valid, "wrong param type", param)
@@ -93,7 +92,11 @@ object ASTNodes {
 
   case class Assign(lvalue: LValue, rvalue: RValue) extends Statement {
     def check(): Boolean = {
-      lvalue.check() && rvalue.check()
+      var valid: Boolean = lvalue.check() && rvalue.check()
+      checkValid(valid, "lvalue and rvalue", lvalue)
+      valid = valid && lvalue.getType() == rvalue.getType()
+      checkValid(valid, "lvalue and rvalue type", lvalue)
+      valid
     }
   }
 
@@ -114,6 +117,7 @@ object ASTNodes {
         false
       } else {
         val tempSymbolTable = currentSymbolTable
+        currentSymbolTable = thenSymbolTable
         var valid: Boolean = true
         thenS match {
           case statements: Statements =>
