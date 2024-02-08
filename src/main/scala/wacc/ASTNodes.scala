@@ -93,9 +93,10 @@ object ASTNodes {
         case _ => false
       }
       valid = valid &&
-        (_type == tValue || isPair && (tValue == PairLiter("null") || 
-         tValue == PairNull()) ||
-         isEmptyArrayLiteral && _type.isInstanceOf[ArrayT])
+        (_type == tValue || 
+         isPair && (tValue == PairLiter("null") || tValue == PairNull()) ||
+         isEmptyArrayLiteral && _type.isInstanceOf[ArrayT] ||
+         _type == BaseT("string") && tValue == ArrayT(BaseT("char"), 1))
       checkValid(valid, "type not same as Rvalue type", ident)
       valid
     }
