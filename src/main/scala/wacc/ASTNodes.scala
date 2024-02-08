@@ -2,8 +2,6 @@ package wacc
 
 import wacc.Main.{SEMANTIC_ERR_CODE, SUCCESS_CODE}
 
-import scala.collection.mutable
-
 object ASTNodes {
 
   var currentSymbolTable: SymbolTable = new SymbolTable(None)
@@ -23,7 +21,6 @@ object ASTNodes {
     def check(): Unit = {
       var valid: Boolean = true
       currentSymbolTable = symbolTable
-
       for (func <- funcs) {
         valid = valid && func.check()
         checkValid(valid, "function", func)

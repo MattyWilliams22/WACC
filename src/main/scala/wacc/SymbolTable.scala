@@ -26,22 +26,19 @@ class SymbolTable(var parent: Option[SymbolTable],
           add(func.ident.str, func)
           val symbolTable = func.symbolTable
           symbolTable.parent = Option(this)
-          generateSymbolTable(func)
+          symbolTable.generateSymbolTable(func)
         }
         generateSymbolTable(prog.statement)
 
       case func: Function =>
-        val symbolTable = func.symbolTable
-        symbolTable.parent = Option(this)
-
         for (param <- func.param_list) {
           if (lookup(param.ident.str).isDefined) {
             System.exit(SEMANTIC_ERR_CODE)
           }
-          symbolTable.add(func.ident.str, param)
+          add(func.ident.str, param)
         }
 
-        symbolTable.generateSymbolTable(func.body)
+        generateSymbolTable(func.body)
 
       case Statements(stmts) =>
         stmts.foreach(generateSymbolTable)
@@ -55,6 +52,8 @@ class SymbolTable(var parent: Option[SymbolTable],
       case ifStatement: If =>
         val thenBlockSymbolTable = ifStatement.thenSymbolTable
         val elseBlockSymbolTable = ifStatement.elseSymbolTable
+        println("If:" + thenBlockSymbolTable)
+        println("Else:" + elseBlockSymbolTable)
         thenBlockSymbolTable.parent = Option(this)
         elseBlockSymbolTable.parent = Option(this)
         thenBlockSymbolTable.generateSymbolTable(ifStatement.thenS)
@@ -62,6 +61,7 @@ class SymbolTable(var parent: Option[SymbolTable],
 
       case whileLoop: While =>
         val whileBlockSymbolTable = whileLoop.symbolTable
+        println("While:" + whileBlockSymbolTable)
         whileBlockSymbolTable.parent = Option(this)
         whileBlockSymbolTable.generateSymbolTable(whileLoop.body)
 
@@ -84,7 +84,7 @@ class SymbolTable(var parent: Option[SymbolTable],
       if (res.isDefined) {
         return res
       }
-      table = getParent()
+      table = table.get.getParent()
     }
     None
   }
