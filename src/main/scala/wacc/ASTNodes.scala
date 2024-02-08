@@ -1,6 +1,8 @@
 package wacc
 
-import wacc.Main.{SUCCESS_CODE, SEMANTIC_ERR_CODE}
+import wacc.Main.{SEMANTIC_ERR_CODE, SUCCESS_CODE}
+
+import scala.collection.mutable
 
 object ASTNodes {
 
@@ -20,6 +22,8 @@ object ASTNodes {
 
     def check(): Unit = {
       var valid: Boolean = true
+      currentSymbolTable = symbolTable
+
       for (func <- funcs) {
         valid = valid && func.check()
         checkValid(valid, "function", func)
@@ -434,8 +438,8 @@ object ASTNodes {
       val type2: Type = exp2.getType()
 
       exp1.check() && exp2.check() &&
-        ((type1 == BaseT("int") || type1 == BaseT("char")) &&
-          (type2 == BaseT("int") || type2 == BaseT("char")))
+        ((type1 == BaseT("int") && type2 == BaseT("int")) ||
+          (type1 == BaseT("char") && type2 == BaseT("char")))
     }
 
     def getType(): Type = {
@@ -449,8 +453,8 @@ object ASTNodes {
       val type2: Type = exp2.getType()
 
       exp1.check() && exp2.check() &&
-        ((type1 == BaseT("int") || type1 == BaseT("char")) &&
-          (type2 == BaseT("int") || type2 == BaseT("char")))
+        ((type1 == BaseT("int") && type2 == BaseT("int")) ||
+          (type1 == BaseT("char") && type2 == BaseT("char")))
     }
 
     def getType(): Type = {
@@ -464,8 +468,8 @@ object ASTNodes {
       val type2: Type = exp2.getType()
 
       exp1.check() && exp2.check() &&
-        ((type1 == BaseT("int") || type1 == BaseT("char")) &&
-          (type2 == BaseT("int") || type2 == BaseT("char")))
+        ((type1 == BaseT("int") && type2 == BaseT("int")) ||
+          (type1 == BaseT("char") && type2 == BaseT("char")))
     }
 
     def getType(): Type = {
@@ -479,8 +483,8 @@ object ASTNodes {
       val type2: Type = exp2.getType()
 
       exp1.check() && exp2.check() &&
-        ((type1 == BaseT("int") || type1 == BaseT("char")) &&
-          (type2 == BaseT("int") || type2 == BaseT("char")))
+        ((type1 == BaseT("int") && type2 == BaseT("int")) ||
+          (type1 == BaseT("char") && type2 == BaseT("char")))
     }
 
     def getType(): Type = {
@@ -636,17 +640,19 @@ object ASTNodes {
   }
 
   case class Ident(str: String) extends Atom with LValue {
-    val node: Option[ASTNode] = currentSymbolTable.lookupAll(str)
-
     def check(): Boolean = {
-      node.isDefined
+      currentSymbolTable.lookupAll(str).isDefined
     }
 
     def getType(): Type = {
-      node match {
+      currentSymbolTable.lookupAll(str) match {
         case Some(x) => x match {
-          case param: Param => param.getType()
-          case _ => BaseT("ERROR")
+          case param: Param =>
+            param.getType()
+          case declare: Declare =>
+            declare._type
+          case _ =>
+            BaseT("ERROR")
         }
         case None => BaseT("ERROR")
       }
