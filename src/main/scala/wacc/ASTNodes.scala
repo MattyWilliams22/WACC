@@ -68,7 +68,6 @@ object ASTNodes {
       val retTs = getReturns(body)
       var retT = retTs.head
       for (thisRetT <- retTs) {
-        println("return value: " + thisRetT)
         valid = valid && thisRetT == retT
       }
       valid = valid && retT == _type
@@ -144,11 +143,16 @@ object ASTNodes {
         case ArrayT(BaseT("Empty"), _) => true
         case _ => false
       }
+      val isPairOfNulls = tValue match {
+        case PairT(PairNull(),PairNull()) => true
+        case _ => false
+      }
       valid = valid &&
         (_type == tValue ||
           isPair && (tValue == PairLiter("null") || tValue == PairNull()) ||
           isEmptyArrayLiteral && _type.isInstanceOf[ArrayT] ||
-          _type == BaseT("string") && tValue == ArrayT(BaseT("char"), 1))
+          _type == BaseT("string") && tValue == ArrayT(BaseT("char"), 1) ||
+          isPairOfNulls)
       checkValid(valid, "type not same as Rvalue type", ident)
       valid
     }
@@ -278,6 +282,10 @@ object ASTNodes {
   case class Return(exp: Expr) extends Statement {
     def check(): Boolean = {
       exp.check()
+    }
+
+    def getType(): Type = {
+      exp.getType()
     }
   }
 
