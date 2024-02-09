@@ -2,8 +2,6 @@ package wacc
 
 import wacc.ASTNodes._
 
-import scala.collection.mutable
-
 class SemanticAnalyser(program: Program) {
   val symbolTable: SymbolTable = program.symbolTable
 

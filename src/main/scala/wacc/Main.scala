@@ -4,8 +4,6 @@ import parsley.{Failure, Success, Result}
 
 import java.io.File
 import scala.io.Source
-import parsley.errors.ErrorBuilder
-import parsley.errors.tokenextractors.MatchParserDemand
 import wacc.ASTNodes._
 import scala.collection.mutable.ListBuffer
 

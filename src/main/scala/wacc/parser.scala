@@ -8,7 +8,6 @@ import parsley.character.whitespace
 import wacc.ASTNodes._
 import wacc.lexer._
 import wacc.lexer.implicits.implicitSymbol
-import wacc.Main._
 import wacc.Error._
 
 object parser {

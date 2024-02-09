@@ -25,20 +25,31 @@ object ASTNodes {
         valid = valid && func.check()
         checkValid(valid, "function", func)
       }
-      statement match {
-        case statements: Statements =>
-          for (stat <- statements.stmts) {
-            stat match {
-              case Return(_) => System.exit(SEMANTIC_ERR_CODE)
-              case _ =>
-            }
-          }
-        case _ =>
-      }
+      checkReturns(statement)
       if (valid && statement.check()) {
         System.exit(SUCCESS_CODE)
       } else {
         System.exit(SEMANTIC_ERR_CODE)
+      }
+    }
+
+    def checkReturns(stmt: Statement): Unit = {
+      stmt match {
+        case stmts: Statements =>
+          for (stat <- stmts.stmts) {
+            stat match {
+              case Return(_) => System.exit(SEMANTIC_ERR_CODE)
+              case While(_,body) => checkReturns(body)
+              case If(_,thenS,elseS) => {
+                checkReturns(thenS)
+                checkReturns(elseS)
+              }
+              case Scope(body) => checkReturns(body)
+              case _ =>
+            }
+          }
+        case Return(_) => System.exit(SEMANTIC_ERR_CODE)
+        case _ =>
       }
     }
   }
@@ -50,8 +61,10 @@ object ASTNodes {
       var valid: Boolean = true
       val tempSymbolTable: SymbolTable = currentSymbolTable
       currentSymbolTable = symbolTable
+
       valid = valid && body.check()
       checkValid(valid, "body", body)
+
       currentSymbolTable = tempSymbolTable
       valid
     }
@@ -86,7 +99,15 @@ object ASTNodes {
         case PairT(_, _) => true
         case _ => false
       }
-      valid = valid && (_type == tValue || isPair && (tValue == PairLiter("null") || tValue == PairNull()))
+      val isEmptyArrayLiteral = tValue match {
+        case ArrayT(BaseT("Empty"), _) => true
+        case _ => false
+      }
+      valid = valid &&
+        (_type == tValue ||
+          isPair && (tValue == PairLiter("null") || tValue == PairNull()) ||
+          isEmptyArrayLiteral && _type.isInstanceOf[ArrayT] ||
+          _type == BaseT("string") && tValue == ArrayT(BaseT("char"), 1))
       checkValid(valid, "type not same as Rvalue type", ident)
       valid
     }
@@ -97,21 +118,36 @@ object ASTNodes {
       var valid: Boolean = lvalue.check() && rvalue.check()
       checkValid(valid, "lvalue and rvalue", lvalue)
       val tlvalue = lvalue.getType()
-      val trvalue = rvalue.getType()
+      var trvalue = rvalue.getType()
+      trvalue = trvalue match {
+        case ArrayT(BaseT("Empty"),0) => PairNull()
+        case _ => trvalue
+      }
       val isPair = tlvalue match {
         case PairT(_, _) => true
         case _ => false
       }
-      valid = valid && (tlvalue == trvalue || isPair && (trvalue == PairLiter("null") || trvalue == PairNull()))
+      valid = valid && (tlvalue == trvalue ||
+        isPair && (trvalue == PairLiter("null") ||
+          trvalue == PairNull()))
+      lvalue match {
+        case ident: Ident => {
+          if (ident.isFunction()) {
+            valid = false
+          }
+        }
+        case _ =>
+      }
 
-//      valid = valid && (lvalue.getType() match {
-//        case PairNull() => rvalue.getType() match {
-//          case PairT(_, _) => true
-//          case PairNull() => true
-//          case PairLiter("null") => true
-//          case _ => false
-//        }
-//      })
+      //      valid = valid && (lvalue.getType() match {
+      //        case PairNull() => rvalue.getType() match {
+      //          case PairT(_, _) => true
+      //          case PairNull() => true
+      //          case PairLiter("null") => true
+      //          case _ => false
+      //        }
+      //      })
+
       checkValid(valid, "lvalue and rvalue type", lvalue)
       valid
     }
@@ -119,7 +155,7 @@ object ASTNodes {
 
   case class Read(lvalue: LValue) extends Statement {
     def check(): Boolean = {
-      lvalue.check()
+      lvalue.check() && (lvalue.getType() == BaseT("int") || lvalue.getType() == BaseT("char"))
     }
   }
 
@@ -290,27 +326,41 @@ object ASTNodes {
         valid = valid && elem.check()
         checkValid(valid, "array elem", elem)
       }
-      if (elems.isEmpty) {
-        valid = true
-      } else {
-        var t1: Type = elems.head.getType()
-        for (elem <- elems) {
-          def tn: Type = elem.getType()
-          // MUST CONSIDER [char[], string] CASE
-          if (tn != t1) {
-            false
+
+      def isStringOrCharArray(t: Type): Boolean = t match {
+        case BaseT("string") => true
+        case ArrayT(BaseT("char"), _) => true
+        case _ => false
+      }
+
+      valid = elems match {
+        case head :: tail =>
+          val firstType = head.getType()
+          firstType match {
+            case BaseT("string") | ArrayT(BaseT("char"), _) =>
+              tail.forall(elem => isStringOrCharArray(elem.getType()))
+            case _ => tail.forall(elem => elem.getType() == firstType)
           }
-        }
+        case _ => true
       }
       valid
     }
 
     def getType(): Type = {
       if (elems.isEmpty) {
-        /* Need to fix type */
-        ArrayT(BaseT("ERROR"), 0)
+        ArrayT(BaseT("Empty"), 0)
       } else {
-        ArrayT(elems.head.getType(), 1)
+        // Must use strongest type in list not just head
+        // e.g. string not char[]
+        if (elems.exists(elem => elem.getType() == BaseT("string"))) {
+          ArrayT(BaseT("string"), 1)
+        } else {
+          // If there's no string, use the type of the head
+          elems.head.getType() match {
+            case ArrayT(t, n) => ArrayT(t, n + 1)
+            case t => ArrayT(t, 1)
+          }
+        }
       }
     }
   }
@@ -356,14 +406,28 @@ object ASTNodes {
     }
 
     def getType(): Type = {
-      def parentT: PairT = lvalue.getType().asInstanceOf[PairT]
-
-      def childT: PairElemT = func match {
-        case "fst" => parentT.pet1
-        case "snd" => parentT.pet2
+      def parentT: Type = lvalue.getType()
+      if (parentT.isInstanceOf[PairT]) {
+        def pairT: PairT = parentT.asInstanceOf[PairT]
+        var childT: Type = func match {
+          case "fst" => pairT.pet1
+          case "snd" => pairT.pet2
+        }
+        if (childT == PairNull()) {
+          childT = lvalue match {
+            case Ident(str) => {
+              currentSymbolTable.lookupAllVariables(str) match {
+                case Some(Declare(t,_,_)) => t
+                case _ => childT
+              }
+            }
+            case _ => childT
+          }
+        }
+        childT
+      } else {
+        BaseT("ERROR")
       }
-
-      childT
     }
   }
 
@@ -372,9 +436,18 @@ object ASTNodes {
       var valid: Boolean = true
       valid = valid && funcName.check()
       checkValid(valid, "function name", funcName)
-      for (arg <- args) {
-        valid = valid && arg.check()
-        checkValid(valid, "argument", arg)
+      val funcForm = funcName.getNode()
+      funcForm match {
+        case Function(t, ident, params, body) => {
+          valid = valid && args.length == params.length
+          checkValid(valid, "number of arguments", Call(funcName, args))
+          for (i <- 0 to params.length - 1) {
+            args(i).check()
+            valid = valid && args(i).getType() == params(i).getType()
+            checkValid(valid, "argument", args(i))
+          }
+        }
+        case _ =>
       }
       valid
     }
@@ -649,23 +722,43 @@ object ASTNodes {
 
   case class Ident(str: String) extends Atom with LValue {
     def check(): Boolean = {
-      currentSymbolTable.lookupAll(str).isDefined
+      currentSymbolTable.lookupAllVariables(str).isDefined ||
+        currentSymbolTable.lookupAllFunctions(str).isDefined
     }
 
     def getType(): Type = {
-      currentSymbolTable.lookupAll(str) match {
+      currentSymbolTable.lookupAllVariables(str) match {
         case Some(x) => x match {
           case param: Param =>
-            param.getType()
+            param._type
           case declare: Declare =>
             declare._type
-          case function: Function =>
-            function._type
           case _ =>
             BaseT("ERROR")
         }
-        case None => BaseT("ERROR")
+        case None => currentSymbolTable.lookupAllFunctions(str) match {
+          case Some(x) => x._type
+          case None => BaseT("ERROR")
+        }
       }
+    }
+
+    def getNode(): ASTNode = {
+      currentSymbolTable.lookupAllVariables(str) match {
+        case Some(x) => x
+        case None => currentSymbolTable.lookupAllFunctions(str) match {
+          case Some(x) => x
+          case None => BaseT("ERROR")
+        }
+      }
+    }
+
+    def isFunction(): Boolean = {
+      currentSymbolTable.lookupAllFunctions(str).isDefined
+    }
+
+    def isVariable(): Boolean = {
+      currentSymbolTable.lookupAllVariables(str).isDefined
     }
   }
 
@@ -674,14 +767,33 @@ object ASTNodes {
       var valid: Boolean = true
       valid = valid && ident.check()
       for (arg <- args) {
-        valid = valid && (arg.getType() == ident.getType())
+        valid = valid && (arg.getType() == BaseT("int"))
         checkValid(valid, "array elem", arg)
+      }
+      val tident = ident.getType()
+      if (tident.isInstanceOf[ArrayT]) {
+        valid = valid && tident.asInstanceOf[ArrayT].dim >= args.length
+      } else {
+        System.exit(SEMANTIC_ERR_CODE)
       }
       valid
     }
 
     def getType(): Type = {
-      ident.getType()
+      ident.getType() match {
+        case ArrayT(t, n) if n > args.length => ArrayT(t, n - args.length)
+        case ArrayT(t, n) if n == args.length => t
+        case ArrayT(_, _) => ident.getType()
+        case _ => BaseT("ERROR")
+      }
+    }
+
+    def getElemType(): Type = {
+      ident.getType() match {
+        case ArrayT(t, n) if n > 1 => ArrayT(t, n-1)
+        case ArrayT(t, _) => t
+        case _ => BaseT("ERROR")
+      }
     }
   }
 }
