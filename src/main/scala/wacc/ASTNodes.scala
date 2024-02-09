@@ -1,6 +1,7 @@
 package wacc
 
 import wacc.Main.{SEMANTIC_ERR_CODE, SUCCESS_CODE}
+import parsley.state
 
 object ASTNodes {
 
@@ -25,20 +26,31 @@ object ASTNodes {
         valid = valid && func.check()
         checkValid(valid, "function", func)
       }
-      statement match {
-        case statements: Statements =>
-          for (stat <- statements.stmts) {
-            stat match {
-              case Return(_) => System.exit(SEMANTIC_ERR_CODE)
-              case _ =>
-            }
-          }
-        case _ =>
-      }
+      checkReturns(statement)
       if (valid && statement.check()) {
         System.exit(SUCCESS_CODE)
       } else {
         System.exit(SEMANTIC_ERR_CODE)
+      }
+    }
+
+    def checkReturns(stmt: Statement): Unit = {
+      stmt match {
+        case stmts: Statements =>
+          for (stat <- stmts.stmts) {
+            stat match {
+              case Return(_) => System.exit(SEMANTIC_ERR_CODE)
+              case While(_,body) => checkReturns(body)
+              case If(_,thenS,elseS) => {
+                checkReturns(thenS)
+                checkReturns(elseS)
+              }
+              case Scope(body) => checkReturns(body)
+              case _ =>
+            }
+          }
+        case Return(_) => System.exit(SEMANTIC_ERR_CODE)
+        case _ =>
       }
     }
   }
@@ -97,10 +109,6 @@ object ASTNodes {
          isPair && (tValue == PairLiter("null") || tValue == PairNull()) ||
          isEmptyArrayLiteral && _type.isInstanceOf[ArrayT] ||
          _type == BaseT("string") && tValue == ArrayT(BaseT("char"), 1))
-
-      println("_type is: " + _type)
-      println("tvalue is: " + tValue) 
-      
       checkValid(valid, "type not same as Rvalue type", ident)
       valid
     }
@@ -109,8 +117,6 @@ object ASTNodes {
   case class Assign(lvalue: LValue, rvalue: RValue) extends Statement {
     def check(): Boolean = {
       var valid: Boolean = lvalue.check() && rvalue.check()
-      println("lvalue is: " + lvalue + " which is: " + lvalue.check())
-      println("rvalue is: " + rvalue + " which is: " + rvalue.check())
       checkValid(valid, "lvalue and rvalue", lvalue)
       val tlvalue = lvalue.getType()
       var trvalue = rvalue.getType()
@@ -134,9 +140,6 @@ object ASTNodes {
 //          case _ => false
 //        }
 //      })
-
-      println("tlvalue is: " + tlvalue)
-      println("trvalue is: " + trvalue)
 
       checkValid(valid, "lvalue and rvalue type", lvalue)
       valid
@@ -202,7 +205,6 @@ object ASTNodes {
     def check(): Boolean = {
       var valid: Boolean = true
       for (stat <- stmts) {
-        println("Starting statement: " + stat)
         valid = valid && stat.check()
         checkValid(valid, "statement", stat)
       }
@@ -397,20 +399,16 @@ object ASTNodes {
     }
 
     def getType(): Type = {
-      println("func is: " + func)
       def parentT: Type = lvalue.getType()
-      println("parentT is: " + parentT)
       if (parentT.isInstanceOf[PairT]) {
         def pairT: PairT = parentT.asInstanceOf[PairT]
         var childT: Type = func match {
           case "fst" => pairT.pet1
           case "snd" => pairT.pet2
         }
-        println("childT before is: " + childT)
         if (childT == PairNull()) {
           childT = lvalue match {
             case Ident(str) => {
-              println("Ident has string: " + str)
               currentSymbolTable.lookupAllVariables(str) match {
                 case Some(Declare(t,_,_)) => t
                 case _ => childT
@@ -419,7 +417,6 @@ object ASTNodes {
             case _ => childT
           }
         }
-        println("childT after is: " + childT)
         childT
       } else {
         BaseT("ERROR")
