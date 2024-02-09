@@ -117,11 +117,6 @@ object lexer {
   val call: Parsley[String] = lexer.lexeme("call").label("function call")
   val skip: Parsley[String] = lexer.lexeme("skip")
   val is: Parsley[String] = lexer.lexeme("is")
-  // One of these tokens breaks the parser
-  // val pair: Parsley[String] = lexer.lexeme("pair").label("pair type")
-  // val pairdef: Parsley[String] = lexer.lexeme("pair(").label("pair definition")
-  // val newpairdef: Parsley[String] = lexer.lexeme("newpair(").label("newpair definition")
-
   val int: Parsley[Int] = lexer.lexeme.integer.decimal32.label("integer literal")
   val char: Parsley[Char] = lexer.lexeme.character.ascii.label("character literal")
   val str: Parsley[String] = lexer.lexeme.string.ascii.label("string literal")
