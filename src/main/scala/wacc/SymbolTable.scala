@@ -40,9 +40,6 @@ class SymbolTable(var parent: Option[SymbolTable],
         }
         generateSymbolTable(func.body)
 
-      case Statements(stmts) =>
-        stmts.foreach(generateSymbolTable)
-
       case Declare(_, ident, _) =>
         if (lookupVariable(ident.str).isDefined) {
           System.exit(SEMANTIC_ERR_CODE)
