@@ -131,6 +131,14 @@ object ASTNodes {
       valid = valid && (tlvalue == trvalue || 
                         isPair && (trvalue == PairLiter("null") || 
                         trvalue == PairNull()))
+      lvalue match {
+        case ident: Ident => {
+          if (ident.isFunction()) {
+            valid = false
+          }
+        }
+        case _ =>
+      }
 
 //      valid = valid && (lvalue.getType() match {
 //        case PairNull() => rvalue.getType() match {
@@ -429,9 +437,18 @@ object ASTNodes {
       var valid: Boolean = true
       valid = valid && funcName.check()
       checkValid(valid, "function name", funcName)
-      for (arg <- args) {
-        valid = valid && arg.check()
-        checkValid(valid, "argument", arg)
+      val funcForm = funcName.getNode()
+      funcForm match {
+        case Function(t, ident, params, body) => {
+          valid = valid && args.length == params.length
+          checkValid(valid, "number of arguments", Call(funcName, args))
+          for (i <- 0 to params.length - 1) {
+            args(i).check()
+            valid = valid && args(i).getType() == params(i).getType()
+            checkValid(valid, "argument", args(i))
+          }
+        }
+        case _ =>
       }
       valid
     }
@@ -725,6 +742,24 @@ object ASTNodes {
           case None => BaseT("ERROR")
         }
       }
+    }
+
+    def getNode(): ASTNode = {
+      currentSymbolTable.lookupAllVariables(str) match {
+        case Some(x) => x
+        case None => currentSymbolTable.lookupAllFunctions(str) match {
+          case Some(x) => x
+          case None => BaseT("ERROR")
+        }
+      }
+    }
+
+    def isFunction(): Boolean = {
+      currentSymbolTable.lookupAllFunctions(str).isDefined
+    }
+
+    def isVariable(): Boolean = {
+      currentSymbolTable.lookupAllVariables(str).isDefined
     }
   }
 
