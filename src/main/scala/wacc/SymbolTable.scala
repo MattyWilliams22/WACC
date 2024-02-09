@@ -6,6 +6,7 @@ import wacc.Main.SEMANTIC_ERR_CODE
 import scala.collection.mutable
 
 class SymbolTable(var parent: Option[SymbolTable],
+                  var canAccessVars: Boolean = true,
                   val funcMap: mutable.Map[String, Function] = mutable.Map.empty[String, Function],
                   val varMap: mutable.Map[String, ASTNode] = mutable.Map.empty[String, ASTNode]) {
 
@@ -24,9 +25,10 @@ class SymbolTable(var parent: Option[SymbolTable],
           if (lookupFunction(func.ident.str).isDefined) {
             System.exit(SEMANTIC_ERR_CODE)
           }
-          val symbolTable = func.symbolTable
-          symbolTable.parent = Option(this)
           addFunction(func.ident.str, func)
+          val symbolTable = func.argSymbolTable
+          symbolTable.parent = Option(this)
+          symbolTable.canAccessVars = false
           symbolTable.generateSymbolTable(func)
         }
         generateSymbolTable(prog.statement)
@@ -38,7 +40,7 @@ class SymbolTable(var parent: Option[SymbolTable],
           }
           addVariable(param.ident.str, param)
         }
-        generateSymbolTable(func.body)
+        func.bodySymbolTable.generateSymbolTable(func.body)
 
       case Declare(_, ident, _) =>
         if (lookupVariable(ident.str).isDefined) {
@@ -73,15 +75,18 @@ class SymbolTable(var parent: Option[SymbolTable],
 
   def lookupAllVariables(name: String): Option[ASTNode] = {
     var table: Option[SymbolTable] = Option(this)
-
-    while (table.isDefined) {
-      val res = table.get.lookupVariable(name)
-      if (res.isDefined) {
-        return res
+    if (canAccessVars) {
+      while (table.isDefined) {
+        val res = table.get.lookupVariable(name)
+        if (res.isDefined) {
+          return res
+        }
+        table = table.get.getParent()
       }
-      table = table.get.getParent()
+      None
+    } else {
+      table.get.lookupVariable(name)
     }
-    None
   }
 
   def lookupAllFunctions(name: String): Option[Function] = {

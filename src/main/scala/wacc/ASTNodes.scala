@@ -55,12 +55,13 @@ object ASTNodes {
   }
 
   case class Function(_type: Type, ident: Ident, param_list: List[Param], body: Statement) extends ASTNode {
-    val symbolTable: SymbolTable = new SymbolTable(None)
+    val argSymbolTable: SymbolTable = new SymbolTable(None)
+    val bodySymbolTable: SymbolTable = new SymbolTable(Option(argSymbolTable))
 
     def check(): Boolean = {
       var valid: Boolean = true
       val tempSymbolTable: SymbolTable = currentSymbolTable
-      currentSymbolTable = symbolTable
+      currentSymbolTable = bodySymbolTable
 
       valid = valid && body.check()
       checkValid(valid, "body", body)
