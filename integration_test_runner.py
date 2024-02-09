@@ -115,19 +115,23 @@ if len(sys.argv) < 2:
   print(f"    Syntax: {syntaxPasses} / {syntaxTotal}")
   print(f"    Semantic: {semanticPasses} / {semanticTotal}")
   print(f"Total: {totalPasses} / {total}")
+  print("Ignored: 0 tests")
 elif sys.argv[1] == "--syntax":
   print(f"Finished running tests. Results: ")
   print(f"    Valid: {validPasses} / {validTotal}")
   print(f"    Syntax: {syntaxPasses} / {syntaxTotal}")
   print(f"Total: {totalPasses} / {total}")
+  print(f"Ignored: {len(tests['valid'] + tests['invalid']) - total} tests")
 elif sys.argv[1] == "--semantic":
   print(f"Finished running tests. Results: ")
   print(f"    Valid: {validPasses} / {validTotal}")
   print(f"    Semantic: {semanticPasses} / {semanticTotal}")
   print(f"Total: {totalPasses} / {total}")
+  print(f"Ignored: {len(tests['valid'] + tests['invalid']) - total} tests")
 else:
   print(f"Finished running tests {'-'.join(sys.argv[1:])}. Results: "
         f"{totalPasses} / {total}")
+  print(f"Ignored {len(tests['valid'] + tests['invalid']) - total} tests")
 
 if len(errorTests) > 0:
   print("")

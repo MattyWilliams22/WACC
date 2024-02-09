@@ -15,7 +15,7 @@ import Error._
 object Main {
 
   def main(args: Array[String]): Unit = {
-    println("Hello WACC!")
+    println("Compiling...")
 
     /* Exits if arguments are not defined */
     if (args.length < 1) {
