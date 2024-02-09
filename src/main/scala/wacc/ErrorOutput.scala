@@ -13,7 +13,7 @@ object ErrorOutput {
   val SEMANTIC_ERR_CODE = 200
   val SUCCESS_CODE = 0
 
-  def output(log: ListBuffer[SemanticError], syntaxError: Option[SyntaxError], file: String, exitStatus: Int): Unit = {
+  def output(syntaxError: Option[SyntaxError], file: String, exitStatus: Int): Unit = {
     if (exitStatus == SUCCESS_CODE) {
       println("Program compiled successfully")
       return
@@ -73,77 +73,6 @@ object ErrorOutput {
       sb.append("| " + line.line + "\n")
       sb.append("| " + (" " * line.errorPointsAt) + "^" * math.min(line.errorWidth, (line.line.length - line.errorPointsAt)) + "\n")
       sb.append("Lines after: \n" + line.linesAfter.mkString("\n ") + "\n")
-      sb.toString()
-    }
-  }
-
-  class SemanticErrorParser(log: ListBuffer[SemanticError], filename: String) extends ErrorParser {
-    override def parseError(): String = {
-      val sb = new StringBuilder()
-      sb.append("Semantic Error: " + filename + "\n")
-      for (error <- log) {
-        error match {
-          case UnknownIdentifierError(pos, ident, context) => {
-            sb.append("Unknown identifier: " + ident + " at line " + pos._1 + " at column " + pos._2 + "\n")
-          }
-
-          case TypeError(pos, expected, actual, context) => {
-            sb.append("Type Error: Expected " + expected + " but got " + actual + " at line " + pos._1 + " at column " + pos._2 + "\n")
-            if (context.isDefined) {
-              sb.append("Context: " + context.get + "\n")
-            }
-          }
-
-          case TypeErasureError(pos, context) => {
-            sb.append("Type Erasure Error at line " + pos._1 + " at column " + pos._2 + "\n")
-            if (context.isDefined) {
-              sb.append("Context: " + context.get + "\n")
-            }
-          }
-
-          case UnknownObjectError(pos, context) => {
-            sb.append("Unknown object at line " + pos._1 + " at column " + pos._2 + "\n")
-            if (context.isDefined) {
-              sb.append("Context: " + context.get + "\n")
-            }
-          }
-
-          case InvalidScopeError(pos, member, context) => {
-            sb.append("Invalid scope: " + member + " at line " + pos._1 + " at column " + pos._2 + "\n")
-            if (context.isDefined) {
-              sb.append("Context: " + context.get + "\n")
-            }
-          }
-
-          case ArityMismatch(pos, expected, actual, context) => {
-            sb.append("Arity Mismatch: Expected " + expected + " but got " + actual + " at line " + pos._1 + " at column " + pos._2 + "\n")
-            if (context.isDefined) {
-              sb.append("Context: " + context.get + "\n")
-            }
-          }
-
-          case ArrayError(pos, name, maxDim, context) => {
-            sb.append("Array Error: " + name + " has " + maxDim + " dimensions at line " + pos._1 + " at column " + pos._2 + "\n")
-            if (context.isDefined) {
-              sb.append("Context: " + context.get + "\n")
-            }
-          }
-
-          case DuplicateIdentifier(pos, ident, context) => {
-            sb.append("Duplicate Identifier: " + ident + " at line " + pos._1 + " at column " + pos._2 + "\n")
-            if (context.isDefined) {
-              sb.append("Context: " + context.get + "\n")
-            }
-          }
-
-          case InvalidReturnError(pos, context) => {
-            sb.append("Invalid Return at line " + pos._1 + " at column " + pos._2 + "\n")
-            if (context.isDefined) {
-              sb.append("Context: " + context.get + "\n")
-            }
-          }
-        }
-      }
       sb.toString()
     }
   }

@@ -77,7 +77,7 @@ object Main {
           System.exit(SUCCESS_CODE)
         }
         case Failure(msg) => {
-          output(ListBuffer.empty[Error.SemanticError], Some(msg), args(0), SYNTAX_ERR_CODE)
+          output(Some(msg), args(0), SYNTAX_ERR_CODE)
           System.exit(SYNTAX_ERR_CODE)
         }
       }
