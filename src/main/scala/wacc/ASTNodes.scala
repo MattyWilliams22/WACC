@@ -65,8 +65,37 @@ object ASTNodes {
       valid = valid && body.check()
       checkValid(valid, "body", body)
 
+      val retT = getReturn(body)
+      valid = valid && retT == _type
+
       currentSymbolTable = tempSymbolTable
       valid
+    }
+
+    def getReturn(stmt: Statement): Type = {
+      stmt match {
+        case stmts: Statements =>
+          for (stat <- stmts.stmts) {
+            val returnType = getReturn(stat)
+            if (returnType != BaseT("ERROR")) {
+              return returnType // Return the type immediately if a Return statement is found
+            }
+          }
+          BaseT("ERROR") // If no Return statement is found in the block, return ERROR type
+
+        case r: Return => r.getType() // If a Return statement is encountered, return its type
+        case While(_, body) => getReturn(body) // Recursively handle other statements
+        case If(_, thenS, elseS) =>
+          val tthen = getReturn(thenS)
+          val telse = getReturn(elseS)
+          if (tthen != BaseT("ERROR") && telse != BaseT("ERROR") && tthen == telse) {
+            tthen
+          } else {
+            BaseT("ERROR")
+          }
+        case Scope(body) => getReturn(body)
+        case _ => BaseT("ERROR") // For any other statement type, return ERROR type
+      }
     }
   }
 
@@ -242,6 +271,10 @@ object ASTNodes {
   case class Return(exp: Expr) extends Statement {
     def check(): Boolean = {
       exp.check()
+    }
+
+    def getType(): Type = {
+      exp.getType()
     }
   }
 
