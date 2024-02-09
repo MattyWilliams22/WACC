@@ -1,6 +1,7 @@
 package wacc
 
 import wacc.Main.{SEMANTIC_ERR_CODE, SUCCESS_CODE}
+import parsley.state
 
 object ASTNodes {
 
