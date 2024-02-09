@@ -2,7 +2,6 @@ package wacc
 
 import java.io.File
 
-import scala.collection.mutable.ListBuffer
 import scala.io.Source
 
 import parsley.{Failure, Success, Result}

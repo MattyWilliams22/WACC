@@ -85,7 +85,7 @@ object ASTNodes {
 
       // Check that all the return statements have type _type
       val retTs = getReturns(body)
-      var retT = retTs.head
+      val retT = retTs.head
       for (thisRetT <- retTs) {
         valid = valid && thisRetT == retT
         checkValid(valid, "Return values have different types", body)
@@ -582,27 +582,29 @@ object ASTNodes {
       // Get the type of the parent of the pair element
       def parentT: Type = lvalue.getType()
       // If the parent is a pair, return the type of the child
-      if (parentT.isInstanceOf[PairT]) {
-        def pairT: PairT = parentT.asInstanceOf[PairT]
-        var childT: Type = func match {
-          case "fst" => pairT.pet1
-          case "snd" => pairT.pet2
-        }
-        if (childT == PairNull()) {
-          childT = lvalue match {
-            case Ident(str) => {
-              currentSymbolTable.lookupAllVariables(str) match {
-                case Some(Declare(t,_,_)) => t
-                case _ => childT
-              }
-            }
-            case _ => childT
+      parentT match {
+        case t1: PairT =>
+          def pairT: PairT = t1
+
+          var childT: Type = func match {
+            case "fst" => pairT.pet1
+            case "snd" => pairT.pet2
           }
-        }
-        childT
-      } else {
-        // If the parent is not a pair, return an error
-        BaseT("ERROR")
+          if (childT == PairNull()) {
+            childT = lvalue match {
+              case Ident(str) => {
+                currentSymbolTable.lookupAllVariables(str) match {
+                  case Some(Declare(t, _, _)) => t
+                  case _ => childT
+                }
+              }
+              case _ => childT
+            }
+          }
+          childT
+        case _ =>
+          // If the parent is not a pair, return an error
+          BaseT("ERROR")
       }
     }
   }
@@ -1118,11 +1120,6 @@ object ASTNodes {
     def isFunction(): Boolean = {
       currentSymbolTable.lookupAllFunctions(str).isDefined
     }
-
-    // Check if the identifier is a variable
-    def isVariable(): Boolean = {
-      currentSymbolTable.lookupAllVariables(str).isDefined
-    }
   }
 
   case class ArrayElem(ident: Ident, indices: List[Expr]) extends Atom with LValue {
@@ -1138,12 +1135,13 @@ object ASTNodes {
         checkValid(valid, "Index must have type int", index)
       }
       val tident = ident.getType()
-      if (tident.isInstanceOf[ArrayT]) {
-        // Check that the number of indices is less than or equal to the dimensions of the array
-        valid = valid && tident.asInstanceOf[ArrayT].dim >= indices.length
-        checkValid(valid, "Invalid number of indices", this)
-      } else {
-        checkValid(false, "Identifier must be have type array", this)
+      tident match {
+        case t: ArrayT =>
+          // Check that the number of indices is less than or equal to the dimensions of the array
+          valid = valid && t.dim >= indices.length
+          checkValid(valid, "Invalid number of indices", this)
+        case _ =>
+          checkValid(false, "Identifier must be have type array", this)
       }
       valid
     }
