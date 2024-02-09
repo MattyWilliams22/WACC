@@ -40,7 +40,7 @@ object ErrorOutput {
   class SyntaxErrorParser(error: SyntaxError, filename: String) extends ErrorParser {
     override def parseError(): String = {
       val sb = new StringBuilder()
-      sb.append("Syntax Error: " + filename + "on line " + error.pos._1 + " at column " + error.pos._2 + "\n")
+      sb.append("Syntax Error: " + filename + " on line " + error.pos._1 + " at column " + error.pos._2 + "\n")
 
       error.lines match {
         case VanillaError(unexpected, expecteds, reasons, line) =>{
@@ -53,26 +53,27 @@ object ErrorOutput {
           if (reasons.nonEmpty) {
             sb.append("Reasons: " + reasons.mkString(", ") + "\n")
           }
-          sb.append("Line: " + lineInfoToString(line) + "\n")
-          sb.append("\n")
+          sb.append(lineInfoToString(line))
         }
 
         case SpecializedError(msgs, line) => {
           sb.append("Error: " + msgs.mkString(", ") + "\n")
-          sb.append("Line: " + lineInfoToString(line) + "\n")
-          sb.append("\n")
+          sb.append(lineInfoToString(line))
         }
       }
-      sb.append("\n")
       sb.toString()
     }
 
     def lineInfoToString(line: LineInfo): String = {
       val sb = new StringBuilder()
-      sb.append("Lines before: \n" + line.linesBefore.mkString("\n ") + "\n")
+      if (line.linesBefore.nonEmpty) {
+        sb.append("Lines before: \n" + line.linesBefore.mkString("\n ") + "\n")
+      }
       sb.append("| " + line.line + "\n")
       sb.append("| " + (" " * line.errorPointsAt) + "^" * math.min(line.errorWidth, (line.line.length - line.errorPointsAt)) + "\n")
-      sb.append("Lines after: \n" + line.linesAfter.mkString("\n ") + "\n")
+      if (line.linesAfter.nonEmpty) {
+        sb.append("Lines after: \n" + line.linesAfter.mkString("\n ") + "\n")
+      }
       sb.toString()
     }
   }
