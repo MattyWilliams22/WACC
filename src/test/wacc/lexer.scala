@@ -2,7 +2,9 @@ package wacc
 
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+
 import parsley.{Success, Result, Parsley, Failure}
+
 import wacc.lexer._
 
 class LexerSpec extends AnyFlatSpec with Matchers {

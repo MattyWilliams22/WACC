@@ -1,9 +1,9 @@
 package wacc
 
+import scala.collection.mutable
+
 import wacc.ASTNodes._
 import wacc.Main.SEMANTIC_ERR_CODE
-
-import scala.collection.mutable
 
 class SymbolTable(var parent: Option[SymbolTable],
                   var canAccessVars: Boolean = true,

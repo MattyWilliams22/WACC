@@ -2,6 +2,7 @@ package wacc
 
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+
 import wacc.ASTNodes._
 import wacc.NoExitSecurityManager
 

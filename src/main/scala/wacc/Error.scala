@@ -2,7 +2,8 @@ package wacc
 
 import parsley.errors.ErrorBuilder
 import parsley.errors.tokenextractors.MatchParserDemand
-import ASTNodes.Type
+
+import wacc.ASTNodes.Type
 
 object Error {
 

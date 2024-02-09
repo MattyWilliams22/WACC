@@ -1,14 +1,15 @@
 package wacc
 
+import java.io.File
+
+import scala.collection.mutable.ListBuffer
+import scala.io.Source
+
 import parsley.{Failure, Success, Result}
 
-import java.io.File
-import scala.io.Source
 import wacc.ASTNodes._
-import scala.collection.mutable.ListBuffer
-
-import ErrorOutput._
-import Error._
+import wacc.ErrorOutput._
+import wacc.Error._
 
 object Main {
   val FILE_ERR_CODE = 150

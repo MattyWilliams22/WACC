@@ -1,8 +1,9 @@
 package wacc
 
+import java.io.{ByteArrayOutputStream, File, PrintStream}
+
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import java.io.{ByteArrayOutputStream, File, PrintStream}
 
 class MainSpec extends AnyFlatSpec with Matchers {
 
