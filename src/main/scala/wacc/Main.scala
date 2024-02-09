@@ -13,6 +13,10 @@ import ErrorOutput._
 import Error._
 
 object Main {
+  val FILE_ERR_CODE = 150
+  val SYNTAX_ERR_CODE = 100
+  val SEMANTIC_ERR_CODE = 200
+  val SUCCESS_CODE = 0
 
   def main(args: Array[String]): Unit = {
     println("Compiling...")
@@ -67,9 +71,12 @@ object Main {
       /* Parsing of expression */
       result match {
         case Success(x) => {
-          // Semantic Analysis
           println(s"$arg = $x")
-          System.exit(0)
+          // Semantic Analysis
+          val semanticAnalyser = new SemanticAnalyser(x)
+          semanticAnalyser.analyse()
+          println(s"$arg = $x")
+          System.exit(SUCCESS_CODE)
         }
         case Failure(msg) => {
           output(ListBuffer.empty[Error.SemanticError], Some(msg), args(0), SYNTAX_ERR_CODE)
