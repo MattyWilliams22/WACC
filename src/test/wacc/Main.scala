@@ -6,6 +6,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
 class MainSpec extends AnyFlatSpec with Matchers {
+  System.setSecurityManager(new NoExitSecurityManager)
 
   private def captureOutput(block: => Unit): String = {
     val outContent = new ByteArrayOutputStream()
