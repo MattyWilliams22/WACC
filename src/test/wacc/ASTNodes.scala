@@ -3,43 +3,40 @@ package wacc
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import wacc.ASTNodes._
+import wacc.NoExitSecurityManager
 
 class ASTNodesSpec extends AnyFlatSpec with Matchers {
+  System.setSecurityManager(new NoExitSecurityManager)
+
   // Test for Program
   "Program" should "check functions and statement" in {
     val program = Program(List(), Skip())
-    program.check() shouldBe true
+    // All Programs call exit
+    val exception = intercept[SecurityException](program.check())
+    exception.getMessage should include ("Program compiled successfully")
   }
 
   it should "return false if any function is invalid" in {
     val invalidFunction = Function(BaseT("invalid"), Ident("func"), List(), Skip())
     val program = Program(List(invalidFunction), Skip())
-    program.check() shouldBe false
+    val exception = intercept[SecurityException](program.check())
+    exception.getMessage should include ("Semantic Error")
   }
 
   it should "return false if the statement is invalid" in {
     val program = Program(List(), Assign(Ident("x"), Num(5)))
-    program.check() shouldBe false
+    val exception = intercept[SecurityException](program.check())
+    exception.getMessage should include ("Semantic Error")
   }
 
   // Test for Function
-  "Function" should "check type, identifier, parameters, and body" ignore {
-    val func = Function(BaseT("int"), Ident("func"), List(), Skip())
-    func.check() shouldBe true
-  }
-
-  it should "return false if type or identifier is invalid" in {
+  "Function" should "return false if type or identifier is invalid" in {
     val invalidFunc = Function(BaseT("invalid"), Ident("func"), List(), Skip())
     invalidFunc.check() shouldBe false
   }
 
   // Test for Param
-  "Param" should "check type and identifier" ignore {
-    val param = Param(BaseT("int"), Ident("param"))
-    param.check() shouldBe true
-  }
-
-  it should "return false if type or identifier is invalid" in {
+  "Param" should "return false if type or identifier is invalid" in {
     val invalidParam = Param(BaseT("invalid"), Ident("param"))
     invalidParam.check() shouldBe false
   }
@@ -51,29 +48,31 @@ class ASTNodesSpec extends AnyFlatSpec with Matchers {
   }
 
   // Test for Declare
-  "Declare" should "check type, identifier, and value" ignore {
+  "Declare" should "check type, identifier, and value" in {
     val declare = Declare(BaseT("int"), Ident("x"), Num(5))
     declare.check() shouldBe true
   }
 
-  it should "return false if type, identifier, or value is invalid" in {
+  it should "return false if type, identifier or value is invalid" in {
     val invalidDeclare = Declare(BaseT("invalid"), Ident("x"), Num(5))
-    invalidDeclare.check() shouldBe false
+    val exception = intercept[SecurityException](invalidDeclare.check())
+    exception.getMessage should include ("Semantic Error")
   }
 
   // Test for Assign
-  "Assign" should "check lvalue and rvalue" ignore {
+  "Assign" should "check lvalue and rvalue" in {
     val assign = Assign(Ident("x"), Num(5))
     assign.check() shouldBe true
   }
 
   it should "return false if lvalue or rvalue is invalid" in {
     val invalidAssign = Assign(Ident("x"), Bool("int"))
-    invalidAssign.check() shouldBe false
+    val exception = intercept[SecurityException](invalidAssign.check())
+    exception.getMessage should include ("Semantic Error")
   }
 
   // Test for Read
-  "Read" should "check lvalue" ignore {
+  "Read" should "check lvalue" in {
     val read = Read(Ident("x"))
     read.check() shouldBe true
   }
@@ -102,7 +101,8 @@ class ASTNodesSpec extends AnyFlatSpec with Matchers {
 
   it should "return false if condition or body is invalid" in {
     val invalidWhileStatement = While(Num(5), Skip())
-    invalidWhileStatement.check() shouldBe false
+    val exception = intercept[SecurityException](invalidWhileStatement.check())
+    exception.getMessage should include ("Semantic Error")
   }
 
   // Test for Scope
@@ -113,27 +113,24 @@ class ASTNodesSpec extends AnyFlatSpec with Matchers {
 
   it should "return false if body is invalid" in {
     val invalidScope = Scope(Assign(Ident("x"), Bool("4")))
-    invalidScope.check() shouldBe false
+    val exception = intercept[SecurityException](invalidScope.check())
+    exception.getMessage should include ("Semantic Error")
   }
 
   // Test for Statements
-  "Statements" should "check all statements in the list" ignore {
+  "Statements" should "check all statements in the list" in {
     val statements = Statements(List(Skip(), Assign(Ident("x"), Num(5))))
     statements.check() shouldBe true
   }
 
   it should "return false if any statement in the list is invalid" in {
     val invalidStatements = Statements(List(Skip(), Assign(Ident("x"), Bool("correct"))))
-    invalidStatements.check() shouldBe false
+    val exception = intercept[SecurityException](invalidStatements.check())
+    exception.getMessage should include ("Semantic Error")
   }
 
   // Test for Free
-  "Free" should "check expression is an array or pair" ignore {
-    val freeStatement = Free(ArrayElem(Ident("arr"), List(Num(0))))
-    freeStatement.check() shouldBe true
-  }
-
-  it should "return false if expression is not an array or pair" in {
+  "Free" should "return false if expression is not an array or pair" in {
     val invalidFreeStatement = Free(Num(5))
     invalidFreeStatement.check() shouldBe false
   }
@@ -227,12 +224,8 @@ class ASTNodesSpec extends AnyFlatSpec with Matchers {
   }
 
   // Test for Len
-  "Len" should "check the expression" ignore {
-    val lenExpression = Len(ArrayElem(Ident("arr"), List(Num(0))))
-    lenExpression.check() shouldBe true
-  }
 
-  it should "return false if the expression is invalid" in {
+  "Len" should "return false if the expression is invalid" in {
     val invalidLenExpression = Len(Bool("true"))
     invalidLenExpression.check() shouldBe false
   }
