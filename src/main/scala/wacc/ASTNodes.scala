@@ -65,36 +65,47 @@ object ASTNodes {
       valid = valid && body.check()
       checkValid(valid, "body", body)
 
-      val retT = getReturn(body)
+      val retTs = getReturns(body)
+      var retT = retTs.head
+      for (thisRetT <- retTs) {
+        println("return value: " + thisRetT)
+        valid = valid && thisRetT == retT
+      }
       valid = valid && retT == _type
 
       currentSymbolTable = tempSymbolTable
       valid
     }
 
-    def getReturn(stmt: Statement): Type = {
+    def getReturns(stmt: Statement): List[Type] = {
       stmt match {
         case stmts: Statements =>
+          var returnTypes: List[Type] = List.empty
           for (stat <- stmts.stmts) {
-            val returnType = getReturn(stat)
-            if (returnType != BaseT("ERROR")) {
+            val returnType = getReturns(stat)
+            if (returnType.nonEmpty && returnType.head != BaseT("ERROR")) {
               return returnType // Return the type immediately if a Return statement is found
             }
+            returnTypes = returnTypes ++ returnType
           }
-          BaseT("ERROR") // If no Return statement is found in the block, return ERROR type
+          returnTypes
 
-        case r: Return => r.getType() // If a Return statement is encountered, return its type
-        case While(_, body) => getReturn(body) // Recursively handle other statements
-        case If(_, thenS, elseS) =>
-          val tthen = getReturn(thenS)
-          val telse = getReturn(elseS)
-          if (tthen != BaseT("ERROR") && telse != BaseT("ERROR") && tthen == telse) {
-            tthen
-          } else {
-            BaseT("ERROR")
-          }
-        case Scope(body) => getReturn(body)
-        case _ => BaseT("ERROR") // For any other statement type, return ERROR type
+        case r: Return => List(r.getType()) // If a Return statement is encountered, return its type in a list
+        case While(_, wbody) => getReturns(wbody) // Recursively handle other statements
+        case If(_, thenS, elseS) => {
+          val tthen = getReturns(thenS)
+          val telse = getReturns(elseS)
+          var ts: List[Type] = List.empty
+          if (tthen.nonEmpty && tthen.head != BaseT("ERROR")) {
+            ts = ts ++ tthen
+          } 
+          if (telse.nonEmpty && telse.head != BaseT("ERROR")) {
+            ts = ts ++ telse
+          } 
+          ts
+        }
+        case Scope(sbody) => getReturns(sbody)
+        case _ => List(BaseT("ERROR")) // For any other statement type, return ERROR type in a list
       }
     }
   }
