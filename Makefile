@@ -10,4 +10,10 @@ all:
 clean:
 	scala-cli clean . && rm -f wacc-compiler
 
+test: all
+	python3 integration_test_runner.py
+
+test-%: all
+	python3 integration_test_runner.py $*
+
 .PHONY: all clean
