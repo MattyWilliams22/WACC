@@ -33,7 +33,8 @@ class ASTNodesSpec extends AnyFlatSpec with Matchers {
   // Test for Function
   "Function" should "return false if type or identifier is invalid" in {
     val invalidFunc = Function(BaseT("invalid"), Ident("func"), List(), Skip())
-    invalidFunc.check() shouldBe false
+    val exception = intercept[SecurityException](invalidFunc.check())
+    exception.getMessage should include ("Semantic Error")
   }
 
   // Test for Param
@@ -80,7 +81,8 @@ class ASTNodesSpec extends AnyFlatSpec with Matchers {
 
   it should "return false if lvalue is invalid" in {
     val invalidRead = Read(Ident("x$"))
-    invalidRead.check() shouldBe false
+    val exception = intercept[SecurityException](invalidRead.check())
+    exception.getMessage should include ("Semantic Error")
   }
 
   // Test for If
@@ -91,7 +93,8 @@ class ASTNodesSpec extends AnyFlatSpec with Matchers {
 
   it should "return false if condition, thenS, or elseS is invalid" in {
     val invalidIfStatement = If(Num(5), Skip(), Skip())
-    invalidIfStatement.check() shouldBe false
+    val exception = intercept[SecurityException](invalidIfStatement.check())
+    exception.getMessage should include ("Semantic Error")
   }
 
   // Test for While
@@ -133,7 +136,8 @@ class ASTNodesSpec extends AnyFlatSpec with Matchers {
   // Test for Free
   "Free" should "return false if expression is not an array or pair" in {
     val invalidFreeStatement = Free(Num(5))
-    invalidFreeStatement.check() shouldBe false
+    val exception = intercept[SecurityException](invalidFreeStatement.check())
+    exception.getMessage should include ("Semantic Error")
   }
 
   // Test for Return
@@ -144,7 +148,8 @@ class ASTNodesSpec extends AnyFlatSpec with Matchers {
 
   it should "return false if expression is invalid" in {
     val invalidReturnStatement = Return(Bool("0"))
-    invalidReturnStatement.check() shouldBe false
+    val exception = intercept[SecurityException](invalidReturnStatement.check())
+    exception.getMessage should include ("Semantic Error")
   }
 
   // Test for Exit
@@ -155,7 +160,8 @@ class ASTNodesSpec extends AnyFlatSpec with Matchers {
 
   it should "return false if expression is invalid" in {
     val invalidExitStatement = Exit(Bool("1"))
-    invalidExitStatement.check() shouldBe false
+    val exception = intercept[SecurityException](invalidExitStatement.check())
+    exception.getMessage should include ("Semantic Error")
   }
 
   // Test for Print
@@ -166,7 +172,8 @@ class ASTNodesSpec extends AnyFlatSpec with Matchers {
 
   it should "return false if expression is invalid" in {
     val invalidPrintStatement = Print(Bool("y"))
-    invalidPrintStatement.check() shouldBe false
+    val exception = intercept[SecurityException](invalidPrintStatement.check())
+    exception.getMessage should include ("Semantic Error")
   }
 
   // Test for Println
@@ -177,7 +184,8 @@ class ASTNodesSpec extends AnyFlatSpec with Matchers {
 
   it should "return false if expression is invalid" in {
     val invalidPrintlnStatement = Println(Bool("z"))
-    invalidPrintlnStatement.check() shouldBe false
+    val exception = intercept[SecurityException](invalidPrintlnStatement.check())
+    exception.getMessage should include ("Semantic Error")
   }
 
   // Test for And
@@ -188,7 +196,8 @@ class ASTNodesSpec extends AnyFlatSpec with Matchers {
 
   it should "return false if either expression is invalid" in {
     val invalidAndExpression = And(Bool("true"), Num(5))
-    invalidAndExpression.check() shouldBe false
+    val exception = intercept[SecurityException](invalidAndExpression.check())
+    exception.getMessage should include ("Semantic Error")
   }
 
   // Test for Or
@@ -199,7 +208,8 @@ class ASTNodesSpec extends AnyFlatSpec with Matchers {
 
   it should "return false if either expression is invalid" in {
     val invalidOrExpression = Or(Bool("true"), Num(5))
-    invalidOrExpression.check() shouldBe false
+    val exception = intercept[SecurityException](invalidOrExpression.check())
+    exception.getMessage should include ("Semantic Error")
   }
 
   // Test for Not
@@ -210,7 +220,8 @@ class ASTNodesSpec extends AnyFlatSpec with Matchers {
 
   it should "return false if the expression is invalid" in {
     val invalidNotExpression = Not(Num(5))
-    invalidNotExpression.check() shouldBe false
+    val exception = intercept[SecurityException](invalidNotExpression.check())
+    exception.getMessage should include ("Semantic Error")
   }
 
   // Test for Neg
@@ -221,14 +232,16 @@ class ASTNodesSpec extends AnyFlatSpec with Matchers {
 
   it should "return false if the expression is invalid" in {
     val invalidNegExpression = Neg(Bool("true"))
-    invalidNegExpression.check() shouldBe false
+    val exception = intercept[SecurityException](invalidNegExpression.check())
+    exception.getMessage should include ("Semantic Error")
   }
 
   // Test for Len
 
   "Len" should "return false if the expression is invalid" in {
     val invalidLenExpression = Len(Bool("true"))
-    invalidLenExpression.check() shouldBe false
+    val exception = intercept[SecurityException](invalidLenExpression.check())
+    exception.getMessage should include ("Semantic Error")
   }
 
   // Test for Ord
@@ -239,7 +252,8 @@ class ASTNodesSpec extends AnyFlatSpec with Matchers {
 
   it should "return false if the expression is invalid" in {
     val invalidOrdExpression = Ord(Bool("false"))
-    invalidOrdExpression.check() shouldBe false
+    val exception = intercept[SecurityException](invalidOrdExpression.check())
+    exception.getMessage should include ("Semantic Error")
   }
 
   // Test for Chr
@@ -250,6 +264,7 @@ class ASTNodesSpec extends AnyFlatSpec with Matchers {
 
   it should "return false if the expression is invalid" in {
     val invalidChrExpression = Chr(Bool("true"))
-    invalidChrExpression.check() shouldBe false
+    val exception = intercept[SecurityException](invalidChrExpression.check())
+    exception.getMessage should include ("Semantic Error")
   }
 }
