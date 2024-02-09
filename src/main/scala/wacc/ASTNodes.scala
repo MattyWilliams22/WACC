@@ -132,7 +132,6 @@ object ASTNodes {
 
   case class Declare(_type: Type, ident: Ident, value: RValue) extends Statement {
     def check(): Boolean = {
-      println("Generating symbol table for " + this)
       currentSymbolTable.generateSymbolTable(this)
       var valid: Boolean = value.check()
       checkValid(valid, "Rvalue", value)
@@ -206,7 +205,6 @@ object ASTNodes {
     val elseSymbolTable: SymbolTable = new SymbolTable(None)
 
     def check(): Boolean = {
-      println("Generating symbol table for " + this)
       currentSymbolTable.generateSymbolTable(this)
       if (!cond.check() || cond.getType() != BaseT("bool")) {
         false
@@ -231,7 +229,6 @@ object ASTNodes {
     val symbolTable: SymbolTable = new SymbolTable(None)
 
     def check(): Boolean = {
-      println("Generating symbol table for " + this)
       currentSymbolTable.generateSymbolTable(this)
       val tempSymbolTable: SymbolTable = currentSymbolTable
       currentSymbolTable = symbolTable
@@ -246,7 +243,6 @@ object ASTNodes {
     val symbolTable: SymbolTable = new SymbolTable(None)
 
     def check(): Boolean = {
-      println("Generating symbol table for " + this)
       currentSymbolTable.generateSymbolTable(this)
       val tempSymbolTable: SymbolTable = currentSymbolTable
       currentSymbolTable = symbolTable
@@ -282,10 +278,6 @@ object ASTNodes {
   case class Return(exp: Expr) extends Statement {
     def check(): Boolean = {
       exp.check()
-    }
-
-    def getType(): Type = {
-      exp.getType()
     }
   }
 
