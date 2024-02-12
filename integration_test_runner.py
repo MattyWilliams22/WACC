@@ -102,7 +102,8 @@ for test in runningTests:
         validPasses += 1
 
         # If compilation was successful, run the corresponding assembly file
-        assembly_file = fname.replace('.wacc', '.s')
+        assembly_file = os.path.basename(fname).replace('.wacc', '.s')
+
         if os.path.exists(assembly_file):
           # Compile the assembly file
           subprocess.run(["aarch64-linux-gnu-gcc", "-o", "execFile", "-z", "noexecstack", "-march=armv8-a", assembly_file])
@@ -124,6 +125,10 @@ for test in runningTests:
           else:
             print("Output does not match expected.")
             errorTests.append(fname)
+
+          # Remove the assembly and executable files
+          os.remove(assembly_file)
+          os.remove("execFile")
         else:
           print(f"Assembly file {assembly_file} not found.")
     else:
