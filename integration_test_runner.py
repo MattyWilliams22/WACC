@@ -104,9 +104,11 @@ for test in runningTests:
 
         if os.path.exists(assembly_file):
           # Compile the assembly file
+          print(f"aarch64-linux-gnu-gcc -o execFile -z noexecstack -march=armv8-a" {assembly_file}")
           subprocess.run(["aarch64-linux-gnu-gcc", "-o", "execFile", "-z", "noexecstack", "-march=armv8-a", assembly_file])
 
           # Run the executable file
+          print("qemu-aarch64 -L /usr/aarch64-linux-gnu/ execFile")
           output = subprocess.run(["qemu-aarch64", "-L", "/usr/aarch64-linux-gnu/", "execFile"], capture_output=True)
 
           expected_output = ""
