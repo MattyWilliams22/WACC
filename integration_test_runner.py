@@ -99,8 +99,6 @@ for test in runningTests:
         elif "semantic" in fname:
           semanticPasses += 1
       else:
-        validPasses += 1
-
         # If compilation was successful, run the corresponding assembly file
         assembly_file = os.path.basename(fname).replace('.wacc', '.s')
 
@@ -111,16 +109,20 @@ for test in runningTests:
           # Run the executable file
           output = subprocess.run(["qemu-aarch64", "-L", "/usr/aarch64-linux-gnu/", "execFile"], capture_output=True)
 
-          expected_output = ""
-
           # Extract expected output from comments in WACC file
           with open(fname) as f:
             lines = f.readlines()
+            output_line_found = False
             for line in lines:
               if line.startswith("# Output:"):
-                expected_output = line[len("# Output:"):].strip()
+                output_line_found = True
+              elif output_line_found and line == "#\n":
                 break
+              elif output_line_found:
+                expected_output += line[2:]
+
           if output.stdout.decode().strip() == expected_output:
+            validPasses += 1
             print("Output matches expected!")
           else:
             print("Output does not match expected.")
