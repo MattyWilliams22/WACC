@@ -128,7 +128,6 @@ for test in runningTests:
 
           # Remove the assembly and executable files
           os.remove(assembly_file)
-          os.remove("execFile")
         else:
           print(f"Assembly file {assembly_file} not found.")
     else:
