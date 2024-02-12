@@ -100,6 +100,32 @@ for test in runningTests:
           semanticPasses += 1
       else:
         validPasses += 1
+
+        # If compilation was successful, run the corresponding assembly file
+        assembly_file = fname.replace('.wacc', '.s')
+        if os.path.exists(assembly_file):
+          # Compile the assembly file
+          subprocess.run(["aarch64-linux-gnu-gcc", "-o", "execFile", "-z", "noexecstack", "-march=armv8-a", assembly_file])
+
+          # Run the executable file
+          output = subprocess.run(["qemu-aarch64", "-L", "/usr/aarch64-linux-gnu/", "execFile"], capture_output=True)
+
+          expected_output = ""
+
+          # Extract expected output from comments in WACC file
+          with open(fname) as f:
+            lines = f.readlines()
+            for line in lines:
+              if line.startswith("# Output:"):
+                expected_output = line[len("# Output:"):].strip()
+                break
+          if output.stdout.decode().strip() == expected_output:
+            print("Output matches expected!")
+          else:
+            print("Output does not match expected.")
+            errorTests.append(fname)
+        else:
+          print(f"Assembly file {assembly_file} not found.")
     else:
       print(f"Failed test {fname}. Expected exit code {expected} but got {actual}")
       errorTests.append(fname)

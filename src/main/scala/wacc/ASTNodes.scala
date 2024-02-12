@@ -1,7 +1,6 @@
 package wacc
 
 import scala.collection.mutable.ListBuffer
-import scala.util.chaining
 
 object ASTNodes {
 
@@ -39,7 +38,7 @@ object ASTNodes {
 
       semanticErrors.toList
     }
-    
+
     // Checks if the statement contains a return statement
     // If it does, exit with semantic error code
     def checkReturns(stmt: Statement): Unit = {
@@ -120,10 +119,10 @@ object ASTNodes {
           // Combine the valid types from the then and else cases
           if (tthen.nonEmpty && tthen.head != BaseT("ERROR")) {
             ts = ts ++ tthen
-          } 
+          }
           if (telse.nonEmpty && telse.head != BaseT("ERROR")) {
             ts = ts ++ telse
-          } 
+          }
           ts
         }
         case Scope(sbody) => getReturns(sbody)
@@ -136,8 +135,8 @@ object ASTNodes {
   case class Param(_type: Type, ident: Ident) extends ASTNode {
     // Semantically check a parameter
     def check(): Boolean = {
-      checkValid(_type == ident.getType(), 
-                  "Type of parameter and identifier do not match", this)
+      checkValid(_type == ident.getType(),
+        "Type of parameter and identifier do not match", this)
       true
     }
 
@@ -180,10 +179,10 @@ object ASTNodes {
         case _ => false
       }
       checkValid((_type == tValue ||
-          isPair && (tValue == PairLiter("null") || tValue == PairNull()) ||
-          isEmptyArrayLiteral && _type.isInstanceOf[ArrayT] ||
-          _type == BaseT("string") && tValue == ArrayT(BaseT("char"), 1) ||
-          isPairOfNulls), "Types of variable and rvalue do not match", this)
+        isPair && (tValue == PairLiter("null") || tValue == PairNull()) ||
+        isEmptyArrayLiteral && _type.isInstanceOf[ArrayT] ||
+        _type == BaseT("string") && tValue == ArrayT(BaseT("char"), 1) ||
+        isPairOfNulls), "Types of variable and rvalue do not match", this)
       true
     }
   }
@@ -207,7 +206,7 @@ object ASTNodes {
         case _ => false
       }
       var valid = (tlvalue == trvalue ||
-                    isPair && (trvalue == PairLiter("null") || trvalue == PairNull()))
+        isPair && (trvalue == PairLiter("null") || trvalue == PairNull()))
       lvalue match {
         case ident: Ident => {
           if (ident.isFunction()) {
@@ -230,7 +229,7 @@ object ASTNodes {
       // Ensure lvalue has type int or type char
       val tlvalue = lvalue.getType()
       checkValid((tlvalue == BaseT("int") || tlvalue == BaseT("char")),
-                                  "Lvalue must have type int or type char", lvalue)
+        "Lvalue must have type int or type char", lvalue)
       true
     }
   }
@@ -245,9 +244,9 @@ object ASTNodes {
 
       // Check that the condition is semantically valid and has type bool
       checkValid(cond.check() , "Invalid condition of if statement", cond)
-      checkValid(cond.getType() == BaseT("bool"), 
-                  "Condition must have type bool", cond)
-    
+      checkValid(cond.getType() == BaseT("bool"),
+        "Condition must have type bool", cond)
+
       val tempSymbolTable = currentSymbolTable
 
       // Check that the body of the then block is valid
@@ -279,8 +278,8 @@ object ASTNodes {
       checkValid(body.check(), "Invalid body of while loop", body)
 
       // Check that the condition has type bool
-      checkValid(cond.getType() == BaseT("bool"), 
-                  "Condition must have type bool", cond)
+      checkValid(cond.getType() == BaseT("bool"),
+        "Condition must have type bool", cond)
 
       currentSymbolTable = tempSymbolTable
       true
@@ -351,8 +350,8 @@ object ASTNodes {
     def check(): Boolean = {
       // Check that the expression is semantically valid and has type int
       checkValid(exp.check(), "Invalid expression", exp)
-      checkValid(exp.getType() == BaseT("int"), 
-                                  "Expression must have type int", exp)
+      checkValid(exp.getType() == BaseT("int"),
+        "Expression must have type int", exp)
       true
     }
   }
@@ -389,9 +388,9 @@ object ASTNodes {
     // Check if the type is valid
     def check(): Boolean = {
       // Check if the type is int, bool, char or string
-      checkValid(str == "int" || str == "bool" || 
-                  str == "char" || str == "string", 
-                  "Base type must be int, bool, char or string", this)
+      checkValid(str == "int" || str == "bool" ||
+        str == "char" || str == "string",
+        "Base type must be int, bool, char or string", this)
       true
     }
 
@@ -626,10 +625,10 @@ object ASTNodes {
       // Check that the expressions are semantically valid and have type int
       checkValid(exp1.check(), "Invalid expression", exp1)
       checkValid(exp2.check(), "Invalid expression", exp2)
-      checkValid(exp1.getType() == BaseT("int"), 
-                                  "Expression must have type int", exp1)
-      checkValid(exp2.getType() == BaseT("int"), 
-                                  "Expression must have type int", exp2)
+      checkValid(exp1.getType() == BaseT("int"),
+        "Expression must have type int", exp1)
+      checkValid(exp2.getType() == BaseT("int"),
+        "Expression must have type int", exp2)
       true
     }
 
@@ -645,10 +644,10 @@ object ASTNodes {
       // Check that the expressions are semantically valid and have type int
       checkValid(exp1.check(), "Invalid expression", exp1)
       checkValid(exp2.check(), "Invalid expression", exp2)
-      checkValid(exp1.getType() == BaseT("int"), 
-                                  "Expression must have type int", exp1)
-      checkValid(exp2.getType() == BaseT("int"), 
-                                  "Expression must have type int", exp2)
+      checkValid(exp1.getType() == BaseT("int"),
+        "Expression must have type int", exp1)
+      checkValid(exp2.getType() == BaseT("int"),
+        "Expression must have type int", exp2)
       true
     }
 
@@ -664,10 +663,10 @@ object ASTNodes {
       // Check that the expressions are semantically valid and have type int
       checkValid(exp1.check(), "Invalid expression", exp1)
       checkValid(exp2.check(), "Invalid expression", exp2)
-      checkValid(exp1.getType() == BaseT("int"), 
-                                  "Expression must have type int", exp1)
-      checkValid(exp2.getType() == BaseT("int"), 
-                                  "Expression must have type int", exp2)
+      checkValid(exp1.getType() == BaseT("int"),
+        "Expression must have type int", exp1)
+      checkValid(exp2.getType() == BaseT("int"),
+        "Expression must have type int", exp2)
       true
     }
 
@@ -683,10 +682,10 @@ object ASTNodes {
       // Check that the expressions are semantically valid and have type int
       checkValid(exp1.check(), "Invalid expression", exp1)
       checkValid(exp2.check(), "Invalid expression", exp2)
-      checkValid(exp1.getType() == BaseT("int"), 
-                                  "Expression must have type int", exp1)
-      checkValid(exp2.getType() == BaseT("int"), 
-                                  "Expression must have type int", exp2)
+      checkValid(exp1.getType() == BaseT("int"),
+        "Expression must have type int", exp1)
+      checkValid(exp2.getType() == BaseT("int"),
+        "Expression must have type int", exp2)
       true
     }
 
@@ -702,10 +701,10 @@ object ASTNodes {
       // Check that the expressions are semantically valid and have type int
       checkValid(exp1.check(), "Invalid expression", exp1)
       checkValid(exp2.check(), "Invalid expression", exp2)
-      checkValid(exp1.getType() == BaseT("int"), 
-                                  "Expression must have type int", exp1)
-      checkValid(exp2.getType() == BaseT("int"), 
-                                  "Expression must have type int", exp2)
+      checkValid(exp1.getType() == BaseT("int"),
+        "Expression must have type int", exp1)
+      checkValid(exp2.getType() == BaseT("int"),
+        "Expression must have type int", exp2)
       true
     }
 
@@ -724,10 +723,10 @@ object ASTNodes {
 
       checkValid(exp1.check(), "Invalid expression", exp1)
       checkValid(exp2.check(), "Invalid expression", exp2)
-      checkValid(type1 == BaseT("int") || type1 == BaseT("char"), 
-                                  "Expression must have type int or char", exp1)
-      checkValid(type2 == BaseT("int") || type2 == BaseT("char"), 
-                                  "Expression must have type int or char", exp2)
+      checkValid(type1 == BaseT("int") || type1 == BaseT("char"),
+        "Expression must have type int or char", exp1)
+      checkValid(type2 == BaseT("int") || type2 == BaseT("char"),
+        "Expression must have type int or char", exp2)
       true
     }
 
@@ -746,10 +745,10 @@ object ASTNodes {
 
       checkValid(exp1.check(), "Invalid expression", exp1)
       checkValid(exp2.check(), "Invalid expression", exp2)
-      checkValid(type1 == BaseT("int") || type1 == BaseT("char"), 
-                                  "Expression must have type int or char", exp1)
-      checkValid(type2 == BaseT("int") || type2 == BaseT("char"), 
-                                  "Expression must have type int or char", exp2)
+      checkValid(type1 == BaseT("int") || type1 == BaseT("char"),
+        "Expression must have type int or char", exp1)
+      checkValid(type2 == BaseT("int") || type2 == BaseT("char"),
+        "Expression must have type int or char", exp2)
       true
     }
 
@@ -768,10 +767,10 @@ object ASTNodes {
 
       checkValid(exp1.check(), "Invalid expression", exp1)
       checkValid(exp2.check(), "Invalid expression", exp2)
-      checkValid((type1 == BaseT("int") || type1 == BaseT("char")), 
-                                  "Expression must have type int or char", exp1)
-      checkValid((type2 == BaseT("int") || type2 == BaseT("char")), 
-                                  "Expression must have type int or char", exp2)
+      checkValid((type1 == BaseT("int") || type1 == BaseT("char")),
+        "Expression must have type int or char", exp1)
+      checkValid((type2 == BaseT("int") || type2 == BaseT("char")),
+        "Expression must have type int or char", exp2)
       true
     }
 
@@ -790,10 +789,10 @@ object ASTNodes {
 
       checkValid(exp1.check(), "Invalid expression", exp1)
       checkValid(exp2.check(), "Invalid expression", exp2)
-      checkValid(type1 == BaseT("int") || type1 == BaseT("char"), 
-                                  "Expression must have type int or char", exp1)
-      checkValid(type2 == BaseT("int") || type2 == BaseT("char"), 
-                                  "Expression must have type int or char", exp2)
+      checkValid(type1 == BaseT("int") || type1 == BaseT("char"),
+        "Expression must have type int or char", exp1)
+      checkValid(type2 == BaseT("int") || type2 == BaseT("char"),
+        "Expression must have type int or char", exp2)
       true
     }
 
@@ -839,10 +838,10 @@ object ASTNodes {
       // Check that the expressions are semantically valid and have type bool
       checkValid(exp1.check(), "Invalid expression", exp1)
       checkValid(exp2.check(), "Invalid expression", exp2)
-      checkValid(exp1.getType() == BaseT("bool"), 
-                                  "Expression must have type bool", exp1)
-      checkValid(exp2.getType() == BaseT("bool"), 
-                                  "Expression must have type bool", exp2)
+      checkValid(exp1.getType() == BaseT("bool"),
+        "Expression must have type bool", exp1)
+      checkValid(exp2.getType() == BaseT("bool"),
+        "Expression must have type bool", exp2)
       true
     }
 
@@ -858,10 +857,10 @@ object ASTNodes {
       // Check that the expressions are semantically valid and have type bool
       checkValid(exp1.check(), "Invalid expression", exp1)
       checkValid(exp2.check(), "Invalid expression", exp2)
-      checkValid(exp1.getType() == BaseT("bool"), 
-                                  "Expression must have type bool", exp1)
-      checkValid(exp2.getType() == BaseT("bool"), 
-                                  "Expression must have type bool", exp2)
+      checkValid(exp1.getType() == BaseT("bool"),
+        "Expression must have type bool", exp1)
+      checkValid(exp2.getType() == BaseT("bool"),
+        "Expression must have type bool", exp2)
       true
     }
 
@@ -876,8 +875,8 @@ object ASTNodes {
     def check(): Boolean = {
       // Check that the expression is semantically valid and has type bool
       checkValid(exp.check(), "Invalid expression", exp)
-      checkValid(exp.getType() == BaseT("bool"), 
-                                  "Expression must have type bool", exp)
+      checkValid(exp.getType() == BaseT("bool"),
+        "Expression must have type bool", exp)
       true
     }
 
@@ -892,8 +891,8 @@ object ASTNodes {
     def check(): Boolean = {
       // Check that the expression is semantically valid and has type int
       checkValid(exp.check(), "Invalid expression", exp)
-      checkValid(exp.getType() == BaseT("int"), 
-                                  "Expression must have type int", exp)
+      checkValid(exp.getType() == BaseT("int"),
+        "Expression must have type int", exp)
       true
     }
 
@@ -929,8 +928,8 @@ object ASTNodes {
     def check(): Boolean = {
       // Check that the expression is semantically valid and has type char
       checkValid(exp.check(), "Invalid expression", exp)
-      checkValid(exp.getType() == BaseT("char"), 
-                                  "Expression must have type char", exp)
+      checkValid(exp.getType() == BaseT("char"),
+        "Expression must have type char", exp)
       true
     }
 
@@ -945,8 +944,8 @@ object ASTNodes {
     def check(): Boolean = {
       // Check that the expression is semantically valid and has type int
       checkValid(exp.check(), "Invalid expression", exp)
-      checkValid(exp.getType() == BaseT("int"), 
-                                  "Expression must have type int", exp)
+      checkValid(exp.getType() == BaseT("int"),
+        "Expression must have type int", exp)
       true
     }
 
@@ -974,8 +973,8 @@ object ASTNodes {
     // Semantically check a boolean
     def check(): Boolean = {
       // Check that the boolean is either true or false
-      checkValid(bool == "true" || bool == "false", 
-                  "Boolean must be true or false", this)
+      checkValid(bool == "true" || bool == "false",
+        "Boolean must be true or false", this)
       true
     }
 
@@ -1026,8 +1025,8 @@ object ASTNodes {
     def check(): Boolean = {
       // Check that the identifier is in the symbol table
       checkValid((currentSymbolTable.lookupAllVariables(str).isDefined ||
-                  currentSymbolTable.lookupAllFunctions(str).isDefined), 
-                  "Identifier does not exist in scope", this)
+        currentSymbolTable.lookupAllFunctions(str).isDefined),
+        "Identifier does not exist in scope", this)
       true
     }
 
@@ -1075,15 +1074,15 @@ object ASTNodes {
       checkValid(ident.check(), "Invalid identifier", ident)
       // Check that the indices are semantically valid and have type int
       for (index <- indices) {
-        checkValid(index.getType() == BaseT("int"), 
-                    "Index must have type int", index)
+        checkValid(index.getType() == BaseT("int"),
+          "Index must have type int", index)
       }
       val tident = ident.getType()
       tident match {
         case t: ArrayT =>
           // Check that the number of indices is less than or equal to the dimensions of the array
-          checkValid(t.dim >= indices.length, 
-                      "Invalid number of indices", this)
+          checkValid(t.dim >= indices.length,
+            "Invalid number of indices", this)
         case _ =>
           checkValid(false, "Identifier must be have type array", this)
       }

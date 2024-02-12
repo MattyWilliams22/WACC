@@ -66,20 +66,24 @@ object Main {
     } else {
       // Invoke your parser's parse method
       val result: Result[SyntaxError, Program] = parser.parse(input)
+
       /* Parsing of expression */
       result match {
-        case Success(x) => {
-          println(s"$arg = $x")
+        case Success(x) =>
           // Semantic Analysis
           val semanticAnalyser = new SemanticAnalyser(x)
           semanticAnalyser.analyse()
-          println(s"$arg = $x")
+
+          // Code Generation
+          val inputFile = new File(arg)
+          val outputFileName = inputFile.getName.split('.').head + ".s"
+          val file = new File(outputFileName)
+          file.createNewFile();
           System.exit(SUCCESS_CODE)
-        }
-        case Failure(msg) => {
+
+        case Failure(msg) =>
           output(Some(msg), args(0), SYNTAX_ERR_CODE)
           System.exit(SYNTAX_ERR_CODE)
-        }
       }
     }
   }
