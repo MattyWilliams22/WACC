@@ -29,36 +29,107 @@ def list_files_in_directory(base):
             file_paths.append(os.path.join(root, file))
     return file_paths
 
+# Extract expected output from comments in WACC file
+def extract_expected_output(fname):
+  with open(fname) as f:
+    lines = f.readlines()
+    output_line_found = False
+    for line in lines:
+      if line.startswith("# Output:"):
+        output_line_found = True
+      elif output_line_found and line == "#\n":
+        break
+      elif output_line_found:
+        expected_output += line[2:]
+  return expected_output
+
+# Adds all the tests to the tests dictionary
+def add_tests_to_dict(base):
+  for directory in list_directories_in_directory(base):
+    # Added valid and invalid directories to the tests dictionary
+    tests[directory] = list_files_in_directory(base + directory + "/")
+
+    # Added subdirectoried of valid and invalid directories to the tests dictionary
+    for subdirectory in list_directories_in_directory(base + directory + "/"):
+      subdirectoryName = subdirectory
+      if subdirectory.endswith("Err"):
+        subdirectoryName = subdirectory[:-3]
+      tests[directory + "-" + subdirectoryName] = list_files_in_directory(base + directory + "/" + subdirectory + "/")
+
+      # Added subdirectories of invalid directory to the tests dictionary
+      if directory == "invalid":
+        for subsubdirectory in list_directories_in_directory(base + directory + "/" + subdirectory + "/"):
+          tests[directory + "-" + subdirectory[:-3] + "-" + subsubdirectory] = \
+            list_files_in_directory(base + directory + "/" + subdirectory + "/" + subsubdirectory + "/")
+
+def compile_run_assembly_file(fname, assembly_file):
+  global validPasses
+  # Compile the assembly file
+  print(f"aarch64-linux-gnu-gcc -o execFile -z noexecstack -march=armv8-a {assembly_file}")
+  subprocess.run(["aarch64-linux-gnu-gcc", "-o", "execFile", "-z", "noexecstack", "-march=armv8-a", assembly_file])
+
+  # Run the executable file
+  print("qemu-aarch64 -L /usr/aarch64-linux-gnu/ execFile")
+  output = subprocess.run(["qemu-aarch64", "-L", "/usr/aarch64-linux-gnu/", "execFile"], capture_output=True)
+
+  expected_output = extract_expected_output(fname)
+
+  if output.stdout.decode().strip() == expected_output:
+    validPasses += 1
+    print("Output matches expected!")
+  else:
+    print("Output does not match expected.")
+    errorTests.append(fname)
+
+  # Remove the assembly and executable files
+  os.remove(assembly_file)
+
+def run_tests(tests_to_run):
+  global syntaxTotal
+  global semanticTotal
+  global syntaxPasses
+  global semanticPasses
+  global validTotal
+  
+  for test in tests_to_run:
+    for fname in glob.glob(test):
+      print(f"sh compile {fname}")
+      proc = subprocess.run(["sh", "compile", fname], stdout=subprocess.DEVNULL)
+
+      actual = proc.returncode
+      expected = get_return_code(fname)
+
+      if fname.startswith("wacc_examples/in"):
+        if "syntax" in fname:
+          syntaxTotal += 1
+        elif "semantic" in fname:
+          semanticTotal += 1
+      else:
+        validTotal += 1
+
+      if actual == expected:
+        if fname.startswith("wacc_examples/in"):
+          if "syntax" in fname:
+            syntaxPasses += 1
+          elif "semantic" in fname:
+            semanticPasses += 1
+        else:
+          # If compilation was successful, run the corresponding assembly file
+          assembly_file = os.path.basename(fname).replace('.wacc', '.s')
+
+          if os.path.exists(assembly_file):
+            # Compile the assembly file
+            compile_run_assembly_file(fname, assembly_file)
+          else:
+            print(f"Assembly file {assembly_file} not found.")
+      else:
+        print(f"Failed test {fname}. Expected exit code {expected} but got {actual}")
+        errorTests.append(fname)
+
 base = "wacc_examples/"
 tests = dict()
-
-for directory in list_directories_in_directory(base):
-  # Added valid and invalid directories to the tests dictionary
-  tests[directory] = list_files_in_directory(base + directory + "/")
-
-  # Added subdirectoried of valid and invalid directories to the tests dictionary
-  for subdirectory in list_directories_in_directory(base + directory + "/"):
-    subdirectoryName = subdirectory
-    if subdirectory.endswith("Err"):
-      subdirectoryName = subdirectory[:-3]
-    tests[directory + "-" + subdirectoryName] = list_files_in_directory(base + directory + "/" + subdirectory + "/")
-
-    # Added subdirectories of invalid directory to the tests dictionary
-    if directory == "invalid":
-      for subsubdirectory in list_directories_in_directory(base + directory + "/" + subdirectory + "/"):
-        tests[directory + "-" + subdirectory[:-3] + "-" + subsubdirectory] = \
-          list_files_in_directory(base + directory + "/" + subdirectory + "/" + subsubdirectory + "/")
-
-validTotal = 0
-syntaxTotal = 0
-semanticTotal = 0
-syntaxPasses = 0
-semanticPasses = 0
-validPasses = 0
+add_tests_to_dict(base)
 runningTests = []
-errorTests = []
-
-print("Running tests...")
 
 # If no arguments are given, run all tests
 if len(sys.argv) < 2:
@@ -75,70 +146,18 @@ else :
     print(f"Test tag {tag} not found")
     sys.exit(1)
 
+validTotal = 0
+syntaxTotal = 0
+semanticTotal = 0
+syntaxPasses = 0
+semanticPasses = 0
+validPasses = 0
+errorTests = []
+
+print("Running tests...")
+
 # Run the tests
-for test in runningTests:
-  for fname in glob.glob(test):
-    print(f"sh compile {fname}")
-    proc = subprocess.run(["sh", "compile", fname], stdout=subprocess.DEVNULL)
-
-    actual = proc.returncode
-    expected = get_return_code(fname)
-
-    if fname.startswith("wacc_examples/in"):
-      if "syntax" in fname:
-        syntaxTotal += 1
-      elif "semantic" in fname:
-        semanticTotal += 1
-    else:
-      validTotal += 1
-
-    if actual == expected:
-      if fname.startswith("wacc_examples/in"):
-        if "syntax" in fname:
-          syntaxPasses += 1
-        elif "semantic" in fname:
-          semanticPasses += 1
-      else:
-        # If compilation was successful, run the corresponding assembly file
-        assembly_file = os.path.basename(fname).replace('.wacc', '.s')
-
-        if os.path.exists(assembly_file):
-          # Compile the assembly file
-          print(f"aarch64-linux-gnu-gcc -o execFile -z noexecstack -march=armv8-a {assembly_file}")
-          subprocess.run(["aarch64-linux-gnu-gcc", "-o", "execFile", "-z", "noexecstack", "-march=armv8-a", assembly_file])
-
-          # Run the executable file
-          print("qemu-aarch64 -L /usr/aarch64-linux-gnu/ execFile")
-          output = subprocess.run(["qemu-aarch64", "-L", "/usr/aarch64-linux-gnu/", "execFile"], capture_output=True)
-
-          expected_output = ""
-
-          # Extract expected output from comments in WACC file
-          with open(fname) as f:
-            lines = f.readlines()
-            output_line_found = False
-            for line in lines:
-              if line.startswith("# Output:"):
-                output_line_found = True
-              elif output_line_found and line == "#\n":
-                break
-              elif output_line_found:
-                expected_output += line[2:]
-
-          if output.stdout.decode().strip() == expected_output:
-            validPasses += 1
-            print("Output matches expected!")
-          else:
-            print("Output does not match expected.")
-            errorTests.append(fname)
-
-          # Remove the assembly and executable files
-          os.remove(assembly_file)
-        else:
-          print(f"Assembly file {assembly_file} not found.")
-    else:
-      print(f"Failed test {fname}. Expected exit code {expected} but got {actual}")
-      errorTests.append(fname)
+run_tests(runningTests)
 
 totalPasses = validPasses + syntaxPasses + semanticPasses
 total = validTotal + syntaxTotal + semanticTotal
