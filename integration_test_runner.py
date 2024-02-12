@@ -31,6 +31,7 @@ def list_files_in_directory(base):
 
 # Extract expected output from comments in WACC file
 def extract_expected_output(fname):
+  expected_output = ""
   with open(fname) as f:
     lines = f.readlines()
     output_line_found = False
@@ -90,7 +91,7 @@ def run_tests(tests_to_run):
   global syntaxPasses
   global semanticPasses
   global validTotal
-  
+
   for test in tests_to_run:
     for fname in glob.glob(test):
       print(f"sh compile {fname}")
