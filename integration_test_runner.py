@@ -109,6 +109,8 @@ for test in runningTests:
           # Run the executable file
           output = subprocess.run(["qemu-aarch64", "-L", "/usr/aarch64-linux-gnu/", "execFile"], capture_output=True)
 
+          expected_output = ""
+
           # Extract expected output from comments in WACC file
           with open(fname) as f:
             lines = f.readlines()
