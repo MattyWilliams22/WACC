@@ -1,11 +1,8 @@
 package wacc
 
-import java.io.File
-
+import java.io.{File, PrintWriter}
 import scala.io.Source
-
-import parsley.{Failure, Success, Result}
-
+import parsley.{Failure, Result, Success}
 import wacc.ASTNodes._
 import wacc.ErrorOutput._
 import wacc.Error._
@@ -79,6 +76,19 @@ object Main {
           val outputFileName = inputFile.getName.split('.').head + ".s"
           val file = new File(outputFileName)
           file.createNewFile();
+
+          // Write a main function to the file
+          val writer = new PrintWriter(file)
+          writer.write(
+            """
+              |.global main
+              |main:
+              |    mov x8, #60
+              |    mov x0, #0
+              |    svc 0
+                """.stripMargin)
+          writer.close()
+
           System.exit(SUCCESS_CODE)
 
         case Failure(msg) =>
