@@ -14,5 +14,6 @@ test-integration:
   stage: test
   script:
     - apt-get update -y
+    - apt-get install gcc -y
     - git submodule update --init --recursive
     - make test
