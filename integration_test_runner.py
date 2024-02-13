@@ -25,7 +25,7 @@ def extract_expected_output(fname):
     for line in lines:
       if line.startswith("# Output:"):
         output_line_found = True
-      elif output_line_found and line == "#\n":
+      elif output_line_found and (line == "# Program:\n" or line == "# Exit:\n"):
         break
       elif output_line_found:
         expected_output += line[2:]
@@ -76,6 +76,10 @@ def compile_run_assembly_file(fname, assembly_file):
   output = subprocess.run(["./execFile"], capture_output=True)
 
   expected_output = extract_expected_output(fname)
+
+  print(f"Ouptut: {output.stdout.decode().strip()}")
+  print(f"Expected:")
+  print(expected_output)
 
   if output.stdout.decode().strip() == expected_output:
     print("Output matches expected!")
@@ -128,8 +132,7 @@ def run_tests(tests_to_run):
             os.remove(assembly_file)
           else:
             print(f"Assembly file {assembly_file} not found.")
-          #   errorTests.append(fname)
-          validPasses += 1
+            errorTests.append(fname)
       else:
         print(f"Failed test {fname}. Expected exit code {expected} but got {actual}")
         errorTests.append(fname)
