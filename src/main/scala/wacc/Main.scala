@@ -76,7 +76,7 @@ object Main {
           val inputFile = new File(arg)
           val outputFileName = inputFile.getName.split('.').head + ".s"
           val file = new File(outputFileName)
-          /*file.createNewFile();
+          file.createNewFile();
 
           // Write a main function to the file
           val writer = new PrintWriter(file)
@@ -88,7 +88,7 @@ object Main {
               |    mov x0, #0
               |    svc 0
                 """.stripMargin)
-          writer.close()*/
+          writer.close()
 
           System.exit(SUCCESS_CODE)
 

@@ -8,26 +8,13 @@ import sys
 def get_return_code(fname):
   if (not fname.startswith("wacc_examples/in")):
     return 0
-  with open(fname) as f:
-    lines = f.readlines()
-    for i in range(len(lines)):
-      if lines[i].startswith("# Exit:"):
-        return int(re.search("[0-9]+", lines[i+1]).group())
-  return 0
-
-# Returns a list of all the directories in the base directory
-def list_directories_in_directory(base):
-  result = [name for name in os.listdir(base) if (os.path.isdir(os.path.join(base, name)) and name != 'whack')]
-  return result
-
-# Returns a list of all the files in the base directory
-def list_files_in_directory(base):
-    file_paths = []
-    for root, dirs, files in os.walk(base):
-        dirs[:] = [d for d in dirs if d.lower() != 'whack']
-        for file in files:
-            file_paths.append(os.path.join(root, file))
-    return file_paths
+  else:
+    if "syntax" in fname:
+      return 100
+    elif "semantic" in fname:
+      return 200
+    else:
+      return 0
 
 # Extract expected output from comments in WACC file
 def extract_expected_output(fname):
@@ -44,8 +31,23 @@ def extract_expected_output(fname):
         expected_output += line[2:]
   return expected_output
 
+# Returns a list of all the directories in the base directory
+def list_directories_in_directory(base):
+  result = [name for name in os.listdir(base) if (os.path.isdir(os.path.join(base, name)) and name != 'whack')]
+  return result
+
+# Returns a list of all the files in the base directory
+def list_files_in_directory(base):
+    file_paths = []
+    for root, dirs, files in os.walk(base):
+        dirs[:] = [d for d in dirs if d.lower() != 'whack']
+        for file in files:
+            file_paths.append(os.path.join(root, file))
+    return file_paths
+
 # Adds all the tests to the tests dictionary
 def add_tests_to_dict(base):
+  tests = dict()
   for directory in list_directories_in_directory(base):
     # Added valid and invalid directories to the tests dictionary
     tests[directory] = list_files_in_directory(base + directory + "/")
@@ -62,9 +64,9 @@ def add_tests_to_dict(base):
         for subsubdirectory in list_directories_in_directory(base + directory + "/" + subdirectory + "/"):
           tests[directory + "-" + subdirectory[:-3] + "-" + subsubdirectory] = \
             list_files_in_directory(base + directory + "/" + subdirectory + "/" + subsubdirectory + "/")
+  return tests
 
 def compile_run_assembly_file(fname, assembly_file):
-  global validPasses
   # Compile the assembly file
   print(f"aarch64-linux-gnu-gcc -o execFile -z noexecstack -march=armv8-a {assembly_file}")
   subprocess.run(["aarch64-linux-gnu-gcc", "-o", "execFile", "-z", "noexecstack", "-march=armv8-a", assembly_file])
@@ -76,22 +78,20 @@ def compile_run_assembly_file(fname, assembly_file):
   expected_output = extract_expected_output(fname)
 
   if output.stdout.decode().strip() == expected_output:
-    validPasses += 1
     print("Output matches expected!")
+    return True
   else:
     print("Output does not match expected.")
     errorTests.append(fname)
-
-  # Remove the assembly and executable files
-  os.remove(assembly_file)
+    return False
 
 def run_tests(tests_to_run):
-  global syntaxTotal
-  global semanticTotal
-  global syntaxPasses
-  global semanticPasses
-  global validTotal
-  global validPasses
+  syntaxTotal = 0
+  semanticTotal = 0
+  syntaxPasses = 0
+  semanticPasses = 0
+  validTotal = 0
+  validPasses = 0
 
   for test in tests_to_run:
     for fname in glob.glob(test):
@@ -116,22 +116,27 @@ def run_tests(tests_to_run):
           elif "semantic" in fname:
             semanticPasses += 1
         else:
-#           # If compilation was successful, run the corresponding assembly file
-#           assembly_file = os.path.basename(fname).replace('.wacc', '.s')
-#
-#           if os.path.exists(assembly_file):
-#             # Compile the assembly file
-#             compile_run_assembly_file(fname, assembly_file)
-#           else:
-#             print(f"Assembly file {assembly_file} not found.")
-            validPasses += 1
+          # If compilation was successful, run the corresponding assembly file
+          assembly_file = os.path.basename(fname).replace('.wacc', '.s')
+
+          if os.path.exists(assembly_file):
+            # Compile the assembly file
+            if compile_run_assembly_file(fname, assembly_file):
+              validPasses += 1
+
+            # Remove the assembly and executable files
+            os.remove(assembly_file)
+          else:
+            print(f"Assembly file {assembly_file} not found.")
+          #   errorTests.append(fname)
+          validPasses += 1
       else:
         print(f"Failed test {fname}. Expected exit code {expected} but got {actual}")
         errorTests.append(fname)
+  return (syntaxTotal, semanticTotal, syntaxPasses, semanticPasses, validTotal, validPasses)
 
 base = "wacc_examples/"
-tests = dict()
-add_tests_to_dict(base)
+tests = add_tests_to_dict(base)
 runningTests = []
 
 # If no arguments are given, run all tests
@@ -149,18 +154,12 @@ else :
     print(f"Test tag {tag} not found")
     sys.exit(1)
 
-validTotal = 0
-syntaxTotal = 0
-semanticTotal = 0
-syntaxPasses = 0
-semanticPasses = 0
-validPasses = 0
 errorTests = []
 
 print("Running tests...")
 
 # Run the tests
-run_tests(runningTests)
+syntaxTotal, semanticTotal, syntaxPasses, semanticPasses, validTotal, validPasses = run_tests(runningTests)
 
 totalPasses = validPasses + syntaxPasses + semanticPasses
 total = validTotal + syntaxTotal + semanticTotal
