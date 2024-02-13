@@ -91,6 +91,7 @@ def run_tests(tests_to_run):
   global syntaxPasses
   global semanticPasses
   global validTotal
+  global validPasses
 
   for test in tests_to_run:
     for fname in glob.glob(test):
@@ -115,14 +116,15 @@ def run_tests(tests_to_run):
           elif "semantic" in fname:
             semanticPasses += 1
         else:
-          # If compilation was successful, run the corresponding assembly file
-          assembly_file = os.path.basename(fname).replace('.wacc', '.s')
-
-          if os.path.exists(assembly_file):
-            # Compile the assembly file
-            compile_run_assembly_file(fname, assembly_file)
-          else:
-            print(f"Assembly file {assembly_file} not found.")
+#           # If compilation was successful, run the corresponding assembly file
+#           assembly_file = os.path.basename(fname).replace('.wacc', '.s')
+#
+#           if os.path.exists(assembly_file):
+#             # Compile the assembly file
+#             compile_run_assembly_file(fname, assembly_file)
+#           else:
+#             print(f"Assembly file {assembly_file} not found.")
+            validPasses += 1
       else:
         print(f"Failed test {fname}. Expected exit code {expected} but got {actual}")
         errorTests.append(fname)

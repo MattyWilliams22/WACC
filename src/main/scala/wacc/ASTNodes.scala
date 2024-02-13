@@ -166,7 +166,7 @@ object ASTNodes {
   case class Declare(_type: Type, ident: Ident, value: RValue) extends Statement {
     // Semantically check a declare statement
     def check(): Boolean = {
-
+      currentSymbolTable.generateSymbolTable(this)
       // Check the value on the right of the declaration
       checkValid(value.check(), "Invalid Rvalue", value)
 
@@ -244,7 +244,7 @@ object ASTNodes {
 
     // Semantically check an if-then-else statement
     def check(): Boolean = {
-
+      currentSymbolTable.generateSymbolTable(this)
       // Check that the condition is semantically valid and has type bool
       checkValid(cond.check() , "Invalid condition of if statement", cond)
       checkValid(cond.getType == BaseT("bool"),
@@ -270,6 +270,7 @@ object ASTNodes {
 
     // Semantically check while statements
     def check(): Boolean = {
+      currentSymbolTable.generateSymbolTable(this)
       val tempSymbolTable: SymbolTable = currentSymbolTable
       currentSymbolTable = symbolTable
 
@@ -293,6 +294,7 @@ object ASTNodes {
 
     // Semantically check a scope statement
     def check(): Boolean = {
+      currentSymbolTable.generateSymbolTable(this)
       val tempSymbolTable: SymbolTable = currentSymbolTable
       currentSymbolTable = symbolTable
 
