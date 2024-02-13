@@ -10,3 +10,4 @@ RUN curl -fL https://github.com/Virtuslab/scala-cli/releases/latest/download/sca
 RUN chmod +x scala-cli
 RUN mv scala-cli /usr/local/bin/scala-cli
 RUN apt install python3 -y
+RUN apt install gcc-aarch64-linux-gnu qemu-user -y
