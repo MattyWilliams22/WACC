@@ -77,10 +77,6 @@ def compile_run_assembly_file(fname, assembly_file):
 
   expected_output = extract_expected_output(fname)
 
-  print(f"Ouptut: {output.stdout.decode().strip()}")
-  print(f"Expected:")
-  print(expected_output)
-
   if output.stdout.decode().strip() == expected_output:
     print("Output matches expected!")
     return True
