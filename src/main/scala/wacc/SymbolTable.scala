@@ -21,7 +21,7 @@ class SymbolTable(var parent: Option[SymbolTable],
   def generateSymbolTable(node: ASTNode): Unit = {
     node match {
       case prog: Program =>
-        for (func <- prog.funcs) {
+        for (func <- prog.functions) {
           if (lookupFunction(func.ident.str).isDefined) {
             System.exit(SEMANTIC_ERR_CODE)
           }
