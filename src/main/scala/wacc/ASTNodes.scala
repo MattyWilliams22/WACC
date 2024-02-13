@@ -10,25 +10,33 @@ object ASTNodes {
   var semanticErrors = new ListBuffer[SemanticError]()
 
   // Prints an error message and exits if valid is false
-  def checkValid(valid: Boolean, errorMessage: String, node: ASTNode): Boolean = {
+  private def checkValid(valid: Boolean, errorMessage: String, node: ASTNode): Boolean = {
     if (!valid) {
       semanticErrors += SemanticError(errorMessage, node)
     }
     true
   }
 
+  // Check if an expression is valid and if it is of type int
+  private def checkExprInt(exp: Expr): Boolean = {
+    // Check that the expression is semantically valid and has type int
+    checkValid(exp.check(), "Invalid expression", exp)
+    checkValid(exp.getType == BaseT("int"),
+      "Expression must have type int", exp)
+    true
+  }
+
   sealed trait ASTNode
 
-  case class Program(funcs: List[Function], statement: Statement) extends ASTNode {
+  case class Program(functions: List[Function], statement: Statement) extends ASTNode {
     val symbolTable: SymbolTable = new SymbolTable(None)
 
     // Checks the semantics of a program
     def check(): List[SemanticError] = {
-      var valid: Boolean = true
       currentSymbolTable = symbolTable
 
       // Checks semantics of each function in the program
-      for (func <- funcs) {
+      for (func <- functions) {
         checkValid(func.check(), "Invalid function", func)
       }
 
@@ -43,7 +51,7 @@ object ASTNodes {
 
     // Checks if the statement contains a return statement
     // If it does, exit with semantic error code
-    def checkReturns(stmt: Statement): Unit = {
+    private def checkReturns(stmt: Statement): Unit = {
       stmt match {
         case stmts: Statements =>
           // Check each statement in the list of statements
@@ -51,18 +59,17 @@ object ASTNodes {
             // If the statement is Return(_), exit with the semantic error code
             // Else, If the statement contains more statements, recursively check these
             stat match {
-              case Return(_) => checkValid(false, "Return statement in main body", stat)
+              case Return(_) => checkValid(valid = false, "Return statement in main body", stat)
               case While(_,body) => checkReturns(body)
-              case If(_,thenS,elseS) => {
+              case If(_,thenS,elseS) =>
                 checkReturns(thenS)
                 checkReturns(elseS)
-              }
               case Scope(body) => checkReturns(body)
               case _ =>
             }
           }
         // If the single statement is Return(_), exit with the semantic error code
-        case Return(_) => checkValid(false, "Return statement in main body", stmt)
+        case Return(_) => checkValid(valid = false, "Return statement in main body", stmt)
         case _ =>
       }
     }
@@ -74,7 +81,6 @@ object ASTNodes {
 
     // Checks the semantics of a function
     def check(): Boolean = {
-      var valid: Boolean = true
       val tempSymbolTable: SymbolTable = currentSymbolTable
       currentSymbolTable = bodySymbolTable
 
@@ -94,7 +100,7 @@ object ASTNodes {
     }
 
     // Returns a list of types of every return in the statement
-    def getReturns(stmt: Statement): List[Type] = {
+    private def getReturns(stmt: Statement): List[Type] = {
       stmt match {
         case stmts: Statements =>
           var returnTypes: List[Type] = List.empty
@@ -111,23 +117,22 @@ object ASTNodes {
           returnTypes
 
         // If a return statement is found, return a singleton list of its type
-        case r: Return => List(r.getType())
+        case r: Return => List(r.getType)
         // Recursively check statements containing more statements
-        case While(_, wbody) => getReturns(wbody)
-        case If(_, thenS, elseS) => {
-          val tthen = getReturns(thenS)
-          val telse = getReturns(elseS)
+        case While(_, whileBody) => getReturns(whileBody)
+        case If(_, thenS, elseS) =>
+          val thenType = getReturns(thenS)
+          val elseType = getReturns(elseS)
           var ts: List[Type] = List.empty
           // Combine the valid types from the then and else cases
-          if (tthen.nonEmpty && tthen.head != BaseT("ERROR")) {
-            ts = ts ++ tthen
+          if (thenType.nonEmpty && thenType.head != BaseT("ERROR")) {
+            ts = ts ++ thenType
           }
-          if (telse.nonEmpty && telse.head != BaseT("ERROR")) {
-            ts = ts ++ telse
+          if (elseType.nonEmpty && elseType.head != BaseT("ERROR")) {
+            ts = ts ++ elseType
           }
           ts
-        }
-        case Scope(sbody) => getReturns(sbody)
+        case Scope(bodyScope) => getReturns(bodyScope)
         // For any other statement, return a singleton of the erroneous type
         case _ => List(BaseT("ERROR"))
       }
@@ -137,14 +142,14 @@ object ASTNodes {
   case class Param(_type: Type, ident: Ident) extends ASTNode {
     // Semantically check a parameter
     def check(): Boolean = {
-      checkValid(_type == ident.getType(),
+      checkValid(_type == ident.getType,
         "Type of parameter and identifier do not match", this)
       true
     }
 
     // Get the type of a parameter
-    def getType(): Type = {
-      _type.getType()
+    def getType: Type = {
+      _type.getType
     }
   }
 
@@ -161,30 +166,29 @@ object ASTNodes {
   case class Declare(_type: Type, ident: Ident, value: RValue) extends Statement {
     // Semantically check a declare statement
     def check(): Boolean = {
-      currentSymbolTable.generateSymbolTable(this)
 
       // Check the value on the right of the declaration
-      var valid: Boolean = checkValid(value.check(), "Invalid Rvalue", value)
+      checkValid(value.check(), "Invalid Rvalue", value)
 
       // Check that the type of the variable and the type of the value are complementary
-      val tValue = value.getType()
+      val valueType = value.getType
       val isPair = _type match {
         case PairT(_, _) => true
         case _ => false
       }
-      val isEmptyArrayLiteral = tValue match {
+      val isEmptyArrayLiteral = valueType match {
         case ArrayT(BaseT("Empty"), _) => true
         case _ => false
       }
-      val isPairOfNulls = tValue match {
+      val isPairOfNulls = valueType match {
         case PairT(PairNull(),PairNull()) => true
         case _ => false
       }
-      checkValid((_type == tValue ||
-        isPair && (tValue == PairLiter("null") || tValue == PairNull()) ||
+      checkValid(_type == valueType ||
+        isPair && (valueType == PairLiter("null") || valueType == PairNull()) ||
         isEmptyArrayLiteral && _type.isInstanceOf[ArrayT] ||
-        _type == BaseT("string") && tValue == ArrayT(BaseT("char"), 1) ||
-        isPairOfNulls), "Types of variable and rvalue do not match", this)
+        _type == BaseT("string") && valueType == ArrayT(BaseT("char"), 1) ||
+        isPairOfNulls, "Types of variable and rvalue do not match", this)
       true
     }
   }
@@ -197,28 +201,26 @@ object ASTNodes {
       checkValid(rvalue.check(), "Invalid rvalue", rvalue)
 
       // Check that the types of lvalue and rvalue are complementary
-      val tlvalue = lvalue.getType()
-      var trvalue = rvalue.getType()
-      trvalue = trvalue match {
+      val lvalueType = lvalue.getType
+      var rvalueType = rvalue.getType
+      rvalueType = rvalueType match {
         case ArrayT(BaseT("Empty"),0) => PairNull()
-        case _ => trvalue
+        case _ => rvalueType
       }
-      val isPair = tlvalue match {
+      val isPair = lvalueType match {
         case PairT(_, _) => true
         case _ => false
       }
-      var valid = (tlvalue == trvalue ||
-        isPair && (trvalue == PairLiter("null") || trvalue == PairNull()))
+      var valid = lvalueType == rvalueType ||
+        isPair && (rvalueType == PairLiter("null") || rvalueType == PairNull())
       lvalue match {
-        case ident: Ident => {
-          if (ident.isFunction()) {
+        case ident: Ident =>
+          if (ident.isFunction) {
             valid = false
           }
-        }
         case _ =>
       }
       checkValid(valid, "Types of lvalue and rvalue do not match", this)
-      true
     }
   }
 
@@ -229,8 +231,8 @@ object ASTNodes {
       checkValid(lvalue.check(), "Invalid lvalue", lvalue)
 
       // Ensure lvalue has type int or type char
-      val tlvalue = lvalue.getType()
-      checkValid((tlvalue == BaseT("int") || tlvalue == BaseT("char")),
+      val lvalueType = lvalue.getType
+      checkValid(lvalueType == BaseT("int") || lvalueType == BaseT("char"),
         "Lvalue must have type int or type char", lvalue)
       true
     }
@@ -242,11 +244,10 @@ object ASTNodes {
 
     // Semantically check an if-then-else statement
     def check(): Boolean = {
-      currentSymbolTable.generateSymbolTable(this)
 
       // Check that the condition is semantically valid and has type bool
       checkValid(cond.check() , "Invalid condition of if statement", cond)
-      checkValid(cond.getType() == BaseT("bool"),
+      checkValid(cond.getType == BaseT("bool"),
         "Condition must have type bool", cond)
 
       val tempSymbolTable = currentSymbolTable
@@ -269,7 +270,6 @@ object ASTNodes {
 
     // Semantically check while statements
     def check(): Boolean = {
-      currentSymbolTable.generateSymbolTable(this)
       val tempSymbolTable: SymbolTable = currentSymbolTable
       currentSymbolTable = symbolTable
 
@@ -280,7 +280,7 @@ object ASTNodes {
       checkValid(body.check(), "Invalid body of while loop", body)
 
       // Check that the condition has type bool
-      checkValid(cond.getType() == BaseT("bool"),
+      checkValid(cond.getType == BaseT("bool"),
         "Condition must have type bool", cond)
 
       currentSymbolTable = tempSymbolTable
@@ -293,7 +293,6 @@ object ASTNodes {
 
     // Semantically check a scope statement
     def check(): Boolean = {
-      currentSymbolTable.generateSymbolTable(this)
       val tempSymbolTable: SymbolTable = currentSymbolTable
       currentSymbolTable = symbolTable
 
@@ -308,7 +307,6 @@ object ASTNodes {
   case class Statements(stmts: List[Statement]) extends Statement {
     // Semantically check a list of statements
     def check(): Boolean = {
-      var valid: Boolean = true
       // Check that each statement in the list is semantically valid
       for (stat <- stmts) {
         checkValid(stat.check(), "Invalid statement", stat)
@@ -321,7 +319,7 @@ object ASTNodes {
     // Semantically check a free statement
     def check(): Boolean = {
       // Check that the expression is semantically valid and has type pair or array
-      val t: Type = exp.getType()
+      val t: Type = exp.getType
       checkValid(exp.check(), "Invalid expression", exp)
       val valid = t match {
         case PairT(_, _) => true
@@ -341,9 +339,9 @@ object ASTNodes {
     }
 
     // Get the type of the return statement
-    def getType(): Type = {
+    def getType: Type = {
       // Get the type of the expression
-      exp.getType()
+      exp.getType
     }
   }
 
@@ -351,9 +349,7 @@ object ASTNodes {
     // Semantically check an exit statement
     def check(): Boolean = {
       // Check that the expression is semantically valid and has type int
-      checkValid(exp.check(), "Invalid expression", exp)
-      checkValid(exp.getType() == BaseT("int"),
-        "Expression must have type int", exp)
+      checkExprInt(exp)
       true
     }
   }
@@ -377,13 +373,13 @@ object ASTNodes {
   sealed trait Type extends ASTNode {
     def check(): Boolean
 
-    def getType(): Type
+    def getType: Type
   }
 
   sealed trait PairElemT extends Type {
     def check(): Boolean
 
-    def getType(): Type
+    def getType: Type
   }
 
   case class BaseT(str: String) extends Type with PairElemT {
@@ -396,7 +392,7 @@ object ASTNodes {
       true
     }
 
-    def getType(): Type = {
+    def getType: Type = {
       // Return the type
       this
     }
@@ -410,7 +406,7 @@ object ASTNodes {
     }
 
     // Get the type of the array
-    def getType(): Type = {
+    def getType: Type = {
       // Return the type
       this
     }
@@ -426,7 +422,7 @@ object ASTNodes {
     }
 
     // Get the type of the pair
-    def getType(): Type = {
+    def getType: Type = {
       // Return the type
       this
     }
@@ -439,7 +435,7 @@ object ASTNodes {
     }
 
     // Get the type of a pair null
-    def getType(): Type = {
+    def getType: Type = {
       this
     }
   }
@@ -447,13 +443,13 @@ object ASTNodes {
   sealed trait LValue extends ASTNode {
     def check(): Boolean
 
-    def getType(): Type
+    def getType: Type
   }
 
   sealed trait RValue extends ASTNode {
     def check(): Boolean
 
-    def getType(): Type
+    def getType: Type
   }
 
   case class ArrayLiter(elems: List[Expr]) extends RValue {
@@ -474,11 +470,11 @@ object ASTNodes {
       // Check that the elements in the array are all of the same type
       valid = elems match {
         case head :: tail =>
-          val firstType = head.getType()
+          val firstType = head.getType
           firstType match {
             case BaseT("string") | ArrayT(BaseT("char"), _) =>
-              tail.forall(elem => isStringOrCharArray(elem.getType()))
-            case _ => tail.forall(elem => elem.getType() == firstType)
+              tail.forall(elem => isStringOrCharArray(elem.getType))
+            case _ => tail.forall(elem => elem.getType == firstType)
           }
         case _ => true
       }
@@ -487,17 +483,17 @@ object ASTNodes {
     }
 
     // Get the type of the array literal
-    def getType(): Type = {
+    def getType: Type = {
       // If the array is empty, return the type of the first element
       if (elems.isEmpty) {
         ArrayT(BaseT("Empty"), 0)
       } else {
         // If the array contains a string, return the type of the string
-        if (elems.exists(elem => elem.getType() == BaseT("string"))) {
+        if (elems.exists(elem => elem.getType == BaseT("string"))) {
           ArrayT(BaseT("string"), 1)
         } else {
           // If there is no string, return the type of the first element
-          elems.head.getType() match {
+          elems.head.getType match {
             case ArrayT(t, n) => ArrayT(t, n + 1)
             case t => ArrayT(t, 1)
           }
@@ -515,35 +511,26 @@ object ASTNodes {
       true
     }
 
+    private def convertToPairElemType(t: Type): PairElemT = t match {
+      case t: PairElemT => t
+      case _: PairLiter => PairNull()
+      case _: PairT => PairNull()
+      case _ => BaseT("Error")
+    }
+
     // Get the type of the new pair statement
-    def getType(): Type = {
+    def getType: Type = {
       // Get the types of the expressions
-      val type1: Type = exp1.getType()
-      val type2: Type = exp2.getType()
+      val type1: Type = exp1.getType
+      val type2: Type = exp2.getType
 
       // Convert types to PairElemT
-      val vtype1 = if (type1.isInstanceOf[PairElemT]) {
-        type1.asInstanceOf[PairElemT]
-      } else if (type1.isInstanceOf[PairLiter]) {
-        PairNull()
-      } else if (type1.isInstanceOf[PairT]) {
-        PairNull()
-      } else {
-        BaseT("ERROR")
-      }
-      val vtype2 = if (type2.isInstanceOf[PairElemT]) {
-        type2.asInstanceOf[PairElemT]
-      } else if (type2.isInstanceOf[PairLiter]) {
-        PairNull()
-      } else if (type2.isInstanceOf[PairT]) {
-        PairNull()
-      } else {
-        BaseT("ERROR")
-      }
+      val elemType1 = convertToPairElemType(type1)
+      val elemType2 = convertToPairElemType(type2)
 
       // Return the type of the pair
-      if (vtype1 != BaseT("ERROR") && vtype2 != BaseT("ERROR")) {
-        PairT(vtype1, vtype2)
+      if (elemType1 != BaseT("ERROR") && elemType2 != BaseT("ERROR")) {
+        PairT(elemType1, elemType2)
       } else {
         BaseT("ERROR")
       }
@@ -557,30 +544,29 @@ object ASTNodes {
     }
 
     // Get the type of the pair element
-    def getType(): Type = {
+    def getType: Type = {
       // Get the type of the parent of the pair element
-      def parentT: Type = lvalue.getType()
+      def parentT: Type = lvalue.getType
       // If the parent is a pair, return the type of the child
       parentT match {
         case t1: PairT =>
-          def pairT: PairT = t1
+          def pairType: PairT = t1
 
-          var childT: Type = func match {
-            case "fst" => pairT.pet1
-            case "snd" => pairT.pet2
+          var childType: Type = func match {
+            case "fst" => pairType.pet1
+            case "snd" => pairType.pet2
           }
-          if (childT == PairNull()) {
-            childT = lvalue match {
-              case Ident(str) => {
+          if (childType == PairNull()) {
+            childType = lvalue match {
+              case Ident(str) =>
                 currentSymbolTable.lookupAllVariables(str) match {
                   case Some(Declare(t, _, _)) => t
-                  case _ => childT
+                  case _ => childType
                 }
-              }
-              case _ => childT
+              case _ => childType
             }
           }
-          childT
+          childType
         case _ =>
           // If the parent is not a pair, return an error
           BaseT("ERROR")
@@ -595,133 +581,70 @@ object ASTNodes {
       checkValid(funcName.check(), "Function does not exist in scope", funcName)
 
       // Check that the arguments are semantically valid and have the correct types
-      val funcForm = funcName.getNode()
+      val funcForm = funcName.getNode
       funcForm match {
-        case Function(t, ident, params, body) => {
+        case Function(_, _, params, _) =>
           checkValid(args.length == params.length, "Invalid number of arguments", Call(funcName, args))
           for (i <- 0 to (params.length-1).min(args.length-1)) {
             checkValid(args(i).check(), "Invalid argument", args(i))
-            checkValid(args(i).getType() == params(i).getType(), "Invalid argument type", args(i))
+            checkValid(args(i).getType == params(i).getType, "Invalid argument type", args(i))
           }
-        }
         case _ =>
       }
       true
     }
 
     // Get the type of the function call
-    def getType(): Type = {
-      funcName.getType()
+    def getType: Type = {
+      funcName.getType
     }
   }
 
   sealed trait Expr extends RValue {
     def check(): Boolean
 
-    def getType(): Type
+    def getType: Type
   }
 
-  case class Mul(exp1: Expr, exp2: Expr) extends Expr {
-    // Semantically check a multiplication expression
+  sealed trait BinOp extends Expr {
+    def exp1: Expr
+    def exp2: Expr
+
     def check(): Boolean = {
       // Check that the expressions are semantically valid and have type int
       checkValid(exp1.check(), "Invalid expression", exp1)
-      checkValid(exp2.check(), "Invalid expression", exp2)
-      checkValid(exp1.getType() == BaseT("int"),
+      checkValid(exp1.check(), "Invalid expression", exp2)
+      checkValid(exp1.getType == BaseT("int"),
         "Expression must have type int", exp1)
-      checkValid(exp2.getType() == BaseT("int"),
+      checkValid(exp1.getType == BaseT("int"),
         "Expression must have type int", exp2)
       true
     }
 
     // Get the type of the multiplication expression
-    def getType(): Type = {
+    def getType: Type = {
       BaseT("int")
     }
   }
 
-  case class Div(exp1: Expr, exp2: Expr) extends Expr {
-    // Semantically check a division expression
-    def check(): Boolean = {
-      // Check that the expressions are semantically valid and have type int
-      checkValid(exp1.check(), "Invalid expression", exp1)
-      checkValid(exp2.check(), "Invalid expression", exp2)
-      checkValid(exp1.getType() == BaseT("int"),
-        "Expression must have type int", exp1)
-      checkValid(exp2.getType() == BaseT("int"),
-        "Expression must have type int", exp2)
-      true
-    }
+  case class Mul(exp1: Expr, exp2: Expr) extends BinOp
 
-    // Get the type of the division expression
-    def getType(): Type = {
-      BaseT("int")
-    }
-  }
+  case class Div(exp1: Expr, exp2: Expr) extends BinOp
 
-  case class Mod(exp1: Expr, exp2: Expr) extends Expr {
-    // Semantically check a modulo expression
-    def check(): Boolean = {
-      // Check that the expressions are semantically valid and have type int
-      checkValid(exp1.check(), "Invalid expression", exp1)
-      checkValid(exp2.check(), "Invalid expression", exp2)
-      checkValid(exp1.getType() == BaseT("int"),
-        "Expression must have type int", exp1)
-      checkValid(exp2.getType() == BaseT("int"),
-        "Expression must have type int", exp2)
-      true
-    }
+  case class Mod(exp1: Expr, exp2: Expr) extends BinOp
 
-    // Get the type of the modulo expression
-    def getType(): Type = {
-      BaseT("int")
-    }
-  }
+  case class Add(exp1: Expr, exp2: Expr) extends BinOp
 
-  case class Add(exp1: Expr, exp2: Expr) extends Expr {
-    // Semantically check an addition expression
-    def check(): Boolean = {
-      // Check that the expressions are semantically valid and have type int
-      checkValid(exp1.check(), "Invalid expression", exp1)
-      checkValid(exp2.check(), "Invalid expression", exp2)
-      checkValid(exp1.getType() == BaseT("int"),
-        "Expression must have type int", exp1)
-      checkValid(exp2.getType() == BaseT("int"),
-        "Expression must have type int", exp2)
-      true
-    }
+  case class Sub(exp1: Expr, exp2: Expr) extends BinOp
 
-    // Get the type of the addition expression
-    def getType(): Type = {
-      BaseT("int")
-    }
-  }
+  sealed trait BinOpCompare extends Expr {
+    def exp1: Expr
+    def exp2: Expr
 
-  case class Sub(exp1: Expr, exp2: Expr) extends Expr {
-    // Semantically check a subtraction expression
-    def check(): Boolean = {
-      // Check that the expressions are semantically valid and have type int
-      checkValid(exp1.check(), "Invalid expression", exp1)
-      checkValid(exp2.check(), "Invalid expression", exp2)
-      checkValid(exp1.getType() == BaseT("int"),
-        "Expression must have type int", exp1)
-      checkValid(exp2.getType() == BaseT("int"),
-        "Expression must have type int", exp2)
-      true
-    }
-
-    // Get the type of the subtraction expression
-    def getType(): Type = {
-      BaseT("int")
-    }
-  }
-
-  case class GT(exp1: Expr, exp2: Expr) extends Expr {
-    // Semantically check a greater than expression
     def check(): Boolean = {
       // Check that the expressions are semantically valid and have type int or char
-      val type1: Type = exp1.getType()
-      val type2: Type = exp2.getType()
+      val type1: Type = exp1.getType
+      val type2: Type = exp2.getType
 
       checkValid(exp1.check(), "Invalid expression", exp1)
       checkValid(exp2.check(), "Invalid expression", exp2)
@@ -733,79 +656,20 @@ object ASTNodes {
     }
 
     // Get the type of the greater than expression
-    def getType(): Type = {
+    def getType: Type = {
       BaseT("bool")
     }
   }
 
-  case class GTEQ(exp1: Expr, exp2: Expr) extends Expr {
-    // Semantically check a greater than or equal to expression
-    def check(): Boolean = {
-      // Check that the expressions are semantically valid and have type int or char
-      val type1: Type = exp1.getType()
-      val type2: Type = exp2.getType()
+  case class GT(exp1: Expr, exp2: Expr) extends BinOpCompare
 
-      checkValid(exp1.check(), "Invalid expression", exp1)
-      checkValid(exp2.check(), "Invalid expression", exp2)
-      checkValid(type1 == BaseT("int") || type1 == BaseT("char"),
-        "Expression must have type int or char", exp1)
-      checkValid(type2 == BaseT("int") || type2 == BaseT("char"),
-        "Expression must have type int or char", exp2)
-      true
-    }
+  case class GTEQ(exp1: Expr, exp2: Expr) extends BinOpCompare
 
-    // Get the type of the greater than or equal to expression
-    def getType(): Type = {
-      BaseT("bool")
-    }
-  }
+  case class LT(exp1: Expr, exp2: Expr) extends BinOpCompare
 
-  case class LT(exp1: Expr, exp2: Expr) extends Expr {
-    // Semantically check a less than expression
-    def check(): Boolean = {
-      // Check that the expressions are semantically valid and have type int or char
-      val type1: Type = exp1.getType()
-      val type2: Type = exp2.getType()
+  case class LTEQ(exp1: Expr, exp2: Expr) extends BinOpCompare
 
-      checkValid(exp1.check(), "Invalid expression", exp1)
-      checkValid(exp2.check(), "Invalid expression", exp2)
-      checkValid((type1 == BaseT("int") || type1 == BaseT("char")),
-        "Expression must have type int or char", exp1)
-      checkValid((type2 == BaseT("int") || type2 == BaseT("char")),
-        "Expression must have type int or char", exp2)
-      true
-    }
-
-    // Get the type of the less than expression
-    def getType(): Type = {
-      BaseT("bool")
-    }
-  }
-
-  case class LTEQ(exp1: Expr, exp2: Expr) extends Expr {
-    // Semantically check a less than or equal to expression
-    def check(): Boolean = {
-      // Check that the expressions are semantically valid and have type int or char
-      val type1: Type = exp1.getType()
-      val type2: Type = exp2.getType()
-
-      checkValid(exp1.check(), "Invalid expression", exp1)
-      checkValid(exp2.check(), "Invalid expression", exp2)
-      checkValid(type1 == BaseT("int") || type1 == BaseT("char"),
-        "Expression must have type int or char", exp1)
-      checkValid(type2 == BaseT("int") || type2 == BaseT("char"),
-        "Expression must have type int or char", exp2)
-      true
-    }
-
-    // Get the type of the less than or equal to expression
-    def getType(): Type = {
-      BaseT("bool")
-    }
-  }
-
-  case class EQ(exp1: Expr, exp2: Expr) extends Expr {
-    // Semantically check an equal to expression
+  class Equality(exp1: Expr, exp2: Expr) extends Expr {
     def check(): Boolean = {
       // Check that the expressions are semantically valid
       checkValid(exp1.check(), "Invalid expression", exp1)
@@ -814,76 +678,52 @@ object ASTNodes {
     }
 
     // Get the type of the equal to expression
-    def getType(): Type = {
+    def getType: Type = {
       BaseT("bool")
     }
   }
 
-  case class NEQ(exp1: Expr, exp2: Expr) extends Expr {
-    // Semantically check a not equal to expression
-    def check(): Boolean = {
-      // Check that the expressions are semantically valid
-      checkValid(exp1.check(), "Invalid expression", exp1)
-      checkValid(exp2.check(), "Invalid expression", exp2)
-      true
-    }
+  case class EQ(exp1: Expr, exp2: Expr) extends Equality(exp1, exp2)
 
-    // Get the type of the not equal to expression
-    def getType(): Type = {
-      BaseT("bool")
-    }
-  }
+  case class NEQ(exp1: Expr, exp2: Expr) extends Equality(exp1, exp2)
 
-  case class And(exp1: Expr, exp2: Expr) extends Expr {
-    // Semantically check an and expression
+  sealed trait BinOpLogic extends Expr {
+    def exp1: Expr
+    def exp2: Expr
+
     def check(): Boolean = {
       // Check that the expressions are semantically valid and have type bool
       checkValid(exp1.check(), "Invalid expression", exp1)
       checkValid(exp2.check(), "Invalid expression", exp2)
-      checkValid(exp1.getType() == BaseT("bool"),
+      checkValid(exp1.getType == BaseT("bool"),
         "Expression must have type bool", exp1)
-      checkValid(exp2.getType() == BaseT("bool"),
+      checkValid(exp2.getType == BaseT("bool"),
         "Expression must have type bool", exp2)
       true
     }
 
     // Get the type of the and expression
-    def getType(): Type = {
+    def getType: Type = {
       BaseT("bool")
     }
   }
 
-  case class Or(exp1: Expr, exp2: Expr) extends Expr {
-    // Semantically check an or expression
-    def check(): Boolean = {
-      // Check that the expressions are semantically valid and have type bool
-      checkValid(exp1.check(), "Invalid expression", exp1)
-      checkValid(exp2.check(), "Invalid expression", exp2)
-      checkValid(exp1.getType() == BaseT("bool"),
-        "Expression must have type bool", exp1)
-      checkValid(exp2.getType() == BaseT("bool"),
-        "Expression must have type bool", exp2)
-      true
-    }
+  case class And(exp1: Expr, exp2: Expr) extends BinOpLogic
 
-    // Get the type of the or expression
-    def getType(): Type = {
-      BaseT("bool")
-    }
-  }
+  case class Or(exp1: Expr, exp2: Expr) extends BinOpLogic
 
   case class Not(exp: Expr) extends Expr {
     // Semantically check a not expression
     def check(): Boolean = {
       // Check that the expression is semantically valid and has type bool
       checkValid(exp.check(), "Invalid expression", exp)
-      checkValid(exp.getType() == BaseT("bool"),
+      checkValid(exp.getType == BaseT("bool"),
         "Expression must have type bool", exp)
       true
     }
 
     // Get the type of the not expression
-    def getType(): Type = {
+    def getType: Type = {
       BaseT("bool")
     }
   }
@@ -892,14 +732,11 @@ object ASTNodes {
     // Semantically check a negation expression
     def check(): Boolean = {
       // Check that the expression is semantically valid and has type int
-      checkValid(exp.check(), "Invalid expression", exp)
-      checkValid(exp.getType() == BaseT("int"),
-        "Expression must have type int", exp)
-      true
+      checkExprInt(exp)
     }
 
     // Get the type of the negation expression
-    def getType(): Type = {
+    def getType: Type = {
       BaseT("int")
     }
   }
@@ -908,10 +745,10 @@ object ASTNodes {
     // Semantically check a length expression
     def check(): Boolean = {
       // Check that the expression is semantically valid and has type array
-      val arrT: Type = exp.getType()
+      val arrType: Type = exp.getType
 
       checkValid(exp.check(), "Invalid expression", exp)
-      val valid = arrT match {
+      val valid = arrType match {
         case ArrayT(_, n) if n > 0 => true
         case _ => false
       }
@@ -920,7 +757,7 @@ object ASTNodes {
     }
 
     // Get the type of the length expression
-    def getType(): Type = {
+    def getType: Type = {
       BaseT("int")
     }
   }
@@ -930,13 +767,13 @@ object ASTNodes {
     def check(): Boolean = {
       // Check that the expression is semantically valid and has type char
       checkValid(exp.check(), "Invalid expression", exp)
-      checkValid(exp.getType() == BaseT("char"),
+      checkValid(exp.getType == BaseT("char"),
         "Expression must have type char", exp)
       true
     }
 
     // Get the type of the ord expression
-    def getType(): Type = {
+    def getType: Type = {
       BaseT("int")
     }
   }
@@ -945,14 +782,11 @@ object ASTNodes {
     // Semantically check a chr expression
     def check(): Boolean = {
       // Check that the expression is semantically valid and has type int
-      checkValid(exp.check(), "Invalid expression", exp)
-      checkValid(exp.getType() == BaseT("int"),
-        "Expression must have type int", exp)
-      true
+      checkExprInt(exp)
     }
 
     // Get the type of the chr expression
-    def getType(): Type = {
+    def getType: Type = {
       BaseT("char")
     }
   }
@@ -966,7 +800,7 @@ object ASTNodes {
     }
 
     // Get the type of the number
-    def getType(): Type = {
+    def getType: Type = {
       BaseT("int")
     }
   }
@@ -981,7 +815,7 @@ object ASTNodes {
     }
 
     // Get the type of the boolean
-    def getType(): Type = {
+    def getType: Type = {
       BaseT("bool")
     }
   }
@@ -993,7 +827,7 @@ object ASTNodes {
     }
 
     // Get the type of the character
-    def getType(): Type = {
+    def getType: Type = {
       BaseT("char")
     }
   }
@@ -1005,7 +839,7 @@ object ASTNodes {
     }
 
     // Get the type of the string
-    def getType(): Type = {
+    def getType: Type = {
       BaseT("string")
     }
   }
@@ -1017,7 +851,7 @@ object ASTNodes {
     }
 
     // Get the type of the pair literal
-    def getType(): Type = {
+    def getType: Type = {
       PairLiter(str)
     }
   }
@@ -1026,14 +860,14 @@ object ASTNodes {
     // Semantically check an identifier
     def check(): Boolean = {
       // Check that the identifier is in the symbol table
-      checkValid((currentSymbolTable.lookupAllVariables(str).isDefined ||
-        currentSymbolTable.lookupAllFunctions(str).isDefined),
+      checkValid(currentSymbolTable.lookupAllVariables(str).isDefined ||
+        currentSymbolTable.lookupAllFunctions(str).isDefined,
         "Identifier does not exist in scope", this)
       true
     }
 
     // Get the type of the identifier
-    def getType(): Type = {
+    def getType: Type = {
       // Search the symbol table for the type of the identifier
       currentSymbolTable.lookupAllVariables(str) match {
         case Some(x) => x match {
@@ -1052,7 +886,7 @@ object ASTNodes {
     }
 
     // Get the node of the identifier
-    def getNode(): ASTNode = {
+    def getNode: ASTNode = {
       currentSymbolTable.lookupAllVariables(str) match {
         case Some(x) => x
         case None => currentSymbolTable.lookupAllFunctions(str) match {
@@ -1063,7 +897,7 @@ object ASTNodes {
     }
 
     // Check if the identifier is a function
-    def isFunction(): Boolean = {
+    def isFunction: Boolean = {
       currentSymbolTable.lookupAllFunctions(str).isDefined
     }
   }
@@ -1071,29 +905,28 @@ object ASTNodes {
   case class ArrayElem(ident: Ident, indices: List[Expr]) extends Atom with LValue {
     // Semantically check an array element
     def check(): Boolean = {
-      var valid: Boolean = true
       // Check that the identifier is semantically valid
       checkValid(ident.check(), "Invalid identifier", ident)
       // Check that the indices are semantically valid and have type int
       for (index <- indices) {
-        checkValid(index.getType() == BaseT("int"),
+        checkValid(index.getType == BaseT("int"),
           "Index must have type int", index)
       }
-      val tident = ident.getType()
-      tident match {
+      val identType = ident.getType
+      identType match {
         case t: ArrayT =>
           // Check that the number of indices is less than or equal to the dimensions of the array
           checkValid(t.dim >= indices.length,
             "Invalid number of indices", this)
         case _ =>
-          checkValid(false, "Identifier must be have type array", this)
+          checkValid(valid = false, "Identifier must be have type array", this)
       }
       true
     }
 
     // Get the type of the array element
-    def getType(): Type = {
-      ident.getType() match {
+    def getType: Type = {
+      ident.getType match {
         // Reduce the dimensions of the array by the number of indices
         case ArrayT(t, n) if n > indices.length => ArrayT(t, n - indices.length)
         case ArrayT(t, n) if n == indices.length => t
