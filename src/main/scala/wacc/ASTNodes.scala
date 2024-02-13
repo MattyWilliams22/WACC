@@ -615,10 +615,10 @@ object ASTNodes {
     def check(): Boolean = {
       // Check that the expressions are semantically valid and have type int
       checkValid(exp1.check(), "Invalid expression", exp1)
-      checkValid(exp1.check(), "Invalid expression", exp2)
+      checkValid(exp2.check(), "Invalid expression", exp2)
       checkValid(exp1.getType == BaseT("int"),
         "Expression must have type int", exp1)
-      checkValid(exp1.getType == BaseT("int"),
+      checkValid(exp2.getType == BaseT("int"),
         "Expression must have type int", exp2)
       true
     }
