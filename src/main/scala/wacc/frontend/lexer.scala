@@ -1,19 +1,18 @@
-package wacc
+package wacc.frontend
 
-import scala.language.postfixOps
-
-import parsley.character.digit
-import parsley.errors.combinator.ErrorMethods
 import parsley.Parsley
 import parsley.Parsley.{atomic, notFollowedBy}
+import parsley.character.digit
+import parsley.errors.combinator.ErrorMethods
 import parsley.syntax.character.stringLift
 import parsley.token.descriptions._
 import parsley.token.descriptions.numeric._
 import parsley.token.descriptions.text.EscapeDesc
 import parsley.token.errors._
-import parsley.token.Lexer
-import parsley.token.predicate
+import parsley.token.{Lexer, predicate}
 import parsley.token.symbol.ImplicitSymbol
+
+import scala.language.postfixOps
 
 object lexer {
   val errConfig = new ErrorConfig {

@@ -2,7 +2,7 @@ package wacc
 
 import java.security.Permission
 
-import wacc.ErrorOutput._
+import wacc.frontend.ErrorOutput._
 
 class NoExitSecurityManager extends SecurityManager {
   override def checkPermission(perm: java.security.Permission): Unit = {}

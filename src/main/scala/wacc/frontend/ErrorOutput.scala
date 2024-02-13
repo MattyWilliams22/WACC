@@ -1,11 +1,6 @@
-package wacc
+package wacc.frontend
 
-import scala.collection.mutable.ListBuffer
-import scala.io.BufferedSource
-import scala.io.Source._
-
-import wacc.ASTNodes._
-import wacc.Error._
+import wacc.frontend.Error._
 
 object ErrorOutput {
   val FILE_ERR_CODE = 150

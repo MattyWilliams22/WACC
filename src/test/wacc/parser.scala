@@ -6,7 +6,7 @@ import org.scalatest.matchers.should.Matchers
 import parsley.{Success, Failure}
 
 import wacc.ASTNodes._
-import wacc.parser._
+import wacc.frontend.parser._
 
 
 class ParserSpec extends AnyFlatSpec with Matchers {

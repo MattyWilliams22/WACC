@@ -4,8 +4,9 @@ import java.io.{File, PrintWriter}
 import scala.io.Source
 import parsley.{Failure, Result, Success}
 import wacc.ASTNodes._
-import wacc.ErrorOutput._
-import wacc.Error._
+import wacc.frontend.ErrorOutput._
+import wacc.frontend.Error._
+import wacc.frontend.{SemanticAnalyser, parser}
 
 object Main {
   val FILE_ERR_CODE = 150

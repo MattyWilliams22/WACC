@@ -5,7 +5,7 @@ import org.scalatest.matchers.should.Matchers
 
 import parsley.{Success, Result, Parsley, Failure}
 
-import wacc.lexer._
+import wacc.frontend.lexer._
 
 class LexerSpec extends AnyFlatSpec with Matchers {
 
@@ -13,8 +13,8 @@ class LexerSpec extends AnyFlatSpec with Matchers {
     val successInput = "fst"
     val failureInput = "notfst"
 
-    val successResult: Result[String, String] = lexer.fst.parse(successInput)
-    val failureResult: Result[String, String] = lexer.fst.parse(failureInput)
+    val successResult: Result[String, String] = frontend.lexer.fst.parse(successInput)
+    val failureResult: Result[String, String] = frontend.lexer.fst.parse(failureInput)
 
     successResult shouldBe Success("fst")
     failureResult shouldBe a[Failure[_]]
@@ -24,8 +24,8 @@ class LexerSpec extends AnyFlatSpec with Matchers {
     val successInput = "snd"
     val failureInput = "notsnd"
 
-    val successResult: Result[String, String] = lexer.snd.parse(successInput)
-    val failureResult: Result[String, String] = lexer.snd.parse(failureInput)
+    val successResult: Result[String, String] = frontend.lexer.snd.parse(successInput)
+    val failureResult: Result[String, String] = frontend.lexer.snd.parse(failureInput)
 
     successResult shouldBe Success("snd")
     failureResult shouldBe a[Failure[_]]
@@ -35,8 +35,8 @@ class LexerSpec extends AnyFlatSpec with Matchers {
     val successInput = "print"
     val failureInput = "notprint"
 
-    val successResult: Result[String, String] = lexer.print.parse(successInput)
-    val failureResult: Result[String, String] = lexer.print.parse(failureInput)
+    val successResult: Result[String, String] = frontend.lexer.print.parse(successInput)
+    val failureResult: Result[String, String] = frontend.lexer.print.parse(failureInput)
 
     successResult shouldBe Success("print")
     failureResult shouldBe a[Failure[_]]
@@ -46,8 +46,8 @@ class LexerSpec extends AnyFlatSpec with Matchers {
     val successInput = "println"
     val failureInput = "notprintln"
 
-    val successResult: Result[String, String] = lexer.println.parse(successInput)
-    val failureResult: Result[String, String] = lexer.println.parse(failureInput)
+    val successResult: Result[String, String] = frontend.lexer.println.parse(successInput)
+    val failureResult: Result[String, String] = frontend.lexer.println.parse(failureInput)
 
     successResult shouldBe Success("println")
     failureResult shouldBe a[Failure[_]]
@@ -57,8 +57,8 @@ class LexerSpec extends AnyFlatSpec with Matchers {
     val successInput = "read"
     val failureInput = "notread"
 
-    val successResult: Result[String, String] = lexer.read.parse(successInput)
-    val failureResult: Result[String, String] = lexer.read.parse(failureInput)
+    val successResult: Result[String, String] = frontend.lexer.read.parse(successInput)
+    val failureResult: Result[String, String] = frontend.lexer.read.parse(failureInput)
 
     successResult shouldBe Success("read")
     failureResult shouldBe a[Failure[_]]
@@ -68,8 +68,8 @@ class LexerSpec extends AnyFlatSpec with Matchers {
     val successInput = "free"
     val failureInput = "notfree"
 
-    val successResult: Result[String, String] = lexer.free.parse(successInput)
-    val failureResult: Result[String, String] = lexer.free.parse(failureInput)
+    val successResult: Result[String, String] = frontend.lexer.free.parse(successInput)
+    val failureResult: Result[String, String] = frontend.lexer.free.parse(failureInput)
 
     successResult shouldBe Success("free")
     failureResult shouldBe a[Failure[_]]
@@ -79,8 +79,8 @@ class LexerSpec extends AnyFlatSpec with Matchers {
     val successInput = "return"
     val failureInput = "notreturn"
 
-    val successResult: Result[String, String] = lexer.ret.parse(successInput)
-    val failureResult: Result[String, String] = lexer.ret.parse(failureInput)
+    val successResult: Result[String, String] = frontend.lexer.ret.parse(successInput)
+    val failureResult: Result[String, String] = frontend.lexer.ret.parse(failureInput)
 
     successResult shouldBe Success("return")
     failureResult shouldBe a[Failure[_]]
@@ -90,8 +90,8 @@ class LexerSpec extends AnyFlatSpec with Matchers {
     val successInput = "exit"
     val failureInput = "notexit"
 
-    val successResult: Result[String, String] = lexer.exit.parse(successInput)
-    val failureResult: Result[String, String] = lexer.exit.parse(failureInput)
+    val successResult: Result[String, String] = frontend.lexer.exit.parse(successInput)
+    val failureResult: Result[String, String] = frontend.lexer.exit.parse(failureInput)
 
     successResult shouldBe Success("exit")
     failureResult shouldBe a[Failure[_]]
@@ -101,8 +101,8 @@ class LexerSpec extends AnyFlatSpec with Matchers {
     val successInput = "begin"
     val failureInput = "notbegin"
 
-    val successResult: Result[String, String] = lexer.begin.parse(successInput)
-    val failureResult: Result[String, String] = lexer.begin.parse(failureInput)
+    val successResult: Result[String, String] = frontend.lexer.begin.parse(successInput)
+    val failureResult: Result[String, String] = frontend.lexer.begin.parse(failureInput)
 
     successResult shouldBe Success("begin")
     failureResult shouldBe a[Failure[_]]
@@ -112,8 +112,8 @@ class LexerSpec extends AnyFlatSpec with Matchers {
     val successInput = "end"
     val failureInput = "notend"
 
-    val successResult: Result[String, String] = lexer.end.parse(successInput)
-    val failureResult: Result[String, String] = lexer.end.parse(failureInput)
+    val successResult: Result[String, String] = frontend.lexer.end.parse(successInput)
+    val failureResult: Result[String, String] = frontend.lexer.end.parse(failureInput)
 
     successResult shouldBe Success("end")
     failureResult shouldBe a[Failure[_]]
@@ -123,8 +123,8 @@ class LexerSpec extends AnyFlatSpec with Matchers {
     val successInput = "while"
     val failureInput = "notwhile"
 
-    val successResult: Result[String, String] = lexer.WHILE.parse(successInput)
-    val failureResult: Result[String, String] = lexer.WHILE.parse(failureInput)
+    val successResult: Result[String, String] = frontend.lexer.WHILE.parse(successInput)
+    val failureResult: Result[String, String] = frontend.lexer.WHILE.parse(failureInput)
 
     successResult shouldBe Success("while")
     failureResult shouldBe a[Failure[_]]
@@ -134,8 +134,8 @@ class LexerSpec extends AnyFlatSpec with Matchers {
     val successInput = "do"
     val failureInput = "notdo"
 
-    val successResult: Result[String, String] = lexer.DO.parse(successInput)
-    val failureResult: Result[String, String] = lexer.DO.parse(failureInput)
+    val successResult: Result[String, String] = frontend.lexer.DO.parse(successInput)
+    val failureResult: Result[String, String] = frontend.lexer.DO.parse(failureInput)
 
     successResult shouldBe Success("do")
     failureResult shouldBe a[Failure[_]]
@@ -145,8 +145,8 @@ class LexerSpec extends AnyFlatSpec with Matchers {
     val successInput = "done"
     val failureInput = "notdone"
 
-    val successResult: Result[String, String] = lexer.done.parse(successInput)
-    val failureResult: Result[String, String] = lexer.done.parse(failureInput)
+    val successResult: Result[String, String] = frontend.lexer.done.parse(successInput)
+    val failureResult: Result[String, String] = frontend.lexer.done.parse(failureInput)
 
     successResult shouldBe Success("done")
     failureResult shouldBe a[Failure[_]]
@@ -156,8 +156,8 @@ class LexerSpec extends AnyFlatSpec with Matchers {
     val successInput = "if"
     val failureInput = "notif"
 
-    val successResult: Result[String, String] = lexer.IF.parse(successInput)
-    val failureResult: Result[String, String] = lexer.IF.parse(failureInput)
+    val successResult: Result[String, String] = frontend.lexer.IF.parse(successInput)
+    val failureResult: Result[String, String] = frontend.lexer.IF.parse(failureInput)
 
     successResult shouldBe Success("if")
     failureResult shouldBe a[Failure[_]]
@@ -167,8 +167,8 @@ class LexerSpec extends AnyFlatSpec with Matchers {
     val successInput = "then"
     val failureInput = "notthen"
 
-    val successResult: Result[String, String] = lexer.THEN.parse(successInput)
-    val failureResult: Result[String, String] = lexer.THEN.parse(failureInput)
+    val successResult: Result[String, String] = frontend.lexer.THEN.parse(successInput)
+    val failureResult: Result[String, String] = frontend.lexer.THEN.parse(failureInput)
 
     successResult shouldBe Success("then")
     failureResult shouldBe a[Failure[_]]
@@ -178,8 +178,8 @@ class LexerSpec extends AnyFlatSpec with Matchers {
     val successInput = "else"
     val failureInput = "notelse"
 
-    val successResult: Result[String, String] = lexer.ELSE.parse(successInput)
-    val failureResult: Result[String, String] = lexer.ELSE.parse(failureInput)
+    val successResult: Result[String, String] = frontend.lexer.ELSE.parse(successInput)
+    val failureResult: Result[String, String] = frontend.lexer.ELSE.parse(failureInput)
 
     successResult shouldBe Success("else")
     failureResult shouldBe a[Failure[_]]
@@ -189,8 +189,8 @@ class LexerSpec extends AnyFlatSpec with Matchers {
     val successInput = "fi"
     val failureInput = "notfi"
 
-    val successResult: Result[String, String] = lexer.fi.parse(successInput)
-    val failureResult: Result[String, String] = lexer.fi.parse(failureInput)
+    val successResult: Result[String, String] = frontend.lexer.fi.parse(successInput)
+    val failureResult: Result[String, String] = frontend.lexer.fi.parse(failureInput)
 
     successResult shouldBe Success("fi")
     failureResult shouldBe a[Failure[_]]
@@ -200,8 +200,8 @@ class LexerSpec extends AnyFlatSpec with Matchers {
     val successInput = "call"
     val failureInput = "notcall"
 
-    val successResult: Result[String, String] = lexer.call.parse(successInput)
-    val failureResult: Result[String, String] = lexer.call.parse(failureInput)
+    val successResult: Result[String, String] = frontend.lexer.call.parse(successInput)
+    val failureResult: Result[String, String] = frontend.lexer.call.parse(failureInput)
 
     successResult shouldBe Success("call")
     failureResult shouldBe a[Failure[_]]
@@ -211,8 +211,8 @@ class LexerSpec extends AnyFlatSpec with Matchers {
     val successInput = "skip"
     val failureInput = "notskip"
 
-    val successResult: Result[String, String] = lexer.skip.parse(successInput)
-    val failureResult: Result[String, String] = lexer.skip.parse(failureInput)
+    val successResult: Result[String, String] = frontend.lexer.skip.parse(successInput)
+    val failureResult: Result[String, String] = frontend.lexer.skip.parse(failureInput)
 
     successResult shouldBe Success("skip")
     failureResult shouldBe a[Failure[_]]
@@ -222,8 +222,8 @@ class LexerSpec extends AnyFlatSpec with Matchers {
     val successInput = "is"
     val failureInput = "notis"
 
-    val successResult: Result[String, String] = lexer.is.parse(successInput)
-    val failureResult: Result[String, String] = lexer.is.parse(failureInput)
+    val successResult: Result[String, String] = frontend.lexer.is.parse(successInput)
+    val failureResult: Result[String, String] = frontend.lexer.is.parse(failureInput)
 
     successResult shouldBe Success("is")
     failureResult shouldBe a[Failure[_]]
@@ -233,8 +233,8 @@ class LexerSpec extends AnyFlatSpec with Matchers {
     val successInput = "123"
     val failureInput = "not123"
 
-    val successResult: Result[String, Int] = lexer.int.parse(successInput)
-    val failureResult: Result[String, Int] = lexer.int.parse(failureInput)
+    val successResult: Result[String, Int] = frontend.lexer.int.parse(successInput)
+    val failureResult: Result[String, Int] = frontend.lexer.int.parse(failureInput)
 
     successResult shouldBe Success(123)
     failureResult shouldBe a[Failure[_]]
@@ -244,8 +244,8 @@ class LexerSpec extends AnyFlatSpec with Matchers {
     val successInput = "'a'"
     val failureInput = "'ab'"
 
-    val successResult: Result[String, Char] = lexer.char.parse(successInput)
-    val failureResult: Result[String, Char] = lexer.char.parse(failureInput)
+    val successResult: Result[String, Char] = frontend.lexer.char.parse(successInput)
+    val failureResult: Result[String, Char] = frontend.lexer.char.parse(failureInput)
 
     successResult shouldBe Success('a')
     failureResult shouldBe a[Failure[_]]
@@ -255,8 +255,8 @@ class LexerSpec extends AnyFlatSpec with Matchers {
     val successInput = "\"hello\""
     val failureInput = "\"hello"
 
-    val successResult: Result[String, String] = lexer.str.parse(successInput)
-    val failureResult: Result[String, String] = lexer.str.parse(failureInput)
+    val successResult: Result[String, String] = frontend.lexer.str.parse(successInput)
+    val failureResult: Result[String, String] = frontend.lexer.str.parse(failureInput)
 
     successResult shouldBe Success("hello")
     failureResult shouldBe a[Failure[_]]
@@ -266,8 +266,8 @@ class LexerSpec extends AnyFlatSpec with Matchers {
     val successInput = "true"
     val failureInput = "nottrue"
 
-    val successResult: Result[String, String] = lexer.bool.parse(successInput)
-    val failureResult: Result[String, String] = lexer.bool.parse(failureInput)
+    val successResult: Result[String, String] = frontend.lexer.bool.parse(successInput)
+    val failureResult: Result[String, String] = frontend.lexer.bool.parse(failureInput)
 
     successResult shouldBe Success("true")
     failureResult shouldBe a[Failure[_]]
@@ -277,8 +277,8 @@ class LexerSpec extends AnyFlatSpec with Matchers {
     val successInput = "null"
     val failureInput = "notnull"
 
-    val successResult: Result[String, String] = lexer.pairLiter.parse(successInput)
-    val failureResult: Result[String, String] = lexer.pairLiter.parse(failureInput)
+    val successResult: Result[String, String] = frontend.lexer.pairLiter.parse(successInput)
+    val failureResult: Result[String, String] = frontend.lexer.pairLiter.parse(failureInput)
 
     successResult shouldBe Success("null")
     failureResult shouldBe a[Failure[_]]
@@ -288,8 +288,8 @@ class LexerSpec extends AnyFlatSpec with Matchers {
     val successInput = "variable"
     val failureInput = "123variable"
 
-    val successResult: Result[String, String] = lexer.ident.parse(successInput)
-    val failureResult: Result[String, String] = lexer.ident.parse(failureInput)
+    val successResult: Result[String, String] = frontend.lexer.ident.parse(successInput)
+    val failureResult: Result[String, String] = frontend.lexer.ident.parse(failureInput)
 
     successResult shouldBe Success("variable")
     failureResult shouldBe a[Failure[_]]
@@ -299,8 +299,8 @@ class LexerSpec extends AnyFlatSpec with Matchers {
     val successInput = "int"
     val failureInput = "notint"
 
-    val successResult: Result[String, String] = lexer.baseType.parse(successInput)
-    val failureResult: Result[String, String] = lexer.baseType.parse(failureInput)
+    val successResult: Result[String, String] = frontend.lexer.baseType.parse(successInput)
+    val failureResult: Result[String, String] = frontend.lexer.baseType.parse(failureInput)
 
     successResult shouldBe Success("int")
     failureResult shouldBe a[Failure[_]]
@@ -310,8 +310,8 @@ class LexerSpec extends AnyFlatSpec with Matchers {
     val successInput = "[]"
     val failureInput = "[notclosed"
 
-    val successResult: Result[String, String] = lexer.arrayBraces.parse(successInput)
-    val failureResult: Result[String, String] = lexer.arrayBraces.parse(failureInput)
+    val successResult: Result[String, String] = frontend.lexer.arrayBraces.parse(successInput)
+    val failureResult: Result[String, String] = frontend.lexer.arrayBraces.parse(failureInput)
 
     successResult shouldBe Success("[]")
     failureResult shouldBe a[Failure[_]]
@@ -321,8 +321,8 @@ class LexerSpec extends AnyFlatSpec with Matchers {
     val successInput = ")"
     val failureInput = "(notclosed"
 
-    val successResult: Result[String, String] = lexer.rBracket.parse(successInput)
-    val failureResult: Result[String, String] = lexer.rBracket.parse(failureInput)
+    val successResult: Result[String, String] = frontend.lexer.rBracket.parse(successInput)
+    val failureResult: Result[String, String] = frontend.lexer.rBracket.parse(failureInput)
 
     successResult shouldBe Success(")")
     failureResult shouldBe a[Failure[_]]

@@ -1,5 +1,7 @@
 package wacc
 
+import wacc.frontend.SemanticError
+
 import scala.collection.mutable.ListBuffer
 
 object ASTNodes {

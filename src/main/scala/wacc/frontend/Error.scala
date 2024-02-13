@@ -1,9 +1,7 @@
-package wacc
+package wacc.frontend
 
 import parsley.errors.ErrorBuilder
 import parsley.errors.tokenextractors.MatchParserDemand
-
-import wacc.ASTNodes.Type
 
 object Error {
 

@@ -1,15 +1,14 @@
-package wacc
+package wacc.frontend
 
+import parsley.Parsley.{atomic, many, some}
 import parsley.character.whitespace
 import parsley.combinator.{option, sepBy, sepBy1}
 import parsley.expr._
 import parsley.{Parsley, Result}
-import parsley.Parsley.{atomic, many, some}
-
 import wacc.ASTNodes._
-import wacc.Error._
-import wacc.lexer._
-import wacc.lexer.implicits.implicitSymbol
+import wacc.frontend.Error._
+import wacc.frontend.lexer._
+import wacc.frontend.lexer.implicits.implicitSymbol
 
 
 object parser {

@@ -1,7 +1,8 @@
-package wacc
+package wacc.frontend
 
 import wacc.ASTNodes._
-import wacc.Main.{SEMANTIC_ERR_CODE, SUCCESS_CODE}
+import wacc.Main.SEMANTIC_ERR_CODE
+import wacc.SymbolTable
 
 class SemanticAnalyser(program: Program) {
   val symbolTable: SymbolTable = program.symbolTable
