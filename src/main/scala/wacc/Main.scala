@@ -82,11 +82,17 @@ object Main {
           val writer = new PrintWriter(file)
           writer.write(
             """
-              |.global main
+              |.intel_syntax noprefix
+              |.globl main
+              |.text
               |main:
-              |    mov x8, #60
-              |    mov x0, #0
-              |    svc 0
+              |    push rbp
+              |    push rbx
+              |    mov rbp, rsp
+              |    mov rax, 0
+              |    pop rbx
+              |    pop rbp
+              |    ret
                 """.stripMargin)
           writer.close()
 
