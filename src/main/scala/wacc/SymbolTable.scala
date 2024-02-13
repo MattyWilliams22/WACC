@@ -31,7 +31,7 @@ class SymbolTable(var parent: Option[SymbolTable],
 
   def addFunction(name: String, node: Function): String = {
     val uniqueName = generateUniqueFuncName(name)
-    node.ident.str = uniqueName
+    node.ident.nickname = Some(uniqueName)
     funcMap.put(name, node)
     incrementFuncCounter()
     uniqueName
@@ -40,8 +40,8 @@ class SymbolTable(var parent: Option[SymbolTable],
   def addVariable(name: String, node: ASTNode): String = {
     val uniqueName = generateUniqueVarName(name)
     node match {
-      case d: Declare => d.ident.str = uniqueName
-      case p: Param => p.ident.str = uniqueName
+      case d: Declare => d.ident.nickname = Some(uniqueName)
+      case p: Param => p.ident.nickname = Some(uniqueName)
       case _ =>
     }
     varMap.put(name, node)
