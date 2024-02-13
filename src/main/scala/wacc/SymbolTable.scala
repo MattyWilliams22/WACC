@@ -10,13 +10,50 @@ class SymbolTable(var parent: Option[SymbolTable],
                   val funcMap: mutable.Map[String, Function] = mutable.Map.empty[String, Function],
                   val varMap: mutable.Map[String, ASTNode] = mutable.Map.empty[String, ASTNode]) {
 
-  def addFunction(name: String, node: Function): Unit = {
-    funcMap.put(name, node)
+  private var varCounter: Int = 0
+  private var funcCounter: Int = 0
+  private var topLevelSymbolTable: Option[SymbolTable] = None
+  
+  def setTopLevelSymbolTable(symbolTable: SymbolTable): Unit = {
+    topLevelSymbolTable = Some(symbolTable)
+    parent.foreach(_.setTopLevelSymbolTable(symbolTable))
   }
 
-  def addVariable(name: String, node: ASTNode): Unit = {
-    varMap.put(name, node)
+  private def incrementVarCounter(): Unit = {
+    varCounter += 1
+    topLevelSymbolTable.foreach(_.incrementTotalVarCount())
   }
+
+  private def incrementFuncCounter(): Unit = {
+    funcCounter += 1
+    topLevelSymbolTable.foreach(_.incrementTotalFuncCount())
+  }
+
+  def addFunction(name: String, node: Function): String = {
+    val uniqueName = generateUniqueFuncName(name)
+    node.ident.str = uniqueName
+    funcMap.put(name, node)
+    incrementFuncCounter()
+    uniqueName
+  }
+
+  def addVariable(name: String, node: ASTNode): String = {
+    val uniqueName = generateUniqueVarName(name)
+    node match {
+      case d: Declare => d.ident.str = uniqueName
+      case p: Param => p.ident.str = uniqueName
+      case _ =>
+    }
+    varMap.put(name, node)
+    incrementVarCounter()
+    uniqueName
+  }
+
+  private def incrementTotalVarCount(): Unit = topLevelSymbolTable.foreach(_.incrementTotalVarCount())
+  private def incrementTotalFuncCount(): Unit = topLevelSymbolTable.foreach(_.incrementTotalFuncCount())
+  
+  private def generateUniqueVarName(name: String): String = s"var_$varCounter"
+  private def generateUniqueFuncName(name: String): String = s"func_$funcCounter"
 
   def generateSymbolTable(node: ASTNode): Unit = {
     node match {

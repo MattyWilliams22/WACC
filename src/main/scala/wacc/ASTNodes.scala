@@ -75,7 +75,7 @@ object ASTNodes {
     }
   }
 
-  case class Function(_type: Type, ident: Ident, param_list: List[Param], body: Statement) extends ASTNode {
+  case class Function(_type: Type, var ident: Ident, param_list: List[Param], body: Statement) extends ASTNode {
     val argSymbolTable: SymbolTable = new SymbolTable(None)
     val bodySymbolTable: SymbolTable = new SymbolTable(Option(argSymbolTable))
 
@@ -139,7 +139,7 @@ object ASTNodes {
     }
   }
 
-  case class Param(_type: Type, ident: Ident) extends ASTNode {
+  case class Param(_type: Type, var ident: Ident) extends ASTNode {
     // Semantically check a parameter
     def check(): Boolean = {
       checkValid(_type == ident.getType,
@@ -163,7 +163,7 @@ object ASTNodes {
     def check(): Boolean = true
   }
 
-  case class Declare(_type: Type, ident: Ident, value: RValue) extends Statement {
+  case class Declare(_type: Type, var ident: Ident, value: RValue) extends Statement {
     // Semantically check a declare statement
     def check(): Boolean = {
       currentSymbolTable.generateSymbolTable(this)
@@ -576,7 +576,7 @@ object ASTNodes {
     }
   }
 
-  case class Call(funcName: Ident, args: List[Expr]) extends RValue {
+  case class Call(var funcName: Ident, args: List[Expr]) extends RValue {
     // Semantically check a function call
     def check(): Boolean = {
       // Check that the function name is semantically valid
@@ -858,20 +858,43 @@ object ASTNodes {
     }
   }
 
-  case class Ident(str: String) extends Atom with LValue {
+  case class Ident(var str: String) extends Atom with LValue {
+    val oldName = str
+
     // Semantically check an identifier
     def check(): Boolean = {
       // Check that the identifier is in the symbol table
-      checkValid(currentSymbolTable.lookupAllVariables(str).isDefined ||
-        currentSymbolTable.lookupAllFunctions(str).isDefined,
-        "Identifier does not exist in scope", this)
+      val varDef = currentSymbolTable.lookupAllVariables(str)
+      var valid = varDef match {
+        case Some(x) => {
+          x match {
+            case Declare(_, nickname, _) => str = nickname.str
+            case Param(_, nickname) => str = nickname.str
+            case _ => return false
+          }
+          true
+        }
+        case None => false
+      }
+      val funcDef = currentSymbolTable.lookupAllFunctions(str)
+      valid = valid || (funcDef match {
+        case Some(x) => {
+          x match {
+            case Function(_, nickname, _, _) => str = nickname.str
+            case _ => return false
+          }
+          true
+        }
+        case None => false
+      })
+      checkValid(valid, "Identifier does not exist in scope", this)
       true
     }
 
     // Get the type of the identifier
     def getType: Type = {
       // Search the symbol table for the type of the identifier
-      currentSymbolTable.lookupAllVariables(str) match {
+      currentSymbolTable.lookupAllVariables(oldName) match {
         case Some(x) => x match {
           case param: Param =>
             param._type
@@ -880,7 +903,7 @@ object ASTNodes {
           case _ =>
             BaseT("ERROR")
         }
-        case None => currentSymbolTable.lookupAllFunctions(str) match {
+        case None => currentSymbolTable.lookupAllFunctions(oldName) match {
           case Some(x) => x._type
           case None => BaseT("ERROR")
         }
@@ -889,9 +912,9 @@ object ASTNodes {
 
     // Get the node of the identifier
     def getNode: ASTNode = {
-      currentSymbolTable.lookupAllVariables(str) match {
+      currentSymbolTable.lookupAllVariables(oldName) match {
         case Some(x) => x
-        case None => currentSymbolTable.lookupAllFunctions(str) match {
+        case None => currentSymbolTable.lookupAllFunctions(oldName) match {
           case Some(x) => x
           case None => BaseT("ERROR")
         }
@@ -900,11 +923,11 @@ object ASTNodes {
 
     // Check if the identifier is a function
     def isFunction: Boolean = {
-      currentSymbolTable.lookupAllFunctions(str).isDefined
+      currentSymbolTable.lookupAllFunctions(oldName).isDefined
     }
   }
 
-  case class ArrayElem(ident: Ident, indices: List[Expr]) extends Atom with LValue {
+  case class ArrayElem(var ident: Ident, indices: List[Expr]) extends Atom with LValue {
     // Semantically check an array element
     def check(): Boolean = {
       // Check that the identifier is semantically valid
