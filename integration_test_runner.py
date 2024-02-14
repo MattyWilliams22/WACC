@@ -6,15 +6,12 @@ import sys
 
 # Gets the expected return code from the .wacc file from wacc_examples
 def get_return_code(fname):
-  if (not fname.startswith("wacc_examples/in")):
-    return 0
-  else:
-    if "syntax" in fname:
-      return 100
-    elif "semantic" in fname:
-      return 200
-    else:
-      return 0
+  with open(fname) as f:
+    lines = f.readlines()
+    for i in range(len(lines)):
+      if lines[i].startswith("# Exit:"):
+        return int(re.search("[0-9]+", lines[i+1]).group())
+  return 0
 
 # Extract expected output from comments in WACC file
 def extract_expected_output(fname):
@@ -40,7 +37,7 @@ def list_directories_in_directory(base):
 def list_files_in_directory(base):
     file_paths = []
     for root, dirs, files in os.walk(base):
-        dirs[:] = [d for d in dirs if d.lower() != 'whack']
+        dirs[:] = [d for d in dirs if (d.lower() != 'whack' and d.lower() != 'advanced')]
         for file in files:
             file_paths.append(os.path.join(root, file))
     return file_paths
