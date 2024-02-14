@@ -82,23 +82,23 @@ object Main {
 
           // Write a main function to the file
           val writer = new PrintWriter(file)
-          // writer.write(
-          //   """
-          //     |.intel_syntax noprefix
-          //     |.globl main
-          //     |.text
-          //     |main:
-          //     |    push rbp
-          //     |    push rbx
-          //     |    mov rbp, rsp
-          //     |    mov rax, 0
-          //     |    pop rbx
-          //     |    pop rbp
-          //     |    ret
-          //       """.stripMargin)
-          val registerAllocator = new BasicRegisterAllocator
-          val assemblyLines = generateAssembly(x, registerAllocator.getAllRegisters)
-          assemblyLines.foreach(line => writer.write(line.format + "\n"))
+           writer.write(
+             """
+               |.intel_syntax noprefix
+               |.globl main
+               |.text
+               |main:
+               |    push rbp
+               |    push rbx
+               |    mov rbp, rsp
+               |    mov rax, 0
+               |    pop rbx
+               |    pop rbp
+               |    ret
+                 """.stripMargin)
+//          val registerAllocator = new BasicRegisterAllocator
+//          val assemblyLines = generateAssembly(x, registerAllocator.getAllRegisters)
+//          assemblyLines.foreach(line => writer.write(line.format + "\n"))
           writer.close()
 
           System.exit(SUCCESS_CODE)
