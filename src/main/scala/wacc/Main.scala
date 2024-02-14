@@ -5,6 +5,7 @@ import scala.io.Source
 import parsley.{Failure, Result, Success}
 import wacc.ASTNodes._
 import wacc.backend.CodeGenerator._
+import wacc.backend.BasicRegisterAllocator
 import wacc.frontend.ErrorOutput._
 import wacc.frontend.Error._
 import wacc.frontend.{SemanticAnalyser, parser}
@@ -95,7 +96,8 @@ object Main {
           //     |    pop rbp
           //     |    ret
           //       """.stripMargin)
-          val assemblyLines = generateAssembly(x, List())
+          val registerAllocator = new BasicRegisterAllocator
+          val assemblyLines = generateAssembly(x, registerAllocator.getAllRegisters)
           assemblyLines.foreach(line => writer.write(line.format + "\n"))
           writer.close()
 

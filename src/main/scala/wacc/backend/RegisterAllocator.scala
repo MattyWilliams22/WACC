@@ -29,4 +29,6 @@ class BasicRegisterAllocator extends RegisterAllocator {
   def restoreRegisters(): Unit = {
     println("Restoring registers")
   }
+
+  def getAllRegisters: List[Register] = allRegisters
 }

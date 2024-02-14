@@ -1,7 +1,9 @@
 package wacc.backend
 
+import wacc.backend.Instructions._
+
 /* Represents a register in the Intel x86-64 architecture */
-sealed trait Register {
+sealed trait Register extends Operand {
   val number: Int
   def format: String = s"r$number"
 }
