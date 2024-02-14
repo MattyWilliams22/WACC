@@ -4,6 +4,7 @@ import java.io.{File, PrintWriter}
 import scala.io.Source
 import parsley.{Failure, Result, Success}
 import wacc.ASTNodes._
+import wacc.backend.CodeGenerator._
 import wacc.frontend.ErrorOutput._
 import wacc.frontend.Error._
 import wacc.frontend.{SemanticAnalyser, parser}
@@ -80,20 +81,22 @@ object Main {
 
           // Write a main function to the file
           val writer = new PrintWriter(file)
-          writer.write(
-            """
-              |.intel_syntax noprefix
-              |.globl main
-              |.text
-              |main:
-              |    push rbp
-              |    push rbx
-              |    mov rbp, rsp
-              |    mov rax, 0
-              |    pop rbx
-              |    pop rbp
-              |    ret
-                """.stripMargin)
+          // writer.write(
+          //   """
+          //     |.intel_syntax noprefix
+          //     |.globl main
+          //     |.text
+          //     |main:
+          //     |    push rbp
+          //     |    push rbx
+          //     |    mov rbp, rsp
+          //     |    mov rax, 0
+          //     |    pop rbx
+          //     |    pop rbp
+          //     |    ret
+          //       """.stripMargin)
+          val assemblyLines = generateAssembly(x, List())
+          assemblyLines.foreach(line => writer.write(line.format + "\n"))
           writer.close()
 
           System.exit(SUCCESS_CODE)

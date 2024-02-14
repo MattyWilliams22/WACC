@@ -2,7 +2,7 @@ package wacc.backend
 
 // Intel syntax x86-64 instructions
 
-object Instruction {
+object Instructions {
 
   sealed trait Operand {
     def format: String
@@ -14,6 +14,10 @@ object Instruction {
 
   sealed trait AssemblyLine {
     def format: String
+  }
+
+  case class Comment(comment: String) extends AssemblyLine {
+    override def format: String = s"# $comment"
   }
 
   case class Label(name: String) extends AssemblyLine {
@@ -36,19 +40,19 @@ object Instruction {
     override def format: String = s"lea ${dest.format}, ${src.format}"
   }
 
-  case class Add(dest: Register, src: Operand) extends AssemblyLine {
+  case class AddInstr(dest: Register, src: Operand) extends AssemblyLine {
     override def format: String = s"add ${dest.format}, ${src.format}"
   }
 
-  case class Sub(dest: Register, src: Operand) extends AssemblyLine {
+  case class SubInstr(dest: Register, src: Operand) extends AssemblyLine {
     override def format: String = s"sub ${dest.format}, ${src.format}"
   }
 
-  case class Mul(dest: Register, src: Operand) extends AssemblyLine {
+  case class MulInstr(dest: Register, src: Operand) extends AssemblyLine {
     override def format: String = s"imul ${dest.format}, ${src.format}"
   }
 
-  case class Div(dest: Register, src: Operand) extends AssemblyLine {
+  case class DivInstr(dest: Register, src: Operand) extends AssemblyLine {
     override def format: String = s"idiv ${src.format}"
   }
 
@@ -84,7 +88,7 @@ object Instruction {
     override def format: String = s"jle ${label.format}"
   }
 
-  case class Call(label: Label) extends AssemblyLine {
+  case class CallInstr(label: Label) extends AssemblyLine {
     override def format: String = s"call ${label.format}"
   }
 
