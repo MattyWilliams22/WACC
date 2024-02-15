@@ -13,6 +13,6 @@ test:
 test-integration:
   stage: test
   script:
-    - apt-get update -y
+    - sudo apt-get update -y
     - git submodule update --init --recursive
     - make test
