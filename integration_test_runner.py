@@ -13,6 +13,17 @@ def get_return_code(fname):
         return int(re.search("[0-9]+", lines[i+1]).group())
   return 0
 
+def parser_code(fname):
+  if (not fname.startswith("wacc_examples/in")):
+    return 0
+  else:
+    if "syntax" in fname:
+      return 100
+    elif "semantic" in fname:
+      return 200
+    else:
+      return 0
+
 # Extract expected output from comments in WACC file
 def extract_expected_output(fname):
   expected_output = ""
@@ -96,7 +107,7 @@ def run_tests(tests_to_run):
       proc = subprocess.run(["sh", "compile", fname], stdout=subprocess.DEVNULL)
 
       actual = proc.returncode
-      expected = get_return_code(fname)
+      expected = parser_code(fname)
 
       if fname.startswith("wacc_examples/in"):
         if "syntax" in fname:
