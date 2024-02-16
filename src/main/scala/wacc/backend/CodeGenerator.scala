@@ -14,7 +14,10 @@ object CodeGenerator {
       case Program(funcs, stmts) => {
         val funcLines = funcs.flatMap(generateAssembly(_, regs))
         val stmtLines = generateAssembly(stmts, regs)
-        Comment("Start of program") :: funcLines ++ List(Label("main")) ++ stmtLines
+        Comment("Start of program") :: funcLines ++
+          List(Label("main"), Push(RBP)) ++
+          stmtLines ++
+          List(Pop(RBP), Ret())
       }
       case Function(_type, ident, param_list, body) => {
         val paramLines = param_list.flatMap(generateAssembly(_, regs))
@@ -25,7 +28,7 @@ object CodeGenerator {
         List(Comment("Start of parameter"))
       }
       case Skip() => {
-        List(Comment("Skip"))
+        List(Comment("Skip"), Mov(dest, ImmVal(0)))
       }
       case Declare(_type, ident, value) => {
         val valueLines = generateAssembly(value, regs)

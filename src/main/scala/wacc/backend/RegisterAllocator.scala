@@ -1,5 +1,7 @@
 package wacc.backend
 
+import wacc.backend.Instructions.{Push, Pop, AssemblyLine}
+
 sealed trait RegisterAllocator {
   def allocateRegister(): Register
 }
@@ -21,13 +23,15 @@ class BasicRegisterAllocator extends RegisterAllocator {
   }
 
   /* Push all registers that are currently being used onto the stack */
-  def saveRegisters(): Unit = {
+  def saveRegisters(): List[AssemblyLine] = {
     println("Saving registers")
+    (allRegisters diff availableRegisters).map(reg => Push(reg))
   }
 
   /* Pop all registers that were saved onto the stack from the stack */
-  def restoreRegisters(): Unit = {
+  def restoreRegisters(): List[AssemblyLine] = {
     println("Restoring registers")
+    (allRegisters diff availableRegisters).reverse.map(reg => Pop(reg))
   }
 
   def getAllRegisters: List[Register] = allRegisters

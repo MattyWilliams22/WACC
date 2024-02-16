@@ -92,6 +92,7 @@ object Main {
           val registerAllocator = new BasicRegisterAllocator
           val assemblyLines = generateAssembly(x, registerAllocator.getAllRegisters)
           assemblyLines.foreach(line => writer.write(line.format + "\n"))
+          assemblyLines.foreach(line => println(line.format))
           writer.close()
 
           System.exit(SUCCESS_CODE)
