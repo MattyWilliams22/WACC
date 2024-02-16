@@ -9,36 +9,28 @@ sealed trait Register extends Operand {
 }
 
 /* General Purpose Registers */
-case object R0 extends Register {
+case object RAX extends Register {
   val number: Int = 0
 }
 
-case object R1 extends Register {
+case object RBX extends Register {
   val number: Int = 1
 }
 
-case object R2 extends Register {
+case object RCX extends Register {
   val number: Int = 2
 }
 
-case object R3 extends Register {
+case object RDX extends Register {
   val number: Int = 3
 }
 
-case object R4 extends Register {
+case object RSI extends Register {
   val number: Int = 4
 }
 
-case object R5 extends Register {
+case object RDI extends Register {
   val number: Int = 5
-}
-
-case object R6 extends Register {
-  val number: Int = 6
-}
-
-case object R7 extends Register {
-  val number: Int = 7
 }
 
 case object R8 extends Register {
@@ -74,19 +66,13 @@ case object R15 extends Register {
 }
 
 /* Stack Pointer */
-case object SP extends Register {
-  val number: Int = 16
-  override def format: String = "sp"
+case object RSP extends Register {
+  val number: Int = 6
+  override def format: String = "rsp"
 }
 
-/* Frame Pointer */
-case object FP extends Register {
-  val number: Int = 17
-  override def format: String = "fp"
-}
-
-/* Program Counter */
-case object PC extends Register {
-  val number: Int = 18
-  override def format: String = "pc"
+/* Base Pointer */
+case object RBP extends Register {
+  val number: Int = 7
+  override def format: String = "rbp"
 }

@@ -7,7 +7,7 @@ sealed trait RegisterAllocator {
 /* Basic register allocator that allocates registers by always putting the result in the register
    that is at the front of the list of available registers */
 class BasicRegisterAllocator extends RegisterAllocator {
-  private val allRegisters: List[Register] = List(R0, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11, R12, R13, R14, R15)
+  private val allRegisters: List[Register] = List(RAX, RBX, RCX, RDX, RSI, RDI, R8, R9, R10, R11, R12, R13, R14, R15)
 
   private var availableRegisters: List[Register] = allRegisters
 

@@ -86,6 +86,7 @@ object Main {
              """
                |.intel_syntax noprefix
                |.globl main
+               |.section .rodata
                |.text
                |main:
                |    push rbp
