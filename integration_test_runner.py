@@ -87,7 +87,12 @@ def compile_run_assembly_file(fname, assembly_file):
 
   if output.stdout.decode().strip() == expected_output:
     print("Output matches expected!")
-    return True
+    if output.returncode != get_return_code(fname):
+      print(f"Expected return code {get_return_code(fname)} but got {output.returncode}")
+      errorTests.append(fname)
+      return False
+    else:
+      return True
   else:
     print("Output does not match expected.")
     errorTests.append(fname)
