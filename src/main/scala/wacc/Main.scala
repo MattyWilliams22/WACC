@@ -88,11 +88,12 @@ object Main {
                |.globl main
                |.section .rodata
                |.text
+               |main:
                  """.stripMargin)
-          val registerAllocator = new BasicRegisterAllocator
-          val assemblyLines = generateAssembly(x, registerAllocator.getAllRegisters)
-          assemblyLines.foreach(line => writer.write(line.format + "\n"))
-          assemblyLines.foreach(line => println(line.format))
+//          val registerAllocator = new BasicRegisterAllocator
+//          val assemblyLines = generateAssembly(x, registerAllocator.getAllRegisters)
+//          assemblyLines.foreach(line => writer.write(line.format + "\n"))
+//          assemblyLines.foreach(line => println(line.format))
           writer.close()
 
           System.exit(SUCCESS_CODE)
