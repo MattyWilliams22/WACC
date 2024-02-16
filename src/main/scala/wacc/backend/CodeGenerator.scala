@@ -14,7 +14,7 @@ object CodeGenerator {
       case Program(funcs, stmts) => {
         val funcLines = funcs.flatMap(generateAssembly(_, regs))
         val stmtLines = generateAssembly(stmts, regs)
-        Comment("Start of program") :: funcLines ++ stmtLines
+        Comment("Start of program") :: funcLines ++ List(Label("main")) ++ stmtLines
       }
       case Function(_type, ident, param_list, body) => {
         val paramLines = param_list.flatMap(generateAssembly(_, regs))
@@ -63,13 +63,13 @@ object CodeGenerator {
         Comment("Start of while loop") ::
         Label("whileStart") :: // Need unqiue label
         condLines ++
-        List(Comment("While loop condition logic"))
-        stmtLines ++
-        List(
-          Jmp("whileStart"),
-          Label("whileEnd"), // Need unique label
-          Comment("End of while loop")
-        )
+        List(Comment("While loop condition logic")) ++
+        stmtLines
+//        List(
+//          Jmp("whileStart"),
+//          Label("whileEnd"), // Need unique label
+//          Comment("End of while loop")
+//        )
       }
       case Scope(body) => {
         val bodyLines = generateAssembly(body, regs)
