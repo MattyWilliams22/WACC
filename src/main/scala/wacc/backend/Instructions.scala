@@ -1,6 +1,6 @@
 package wacc.backend
 
-// Intel syntax x86-64 instructions
+// Intel syntax arm32 instructions
 
 object Instructions {
 
@@ -23,80 +23,73 @@ object Instructions {
   case class Label(name: String) extends AssemblyLine {
     override def format: String = name + ":"
   }
-
+  
   case class Push(reg: Register) extends AssemblyLine {
-    override def format: String = s"        push ${reg.format}"
+    override def format: String = s"push {${reg.format}}"
+  }
+
+  case class PushMultiple(regs: List[Register]) extends AssemblyLine {
+    override def format: String = s"push {${regs.map(_.format).mkString(", ")}}"
   }
 
   case class Pop(reg: Register) extends AssemblyLine {
-    override def format: String = s"        pop ${reg.format}"
+    override def format: String = s"pop {${reg.format}}"
   }
 
-  case class Mov(dest: Register, src: Operand) extends AssemblyLine {
-    override def format: String = s"        mov ${dest.format}, ${src.format}"
+  case class Ldr(reg: Register, address: Register) extends AssemblyLine {
+    override def format: String = s"ldr ${reg.format}, [${address.format}]"
   }
 
-  case class Lea(dest: Register, src: Operand) extends AssemblyLine {
-    override def format: String = s"        lea ${dest.format}, ${src.format}"
+  case class Ldr(reg: Register, address: Register, offset: Int) extends AssemblyLine {
+    override def format: String = s"ldr ${reg.format}, [${address.format}, #${offset}]"
   }
 
-  case class AddInstr(dest: Register, src: Operand) extends AssemblyLine {
-    override def format: String = s"        add ${dest.format}, ${src.format}"
+  case class Mov(reg: Register, operand: Operand) extends AssemblyLine {
+    override def format: String = s"mov ${reg.format}, ${operand.format}"
   }
 
-  case class SubInstr(dest: Register, src: Operand) extends AssemblyLine {
-    override def format: String = s"        sub ${dest.format}, ${src.format}"
+  case class AddInstr(reg: Register, operand1: Register, operand2: Operand) extends AssemblyLine {
+    override def format: String = s"add ${reg.format}, ${operand1.format}, ${operand2.format}"
   }
 
-  case class MulInstr(dest: Register, src: Operand) extends AssemblyLine {
-    override def format: String = s"        imul ${dest.format}, ${src.format}"
+  case class SubInstr(reg: Register, operand1: Register, operand2: Operand) extends AssemblyLine {
+    override def format: String = s"sub ${reg.format}, ${operand1.format}, ${operand2.format}"
+  }
+  
+  case class MulInstr(reg: Register, operand1: Register, operand2: Operand) extends AssemblyLine {
+    override def format: String = s"mul ${reg.format}, ${operand1.format}, ${operand2.format}"
   }
 
-  case class DivInstr(dest: Register, src: Operand) extends AssemblyLine {
-    override def format: String = s"        idiv ${src.format}"
+  case class DivInstr(reg: Register, operand1: Register, operand2: Operand) extends AssemblyLine {
+    override def format: String = s"sdiv ${reg.format}, ${operand1.format}, ${operand2.format}"
   }
 
-  case class Cmp(reg1: Register, reg2: Register) extends AssemblyLine {
-    override def format: String = s"        cmp ${reg1.format}, ${reg2.format}"
+  case class CmpInstr(operand1: Register, operand2: Operand) extends AssemblyLine {
+    override def format: String = s"cmp ${operand1.format}, ${operand2.format}"
   }
 
-  case class Jmp(label: String) extends AssemblyLine {
-    override def format: String = s"        jmp $label"
+  case class BInstr(label: String) extends AssemblyLine {
+    override def format: String = s"b $label"
   }
 
-  case class Je(label: String) extends AssemblyLine {
-    override def format: String = s"        je $label"
+  case class BlInstr(label: String) extends AssemblyLine {
+    override def format: String = s"bl $label"
   }
 
-  case class Jne(label: String) extends AssemblyLine {
-    override def format: String = s"        jne $label"
+  case class BicInstr(reg: Register, operand1: Register, operand2: Operand) extends AssemblyLine {
+    override def format: String = s"bic ${reg.format}, ${operand1.format}, ${operand2.format}"
   }
 
-  case class Jg(label: String) extends AssemblyLine {
-    override def format: String = s"        jg $label"
+  case class BneInstr(label: String) extends AssemblyLine {
+    override def format: String = s"bne $label"
   }
 
-  case class Jge(label: String) extends AssemblyLine {
-    override def format: String = s"        jge $label"
+  case class BeqInstr(label: String) extends AssemblyLine {
+    override def format: String = s"beq $label"
   }
 
-  case class Jl(label: String) extends AssemblyLine {
-    override def format: String = s"        jl $label"
+  case class AscizInstr(label: String, string: String) extends AssemblyLine {
+    override def format: String = s"$label: .asciz $string"
   }
 
-  case class Jle(label: String) extends AssemblyLine {
-    override def format: String = s"        jle $label"
-  }
-
-  case class CallInstr(label: String) extends AssemblyLine {
-    override def format: String = s"        call $label"
-  }
-
-  case class Ret() extends AssemblyLine {
-    override def format: String = "        ret"
-  }
-
-  case class Asciz(str: String) extends AssemblyLine {
-    override def format: String = s"        .asciz $str"
-  }
 }
