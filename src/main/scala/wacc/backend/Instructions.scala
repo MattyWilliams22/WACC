@@ -40,10 +40,6 @@ object Instructions {
     override def format: String = s"ldr ${reg.format}, [${address.format}]"
   }
 
-  case class Ldr(reg: Register, address: Register, offset: Int) extends AssemblyLine {
-    override def format: String = s"ldr ${reg.format}, [${address.format}, #${offset}]"
-  }
-
   case class Mov(reg: Register, operand: Operand) extends AssemblyLine {
     override def format: String = s"mov ${reg.format}, ${operand.format}"
   }
