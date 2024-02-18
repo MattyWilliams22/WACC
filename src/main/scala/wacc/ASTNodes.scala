@@ -580,7 +580,9 @@ object ASTNodes {
     // Semantically check a function call
     def check(): Boolean = {
       // Check that the function name is semantically valid
+      currentSymbolTable.canAccessVars = false
       checkValid(funcName.check(), "Function does not exist in scope", funcName)
+      currentSymbolTable.canAccessVars = true
 
       // Check that the arguments are semantically valid and have the correct types
       val funcForm = funcName.getNode
@@ -863,23 +865,23 @@ object ASTNodes {
     // Semantically check an identifier
     def check(): Boolean = {
       // Check that the identifier is in the symbol table
-      val varDef = currentSymbolTable.lookupAllVariables(str)
-      var valid = varDef match {
+      val funcDef = currentSymbolTable.lookupAllFunctions(str)
+      var valid = funcDef match {
         case Some(x) => {
           x match {
-            case Declare(_, i, _) => nickname = i.nickname
-            case Param(_, i) => nickname = i.nickname
+            case Function(_, i, _, _) => nickname = i.nickname
             case _ => return false
           }
           true
         }
         case None => false
       }
-      val funcDef = currentSymbolTable.lookupAllFunctions(str)
-      valid = valid || (funcDef match {
+      val varDef = currentSymbolTable.lookupAllVariables(str)
+      valid = valid || (varDef match {
         case Some(x) => {
           x match {
-            case Function(_, i, _, _) => nickname = i.nickname
+            case Declare(_, i, _) => nickname = i.nickname
+            case Param(_, i) => nickname = i.nickname
             case _ => return false
           }
           true

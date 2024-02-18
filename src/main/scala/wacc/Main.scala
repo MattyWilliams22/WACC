@@ -73,6 +73,7 @@ object Main {
           // Semantic Analysis
           val semanticAnalyser = new SemanticAnalyser(x)
           semanticAnalyser.analyse()
+          println("X after semantic analysis: " + x)
 
           // Code Generation
           val inputFile = new File(arg)
@@ -88,12 +89,11 @@ object Main {
                |.globl main
                |.section .rodata
                |.text
-               |main:
                  """.stripMargin)
-//          val registerAllocator = new BasicRegisterAllocator
-//          val assemblyLines = generateAssembly(x, registerAllocator)
-//          assemblyLines.foreach(line => writer.write(line.format + "\n"))
-//          assemblyLines.foreach(line => println(line.format))
+          val registerAllocator = new BasicRegisterAllocator
+          val assemblyLines = generateAssembly(x, registerAllocator)
+          assemblyLines.foreach(line => writer.write(line.format + "\n"))
+          assemblyLines.foreach(line => println(line.format))
           writer.close()
 
           System.exit(SUCCESS_CODE)

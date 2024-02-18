@@ -4,6 +4,12 @@ import wacc.ASTNodes._
 import wacc.backend.Instructions._
 
 object CodeGenerator {
+  var labelCounter = -1
+
+  def getUniqueLabel(): String = {
+    labelCounter += 1
+    "L" + labelCounter
+  }
 
   def generateAssembly(ast: ASTNode, allocator: RegisterAllocator): List[AssemblyLine] = {
 
@@ -16,10 +22,13 @@ object CodeGenerator {
           stmtLines ++
           List(Pop(RBP), Ret())
 
-      case Function(_, _, param_list, body) =>
-        val paramLines = param_list.flatMap(generateAssembly(_, allocator))
+      case Function(_, funcName, paramList, body) =>
+        val paramLines = paramList.flatMap(generateAssembly(_, allocator))
         val bodyLines = generateAssembly(body, allocator)
-        Comment("Start of function") :: paramLines ++ bodyLines
+        Comment("Start of function") :: 
+        Label(funcName.nickname.get) :: 
+        paramLines ++ 
+        bodyLines
 
       case Param(_, _) =>
         List(Comment("Start of parameter"))
@@ -46,6 +55,8 @@ object CodeGenerator {
         List(Comment("Read Logic"))
 
       case If(cond, thenS, elseS) =>
+        val elseLabel = getUniqueLabel()
+        val endLabel = getUniqueLabel()
         val condLines = generateAssembly(cond, allocator)
         val thenLines = generateAssembly(thenS, allocator)
         val elseLines = generateAssembly(elseS, allocator)
@@ -53,23 +64,25 @@ object CodeGenerator {
         condLines ++
         List(Comment("If statement condition logic")) ++
         thenLines ++
-        List(Jmp("ifEnd"), Label("elseS")) ++ // Need unique labels
+        List(Jmp(endLabel), Label(elseLabel)) ++ 
         elseLines ++
-        List(Label("ifEnd"), Comment("End of if statement"))
+        List(Label(endLabel), Comment("End of if statement"))
 
       case While(cond, stmt) =>
+        val startLabel = getUniqueLabel()
+        val endLabel = getUniqueLabel()
         val condLines = generateAssembly(cond, allocator)
         val stmtLines = generateAssembly(stmt, allocator)
         Comment("Start of while loop") ::
-        Label("whileStart") :: // Need unqiue label
+        Label(startLabel) ::
         condLines ++
-        List(Comment("While loop condition logic")) ++
-        stmtLines
-//        List(
-//          Jmp("whileStart"),
-//          Label("whileEnd"), // Need unique label
-//          Comment("End of while loop")
-//        )
+        List(Comment("While loop condition logic"), Jmp(endLabel)) ++ // Temporary jump to end label
+        stmtLines ++ 
+        List(
+          Jmp(startLabel),
+          Label(endLabel), 
+          Comment("End of while loop")
+        )
 
       case Scope(body) =>
         val bodyLines = generateAssembly(body, allocator)
