@@ -11,3 +11,5 @@ RUN chmod +x scala-cli
 RUN mv scala-cli /usr/local/bin/scala-cli
 RUN apt install python3 -y
 RUN apt install gcc -y
+RUN apt install -y libc6-armel-cross libc6-dev-armel-cross binutils-arm-linux-gnueabi libncurses5-dev build-essential bison flex libssl-dev bc
+RUN apt install -y qemu-user
