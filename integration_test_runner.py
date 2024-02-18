@@ -76,12 +76,12 @@ def add_tests_to_dict(base):
 
 def compile_run_assembly_file(fname, assembly_file):
   # Compile the assembly file
-  print(f"gcc -o execFile -z noexecstack {assembly_file}")
-  subprocess.run(["gcc", "-o", "execFile", "-z", "noexecstack", assembly_file])
+  print(f"arm-linux-gnueabi-gcc -o execFile -z noexecstack -march=armv6 {assembly_file}")
+  subprocess.run(["arm-linux-gnueabi-gcc", "-o", "execFile", "-z", "noexecstack", "-march=armv6", assembly_file])
 
   # Run the executable file
-  print("./execFile")
-  output = subprocess.run(["./execFile"], capture_output=True)
+  print("qemu-arm -L /usr/arm-linux-gnueabi/ execFile")
+  output = subprocess.run(["qemu-arm", "-L", "/usr/arm-linux-gnueabi/", "execFile"], capture_output=True)
 
   expected_output = extract_expected_output(fname)
 

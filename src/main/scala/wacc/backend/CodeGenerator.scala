@@ -18,9 +18,9 @@ object CodeGenerator {
         val funcLines = funcs.flatMap(generateAssembly(_, allocator))
         val stmtLines = generateAssembly(stmts, allocator)
         Comment("Start of program") :: funcLines ++
-          List(Label("main"), Push(RBP)) ++
+          List(Label("main"), Push(FP)) ++
           stmtLines ++
-          List(Pop(RBP), Ret())
+          List(Pop(FP), Ret())
 
       case Function(_, funcName, paramList, body) =>
         val paramLines = paramList.flatMap(generateAssembly(_, allocator))
