@@ -310,16 +310,16 @@ object CodeGenerator {
 
       case Bool(b) =>
         Comment("Start of boolean") ::
-        b match {
-          case true =>
+        (b match {
+          case "true" =>
             List(
               Mov(allocator.allocateRegister(), ImmVal(1))
             )
-          case false =>
+          case "false" =>
             List(
               Mov(allocator.allocateRegister(), ImmVal(0))
             )
-        }
+        })
 
       case Ch(c) =>
         List(
