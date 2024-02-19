@@ -22,6 +22,13 @@ class BasicRegisterAllocator extends RegisterAllocator {
     result
   }
 
+  def deallocateRegister(register: Register): Unit = {
+    println(s"Deallocated register: $register")
+
+    /* Add the deallocated register to the list of available registers */
+    availableRegisters = register :: availableRegisters
+  }
+
   /* Push all registers that are currently being used onto the stack */
   def saveRegisters(): List[AssemblyLine] = {
     println("Saving registers")

@@ -48,6 +48,30 @@ object Instructions {
     override def format: String = s"    mov ${reg.format}, ${operand.format}"
   }
 
+  case class Movge(reg: Register, operand: Operand) extends AssemblyLine {
+    override def format: String = s"    movge ${reg.format}, ${operand.format}"
+  }
+
+  case class Movlt(reg: Register, operand: Operand) extends AssemblyLine {
+    override def format: String = s"    movlt ${reg.format}, ${operand.format}"
+  }
+
+  case class Moveq(reg: Register, operand: Operand) extends AssemblyLine {
+    override def format: String = s"    moveq ${reg.format}, ${operand.format}"
+  }
+
+  case class Movne(reg: Register, operand: Operand) extends AssemblyLine {
+    override def format: String = s"    movne ${reg.format}, ${operand.format}"
+  }
+
+  case class Movgt(reg: Register, operand: Operand) extends AssemblyLine {
+    override def format: String = s"    movgt ${reg.format}, ${operand.format}"
+  }
+
+  case class Movle(reg: Register, operand: Operand) extends AssemblyLine {
+    override def format: String = s"    movle ${reg.format}, ${operand.format}"
+  }
+
   case class AddInstr(reg: Register, operand1: Register, operand2: Operand) extends AssemblyLine {
     override def format: String = s"    add ${reg.format}, ${operand1.format}, ${operand2.format}"
   }
