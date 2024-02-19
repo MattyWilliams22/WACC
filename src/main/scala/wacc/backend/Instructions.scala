@@ -25,67 +25,76 @@ object Instructions {
   }
   
   case class Push(reg: Register) extends AssemblyLine {
-    override def format: String = s"push {${reg.format}}"
+    override def format: String = s"    push {${reg.format}}"
   }
 
   case class PushMultiple(regs: List[Register]) extends AssemblyLine {
-    override def format: String = s"push {${regs.map(_.format).mkString(", ")}}"
+    override def format: String = s"    push {${regs.map(_.format).mkString(", ")}}"
   }
 
   case class Pop(reg: Register) extends AssemblyLine {
-    override def format: String = s"pop {${reg.format}}"
+    override def format: String = s"    pop {${reg.format}}"
+  }
+
+  case class PopMultiple(regs: List[Register]) extends AssemblyLine {
+    override def format: String = s"    pop {${regs.map(_.format).mkString(", ")}}"
   }
 
   case class Ldr(reg: Register, address: Register) extends AssemblyLine {
-    override def format: String = s"ldr ${reg.format}, [${address.format}]"
+    override def format: String = s"    ldr ${reg.format}, [${address.format}]"
   }
 
   case class Mov(reg: Register, operand: Operand) extends AssemblyLine {
-    override def format: String = s"mov ${reg.format}, ${operand.format}"
+    override def format: String = s"    mov ${reg.format}, ${operand.format}"
   }
 
   case class AddInstr(reg: Register, operand1: Register, operand2: Operand) extends AssemblyLine {
-    override def format: String = s"add ${reg.format}, ${operand1.format}, ${operand2.format}"
+    override def format: String = s"    add ${reg.format}, ${operand1.format}, ${operand2.format}"
   }
 
   case class SubInstr(reg: Register, operand1: Register, operand2: Operand) extends AssemblyLine {
-    override def format: String = s"sub ${reg.format}, ${operand1.format}, ${operand2.format}"
+    override def format: String = s"    sub ${reg.format}, ${operand1.format}, ${operand2.format}"
   }
   
   case class MulInstr(reg: Register, operand1: Register, operand2: Operand) extends AssemblyLine {
-    override def format: String = s"mul ${reg.format}, ${operand1.format}, ${operand2.format}"
+    override def format: String = s"    mul ${reg.format}, ${operand1.format}, ${operand2.format}"
   }
 
   case class DivInstr(reg: Register, operand1: Register, operand2: Operand) extends AssemblyLine {
-    override def format: String = s"sdiv ${reg.format}, ${operand1.format}, ${operand2.format}"
+    override def format: String = s"    sdiv ${reg.format}, ${operand1.format}, ${operand2.format}"
   }
 
   case class CmpInstr(operand1: Register, operand2: Operand) extends AssemblyLine {
-    override def format: String = s"cmp ${operand1.format}, ${operand2.format}"
+    override def format: String = s"    cmp ${operand1.format}, ${operand2.format}"
   }
 
   case class BInstr(label: String) extends AssemblyLine {
-    override def format: String = s"b $label"
+    override def format: String = s"    b $label"
   }
 
   case class BlInstr(label: String) extends AssemblyLine {
-    override def format: String = s"bl $label"
+    override def format: String = s"    bl $label"
   }
 
   case class BicInstr(reg: Register, operand1: Register, operand2: Operand) extends AssemblyLine {
-    override def format: String = s"bic ${reg.format}, ${operand1.format}, ${operand2.format}"
+    override def format: String = s"    bic ${reg.format}, ${operand1.format}, ${operand2.format}"
   }
 
   case class BneInstr(label: String) extends AssemblyLine {
-    override def format: String = s"bne $label"
+    override def format: String = s"    bne $label"
   }
 
   case class BeqInstr(label: String) extends AssemblyLine {
-    override def format: String = s"beq $label"
+    override def format: String = s"    beq $label"
   }
 
   case class AscizInstr(label: String, string: String) extends AssemblyLine {
-    override def format: String = s"$label: .asciz $string"
+    override def format: String = s"$label:\n   .asciz $string"
+  }
+
+  case class RetInstr() extends AssemblyLine {
+    // Must check this works correctly with BLInstr
+    override def format: String = s"    mov ${LR.format}, ${PC.format}"
   }
 
 }

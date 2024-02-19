@@ -18,17 +18,20 @@ object CodeGenerator {
         val funcLines = funcs.flatMap(generateAssembly(_, allocator))
         val stmtLines = generateAssembly(stmts, allocator)
         Comment("Start of program") :: funcLines ++
-          List(Label("main"), Push(FP)) ++
+          List(Label("main"), PushMultiple(List(FP, LR)), Mov(FP, SP)) ++
           stmtLines ++
-          List(Pop(FP), Ret())
+          List(PopMultiple(List(FP, PC)))
 
       case Function(_, funcName, paramList, body) =>
         val paramLines = paramList.flatMap(generateAssembly(_, allocator))
         val bodyLines = generateAssembly(body, allocator)
         Comment("Start of function") :: 
         Label(funcName.nickname.get) :: 
+        PushMultiple(List(FP, LR)) ::
+        Mov(FP, SP) ::
         paramLines ++ 
-        bodyLines
+        bodyLines ++ 
+        List(PopMultiple(List(FP, PC)))
 
       case Param(_, _) =>
         List(Comment("Start of parameter"))
@@ -64,7 +67,7 @@ object CodeGenerator {
         condLines ++
         List(Comment("If statement condition logic")) ++
         thenLines ++
-        List(Jmp(endLabel), Label(elseLabel)) ++ 
+        List(BInstr(endLabel), Label(elseLabel)) ++ 
         elseLines ++
         List(Label(endLabel), Comment("End of if statement"))
 
@@ -73,13 +76,13 @@ object CodeGenerator {
         val endLabel = getUniqueLabel()
         val condLines = generateAssembly(cond, allocator)
         val stmtLines = generateAssembly(stmt, allocator)
-        Comment("Start of while loop") ::
+        List(Comment("Start of while loop"))
         Label(startLabel) ::
         condLines ++
-        List(Comment("While loop condition logic"), Jmp(endLabel)) ++ // Temporary jump to end label
+        List(Comment("While loop condition logic"), BInstr(endLabel)) ++ // Temporary jump to end label
         stmtLines ++ 
         List(
-          Jmp(startLabel),
+          BInstr(startLabel),
           Label(endLabel), 
           Comment("End of while loop")
         )
@@ -106,7 +109,7 @@ object CodeGenerator {
         expLines ++
         List(
           Comment("Return Logic"),
-          Ret()
+          RetInstr()
         )
 
       case Exit(exp) =>
@@ -150,7 +153,7 @@ object CodeGenerator {
       case Call(funcName, _) =>
         List(
           Comment("Start of function call"),
-          CallInstr(funcName.nickname.get)
+          BlInstr(funcName.nickname.get)
         )
 
       case x: BinOp =>
@@ -161,7 +164,7 @@ object CodeGenerator {
             Comment("Start of multiplication") ::
             exp1Lines ++
             exp2Lines ++
-            List(MulInstr(allocator.allocateRegister(), allocator.allocateRegister()))
+            List(MulInstr(allocator.allocateRegister(), allocator.allocateRegister(), allocator.allocateRegister()))
 
           case Div(exp1, exp2) =>
             val exp1Lines = generateAssembly(exp1, allocator)
@@ -169,7 +172,7 @@ object CodeGenerator {
             Comment("Start of division") ::
             exp1Lines ++
             exp2Lines ++
-            List(DivInstr(allocator.allocateRegister(), allocator.allocateRegister()))
+            List(DivInstr(allocator.allocateRegister(), allocator.allocateRegister(), allocator.allocateRegister()))
 
           case Mod(exp1, exp2) =>
             val exp1Lines = generateAssembly(exp1, allocator)
@@ -185,7 +188,7 @@ object CodeGenerator {
             Comment("Start of addition") ::
             exp1Lines ++
             exp2Lines ++
-            List(AddInstr(allocator.allocateRegister(), allocator.allocateRegister()))
+            List(AddInstr(allocator.allocateRegister(), allocator.allocateRegister(), allocator.allocateRegister()))
 
           case Sub(exp1, exp2) =>
             val exp1Lines = generateAssembly(exp1, allocator)
@@ -193,7 +196,7 @@ object CodeGenerator {
             Comment("Start of subtraction") ::
             exp1Lines ++
             exp2Lines ++
-            List(SubInstr(allocator.allocateRegister(), allocator.allocateRegister()))
+            List(SubInstr(allocator.allocateRegister(), allocator.allocateRegister(), allocator.allocateRegister()))
         }
 
       case x: BinOpCompare =>

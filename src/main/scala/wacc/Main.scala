@@ -73,7 +73,6 @@ object Main {
           // Semantic Analysis
           val semanticAnalyser = new SemanticAnalyser(x)
           semanticAnalyser.analyse()
-          println("X after semantic analysis: " + x)
 
           // Code Generation
           val inputFile = new File(arg)
@@ -83,12 +82,14 @@ object Main {
 
           // Write a main function to the file
           val writer = new PrintWriter(file)
+          
+          // String pool goes between .align 4 and .text
            writer.write(
              """
-               |.intel_syntax noprefix
-               |.globl main
-               |.section .rodata
+               |.data
+               |.align 4
                |.text
+               |.global main
                  """.stripMargin)
           val registerAllocator = new BasicRegisterAllocator
           val assemblyLines = generateAssembly(x, registerAllocator)
