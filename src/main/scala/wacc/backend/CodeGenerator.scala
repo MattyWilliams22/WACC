@@ -302,16 +302,32 @@ object CodeGenerator {
         expLines ++
         List(Comment("chr Logic"))
 
-      case Num(_) =>
-        List(Comment("Start of number"))
+      case Num(n) =>
+        List(
+          Comment("Start of number"),
+          Mov(allocator.allocateRegister(), ImmVal(n))
+        )
 
-      case Bool(_) =>
-        List(Comment("Start of boolean"))
+      case Bool(b) =>
+        Comment("Start of boolean") ::
+        b match {
+          case true =>
+            List(
+              Mov(allocator.allocateRegister(), ImmVal(1))
+            )
+          case false =>
+            List(
+              Mov(allocator.allocateRegister(), ImmVal(0))
+            )
+        }
 
-      case Ch(_) =>
-        List(Comment("Start of character"))
+      case Ch(c) =>
+        List(
+          Comment("Start of character"),
+          Mov(allocator.allocateRegister(), ImmVal(c.toInt))
+        )
 
-      case Str(_) =>
+      case Str(s) =>
         List(Comment("Start of string"))
 
       case PairLiter(_) =>

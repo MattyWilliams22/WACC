@@ -17,7 +17,7 @@ object Instructions {
   }
 
   case class Comment(comment: String) extends AssemblyLine {
-    override def format: String = s"# $comment"
+    override def format: String = s"@ $comment"
   }
 
   case class Label(name: String) extends AssemblyLine {
