@@ -11,7 +11,7 @@ sealed trait RegisterAllocator {
 class BasicRegisterAllocator extends RegisterAllocator {
   private val allRegisters: List[Register] = List(R0, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10)
 
-  private var availableRegisters: List[Register] = allRegisters
+  private var availableRegisters: List[Register] = List(R4, R5, R6, R7, R8, R9, R10)
 
   def allocateRegister(): Register = {
     val result = availableRegisters.head
@@ -34,5 +34,5 @@ class BasicRegisterAllocator extends RegisterAllocator {
     (allRegisters diff availableRegisters).reverse.map(reg => Pop(reg))
   }
 
-  def getAllRegisters: List[Register] = allRegisters
+  def getStartRegisters: List[Register] = List(R4, R5, R6, R7, R8, R9, R10)
 }

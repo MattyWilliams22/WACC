@@ -11,11 +11,11 @@ object CodeGenerator {
     "L" + labelCounter
   }
 
-  def generateAssembly(ast: ASTNode, allocator: RegisterAllocator): List[AssemblyLine] = {
+  def generateAssembly(ast: ASTNode, allocator: RegisterAllocator, dest: Register): List[AssemblyLine] = {
 
-     def programGenerate(funcs: List[Function], stmts: Statement): List[AssemblyLine] = {
-      val funcLines = funcs.flatMap(generateAssembly(_, allocator))
-      val stmtLines = generateAssembly(stmts, allocator)
+    def programGenerate(funcs: List[Function], stmts: Statement): List[AssemblyLine] = {
+      val funcLines = funcs.flatMap(generateAssembly(_, allocator, dest))
+      val stmtLines = generateAssembly(stmts, allocator, dest)
       Comment("Start of program") :: funcLines ++
       List(Label("main"), PushMultiple(List(FP, LR)), Mov(FP, SP)) ++
       stmtLines ++
@@ -23,8 +23,8 @@ object CodeGenerator {
     }
 
     def functionGenerate(funcName: Ident, paramList: List[Param], body: Statement): List[AssemblyLine] = {
-      val paramLines = paramList.flatMap(generateAssembly(_, allocator))
-      val bodyLines = generateAssembly(body, allocator)
+      val paramLines = paramList.flatMap(generateAssembly(_, allocator, dest))
+      val bodyLines = generateAssembly(body, allocator, dest)
       Comment("Start of function") ::
       Label(funcName.nickname.get) ::
       PushMultiple(List(FP, LR)) ::
@@ -35,21 +35,21 @@ object CodeGenerator {
     }
 
     def declareGenerate(value: RValue): List[AssemblyLine] = {
-      val valueLines = generateAssembly(value, allocator)
+      val valueLines = generateAssembly(value, allocator, dest)
       Comment("Start of declare") ::
       valueLines ++
       List(Comment("Declare Logic"))
     }
 
     def assignGenerate(rvalue: RValue): List[AssemblyLine] = {
-      val rvalueLines = generateAssembly(rvalue, allocator)
+      val rvalueLines = generateAssembly(rvalue, allocator, dest)
       Comment("Start of assign") ::
       rvalueLines ++
       List(Comment("Assign Logic"))
     }
 
     def readGenerate(lvalue: LValue): List[AssemblyLine] = {
-      val lvalueLines = generateAssembly(lvalue, allocator)
+      val lvalueLines = generateAssembly(lvalue, allocator, dest)
       Comment("Start of read") ::
       lvalueLines ++
       List(Comment("Read Logic"))
@@ -58,9 +58,9 @@ object CodeGenerator {
     def ifGenerate(cond: Expr, thenS: Statement, elseS: Statement): List[AssemblyLine] = {
       val elseLabel = getUniqueLabel
       val endLabel = getUniqueLabel
-      val condLines = generateAssembly(cond, allocator)
-      val thenLines = generateAssembly(thenS, allocator)
-      val elseLines = generateAssembly(elseS, allocator)
+      val condLines = generateAssembly(cond, allocator, dest)
+      val thenLines = generateAssembly(thenS, allocator, dest)
+      val elseLines = generateAssembly(elseS, allocator, dest)
       Comment("Start of if statement") ::
       condLines ++
       List(Comment("If statement condition logic")) ++
@@ -73,8 +73,8 @@ object CodeGenerator {
     def whileGenerate(cond: Expr, stmt: Statement): List[AssemblyLine] = {
       val startLabel = getUniqueLabel
       val endLabel = getUniqueLabel
-      val condLines = generateAssembly(cond, allocator)
-      val stmtLines = generateAssembly(stmt, allocator)
+      val condLines = generateAssembly(cond, allocator, dest)
+      val stmtLines = generateAssembly(stmt, allocator, dest)
       List(Comment("Start of while loop"))
       Label(startLabel) ::
       condLines ++
@@ -88,21 +88,21 @@ object CodeGenerator {
     }
 
     def scopeGenerate(body: Statement): List[AssemblyLine] = {
-      val bodyLines = generateAssembly(body, allocator)
+      val bodyLines = generateAssembly(body, allocator, dest)
       Comment("Start of new scope") ::
       bodyLines ++
       List(Comment("End of new scope"))
     }
 
     def freeGenerate(exp: Expr): List[AssemblyLine] = {
-      val expLines = generateAssembly(exp, allocator)
+      val expLines = generateAssembly(exp, allocator, dest)
       Comment("Start of free") ::
       expLines ++
       List(Comment("Free Logic"))
     }
 
     def returnGenerate(exp: Expr): List[AssemblyLine] = {
-      val expLines = generateAssembly(exp, allocator)
+      val expLines = generateAssembly(exp, allocator, dest)
       Comment("Start of return") ::
       expLines ++
       List(
@@ -112,36 +112,37 @@ object CodeGenerator {
     }
 
     def exitGenerate(exp: Expr): List[AssemblyLine] = {
-      val expLines = generateAssembly(exp, allocator)
+      val expLines = generateAssembly(exp, allocator, dest)
       Comment("Start of exit") ::
       expLines ++
       List(Comment("Exit Logic"))
     }
 
     def printGenerate(exp: Expr): List[AssemblyLine] = {
-      val expLines = generateAssembly(exp, allocator)
+      val expLines = generateAssembly(exp, allocator, dest)
       Comment("Start of print") ::
       expLines ++
       List(Comment("Print Logic"))
     }
 
     def printlnGenerate(exp: Expr): List[AssemblyLine] = {
-      val expLines = generateAssembly(exp, allocator)
+      val expLines = generateAssembly(exp, allocator, dest)
       Comment("Start of println") ::
       expLines ++
       List(Comment("Println Logic"))
     }
 
     def arrayLiterGenerate(elems: List[Expr]): List[AssemblyLine] = {
-      val elemLines = elems.flatMap(generateAssembly(_, allocator))
+      val elemLines = elems.flatMap(generateAssembly(_, allocator, dest))
       Comment("Start of array literal") ::
       elemLines ++
       List(Comment("ArrayLiter Logic"))
     }
 
     def newPairGenerate(exp1: Expr, exp2: Expr): List[AssemblyLine] = {
-      val exp1Lines = generateAssembly(exp1, allocator)
-      val exp2Lines = generateAssembly(exp2, allocator)
+      val exp1Lines = generateAssembly(exp1, allocator, dest)
+      val next = allocator.allocateRegister()
+      val exp2Lines = generateAssembly(exp2, allocator, next)
       Comment("Start of new pair") ::
       exp1Lines ++
       exp2Lines ++
@@ -149,33 +150,36 @@ object CodeGenerator {
     }
 
     def pairElemGenerate(lvalue: LValue): List[AssemblyLine] = {
-      val lvalueLines = generateAssembly(lvalue, allocator)
+      val lvalueLines = generateAssembly(lvalue, allocator, dest)
       Comment("Start of pair element") ::
       lvalueLines ++
       List(Comment("PairElem Logic"))
     }
 
     def mulGenerate(exp1: Expr, exp2: Expr): List[AssemblyLine] = {
-      val exp1Lines = generateAssembly(exp1, allocator)
-      val exp2Lines = generateAssembly(exp2, allocator)
+      val exp1Lines = generateAssembly(exp1, allocator, dest)
+      val next = allocator.allocateRegister()
+      val exp2Lines = generateAssembly(exp2, allocator, next)
       Comment("Start of multiplication") ::
       exp1Lines ++
       exp2Lines ++
-      List(MulInstr(allocator.allocateRegister(), allocator.allocateRegister(), allocator.allocateRegister()))
+      List(MulInstr(dest, dest, next))
     }
 
     def divGenerate(exp1: Expr, exp2: Expr): List[AssemblyLine] = {
-      val exp1Lines = generateAssembly(exp1, allocator)
-      val exp2Lines = generateAssembly(exp2, allocator)
+      val exp1Lines = generateAssembly(exp1, allocator, dest)
+      val next = allocator.allocateRegister()
+      val exp2Lines = generateAssembly(exp2, allocator, next)
       Comment("Start of division") ::
       exp1Lines ++
       exp2Lines ++
-      List(DivInstr(allocator.allocateRegister(), allocator.allocateRegister(), allocator.allocateRegister()))
+      List(DivInstr(dest, dest, next))
     }
 
     def modGenerate(exp1: Expr, exp2: Expr): List[AssemblyLine] = {
-      val exp1Lines = generateAssembly(exp1, allocator)
-      val exp2Lines = generateAssembly(exp2, allocator)
+      val exp1Lines = generateAssembly(exp1, allocator, dest)
+      val next = allocator.allocateRegister()
+      val exp2Lines = generateAssembly(exp2, allocator, next)
       Comment("Start of modulo") ::
       exp1Lines ++
       exp2Lines ++
@@ -183,26 +187,29 @@ object CodeGenerator {
     }
 
     def addGenerate(exp1: Expr, exp2: Expr): List[AssemblyLine] = {
-      val exp1Lines = generateAssembly(exp1, allocator)
-      val exp2Lines = generateAssembly(exp2, allocator)
+      val exp1Lines = generateAssembly(exp1, allocator, dest)
+      val next = allocator.allocateRegister()
+      val exp2Lines = generateAssembly(exp2, allocator, next)
       Comment("Start of addition") ::
       exp1Lines ++
       exp2Lines ++
-      List(AddInstr(allocator.allocateRegister(), allocator.allocateRegister(), allocator.allocateRegister()))
+      List(AddInstr(dest, dest, next))
     }
 
     def subGenerate(exp1: Expr, exp2: Expr): List[AssemblyLine] = {
-      val exp1Lines = generateAssembly(exp1, allocator)
-      val exp2Lines = generateAssembly(exp2, allocator)
+      val exp1Lines = generateAssembly(exp1, allocator, dest)
+      val next = allocator.allocateRegister()
+      val exp2Lines = generateAssembly(exp2, allocator, next)
       Comment("Start of subtraction") ::
       exp1Lines ++
       exp2Lines ++
-      List(SubInstr(allocator.allocateRegister(), allocator.allocateRegister(), allocator.allocateRegister()))
+      List(SubInstr(dest, dest, next))
     }
 
     def gtGenerate(exp1: Expr, exp2: Expr): List[AssemblyLine] = {
-      val exp1Lines = generateAssembly(exp1, allocator)
-      val exp2Lines = generateAssembly(exp2, allocator)
+      val exp1Lines = generateAssembly(exp1, allocator, dest)
+      val next = allocator.allocateRegister()
+      val exp2Lines = generateAssembly(exp2, allocator, next)
       Comment("Start of greater than") ::
       exp1Lines ++
       exp2Lines ++
@@ -210,8 +217,9 @@ object CodeGenerator {
     }
 
     def gteqGenerate(exp1: Expr, exp2: Expr): List[AssemblyLine] = {
-      val exp1Lines = generateAssembly(exp1, allocator)
-      val exp2Lines = generateAssembly(exp2, allocator)
+      val exp1Lines = generateAssembly(exp1, allocator, dest)
+      val next = allocator.allocateRegister()
+      val exp2Lines = generateAssembly(exp2, allocator, next)
       Comment("Start of greater than or equal to") ::
       exp1Lines ++
       exp2Lines ++
@@ -219,8 +227,9 @@ object CodeGenerator {
     }
 
     def ltGenerate(exp1: Expr, exp2: Expr): List[AssemblyLine] = {
-      val exp1Lines = generateAssembly(exp1, allocator)
-      val exp2Lines = generateAssembly(exp2, allocator)
+      val exp1Lines = generateAssembly(exp1, allocator, dest)
+      val next = allocator.allocateRegister()
+      val exp2Lines = generateAssembly(exp2, allocator, next)
       Comment("Start of less than") ::
       exp1Lines ++
       exp2Lines ++
@@ -228,8 +237,9 @@ object CodeGenerator {
     }
 
     def lteqGenerate(exp1: Expr, exp2: Expr): List[AssemblyLine] = {
-      val exp1Lines = generateAssembly(exp1, allocator)
-      val exp2Lines = generateAssembly(exp2, allocator)
+      val exp1Lines = generateAssembly(exp1, allocator, dest)
+      val next = allocator.allocateRegister()
+      val exp2Lines = generateAssembly(exp2, allocator, next)
       Comment("Start of less than or equal to") ::
       exp1Lines ++
       exp2Lines ++
@@ -237,8 +247,9 @@ object CodeGenerator {
     }
 
     def eqGenerate(exp1: Expr, exp2: Expr): List[AssemblyLine] = {
-      val exp1Lines = generateAssembly(exp1, allocator)
-      val exp2Lines = generateAssembly(exp2, allocator)
+      val exp1Lines = generateAssembly(exp1, allocator, dest)
+      val next = allocator.allocateRegister()
+      val exp2Lines = generateAssembly(exp2, allocator, next)
       Comment("Start of equality") ::
       exp1Lines ++
       exp2Lines ++
@@ -246,8 +257,9 @@ object CodeGenerator {
     }
 
     def neqGenerate(exp1: Expr, exp2: Expr): List[AssemblyLine] = {
-      val exp1Lines = generateAssembly(exp1, allocator)
-      val exp2Lines = generateAssembly(exp2, allocator)
+      val exp1Lines = generateAssembly(exp1, allocator, dest)
+      val next = allocator.allocateRegister()
+      val exp2Lines = generateAssembly(exp2, allocator, next)
       Comment("Start of not equal to") ::
       exp1Lines ++
       exp2Lines ++
@@ -255,8 +267,9 @@ object CodeGenerator {
     }
 
     def andGenerate(exp1: Expr, exp2: Expr): List[AssemblyLine] = {
-      val exp1Lines = generateAssembly(exp1, allocator)
-      val exp2Lines = generateAssembly(exp2, allocator)
+      val exp1Lines = generateAssembly(exp1, allocator, dest)
+      val next = allocator.allocateRegister()
+      val exp2Lines = generateAssembly(exp2, allocator, next)
       Comment("Start of and") ::
       exp1Lines ++
       exp2Lines ++
@@ -264,8 +277,9 @@ object CodeGenerator {
     }
 
     def orGenerate(exp1: Expr, exp2: Expr): List[AssemblyLine] = {
-      val exp1Lines = generateAssembly(exp1, allocator)
-      val exp2Lines = generateAssembly(exp2, allocator)
+      val exp1Lines = generateAssembly(exp1, allocator, dest)
+      val next = allocator.allocateRegister()
+      val exp2Lines = generateAssembly(exp2, allocator, next)
       Comment("Start of or") ::
       exp1Lines ++
       exp2Lines ++
@@ -273,35 +287,35 @@ object CodeGenerator {
     }
 
     def notGenerate(exp: Expr): List[AssemblyLine] = {
-      val expLines = generateAssembly(exp, allocator)
+      val expLines = generateAssembly(exp, allocator, dest)
       Comment("Start of not") ::
       expLines ++
       List(Comment("not Logic"))
     }
 
     def negGenerate(exp: Expr): List[AssemblyLine] = {
-      val expLines = generateAssembly(exp, allocator)
+      val expLines = generateAssembly(exp, allocator, dest)
       Comment("Start of negation") ::
       expLines ++
       List(Comment("neg Logic"))
     }
 
     def lenGenerate(exp: Expr): List[AssemblyLine] = {
-      val expLines = generateAssembly(exp, allocator)
+      val expLines = generateAssembly(exp, allocator, dest)
       Comment("Start of length") ::
       expLines ++
       List(Comment("len Logic"))
     }
 
     def ordGenerate(exp: Expr): List[AssemblyLine] = {
-      val expLines = generateAssembly(exp, allocator)
+      val expLines = generateAssembly(exp, allocator, dest)
       Comment("Start of ord") ::
       expLines ++
       List(Comment("ord Logic"))
     }
 
     def chrGenerate(exp: Expr): List[AssemblyLine] = {
-      val expLines = generateAssembly(exp, allocator)
+      val expLines = generateAssembly(exp, allocator, dest)
       Comment("Start of chr") ::
       expLines ++
       List(Comment("chr Logic"))
@@ -310,7 +324,7 @@ object CodeGenerator {
     def numGenerate(n: Int): List[AssemblyLine] = {
       List(
         Comment("Start of number"),
-        Mov(allocator.allocateRegister(), ImmVal(n))
+        Mov(dest, ImmVal(n))
       )
     }
 
@@ -319,11 +333,11 @@ object CodeGenerator {
       (b match {
         case "true" =>
           List(
-            Mov(allocator.allocateRegister(), ImmVal(1))
+            Mov(dest, ImmVal(1))
           )
         case "false" =>
           List(
-            Mov(allocator.allocateRegister(), ImmVal(0))
+            Mov(dest, ImmVal(0))
           )
       })
     }
@@ -331,7 +345,7 @@ object CodeGenerator {
     def chGenerate(c: Char): List[AssemblyLine] = {
       List(
         Comment("Start of character"),
-        Mov(allocator.allocateRegister(), ImmVal(c.toInt))
+        Mov(dest, ImmVal(c.toInt))
       )
     }
 
@@ -346,7 +360,7 @@ object CodeGenerator {
         List(Comment("Start of parameter"))
 
       case Skip() =>
-        List(Comment("Skip"), Mov(allocator.allocateRegister(), ImmVal(0)))
+        List(Comment("Skip"), Mov(dest, ImmVal(0)))
 
       case Declare(_, _, value) =>
         declareGenerate(value)
@@ -367,7 +381,7 @@ object CodeGenerator {
         scopeGenerate(body)
 
       case Statements(stmts) =>
-        val stmtLines = stmts.flatMap(generateAssembly(_, allocator))
+        val stmtLines = stmts.flatMap(generateAssembly(_, allocator, dest))
         stmtLines
 
       case Free(exp) =>
