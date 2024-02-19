@@ -62,7 +62,11 @@ object CodeGenerator {
       val elseLines = generateAssembly(elseS, allocator, dest)
       Comment("Start of if statement") ::
       condLines ++
-      List(Comment("If statement condition logic")) ++
+      List(
+        Comment("If statement condition logic"),
+        CmpInstr(dest, ImmVal(1)),
+        BneInstr(elseLabel)
+      ) ++
       thenLines ++
       List(BInstr(endLabel), Label(elseLabel)) ++
       elseLines ++
@@ -77,7 +81,12 @@ object CodeGenerator {
       List(Comment("Start of while loop"))
       Label(startLabel) ::
       condLines ++
-      List(Comment("While loop condition logic"), BInstr(endLabel)) ++ // Temporary jump to end label
+      List(
+        Comment("While loop condition logic"),
+        // CmpInstr(dest, ImmVal(1)),
+        // BneInstr(endLabel)
+        BInstr(endLabel)  // Temporarily skip to end of while loop to avoid infinite loop
+      ) ++ 
       stmtLines ++
       List(
         BInstr(startLabel),
@@ -440,7 +449,7 @@ object CodeGenerator {
         List(Comment("Start of parameter"))
 
       case Skip() =>
-        List(Comment("Skip"), Mov(dest, ImmVal(0)))
+        List(Comment("Skip"))
 
       case Declare(_, _, value) =>
         declareGenerate(value)
