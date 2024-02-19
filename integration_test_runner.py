@@ -207,3 +207,4 @@ if len(errorTests) > 0:
   print("Failed tests:")
   for fname in errorTests:
     print(fname)
+  sys.exit(1)

@@ -11,7 +11,7 @@ clean:
 	scala-cli clean . && rm -f wacc-compiler
 
 test: all
-	python3 integration_test_runner.py
+	python3 integration_test_runner.py invalid
 
 test-%: all
 	python3 integration_test_runner.py $*
