@@ -144,7 +144,7 @@ object CodeGenerator {
       List(Label("main"), PushMultiple(List(FP, LR)), Mov(FP, SP)) ++
       stmtLines ++
       List(PopMultiple(List(FP, PC))) ++
-        refFunctions.flatten.toList
+        refFunctions.foldLeft(List[AssemblyLine]())(_ ++ _)
     }
 
     def functionGenerate(funcName: Ident, paramList: List[Param], body: Statement): List[AssemblyLine] = {
