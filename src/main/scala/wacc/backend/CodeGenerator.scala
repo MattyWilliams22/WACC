@@ -7,7 +7,7 @@ import scala.collection.mutable.Set
 
 object CodeGenerator {
   private var labelCounter: Int = -1
-  private val refFunctions: Set[AssemblyLine] = Set()
+  private val refFunctions: Set[List[AssemblyLine]] = Set()
 
   private lazy val exitFunc: List[AssemblyLine] = List(
     Comment("Exit function"),
@@ -34,8 +34,8 @@ object CodeGenerator {
 
     List(
       AscizInstr(s"L._print${_type}_str0", formatSpecifier),
-      Comment(s"Print$_type function"),
-      Label(s"_print$_type"),
+      Comment(s"Print${_type} function"),
+      Label(s"_print${_type}"),
       PushMultiple(List(FP, LR)),
       Mov(FP, SP),
       BicInstr(SP, SP, ImmVal(7)),
@@ -144,7 +144,7 @@ object CodeGenerator {
       List(Label("main"), PushMultiple(List(FP, LR)), Mov(FP, SP)) ++
       stmtLines ++
       List(PopMultiple(List(FP, PC))) ++
-        refFunctions.toList
+        refFunctions.flatten.toList
     }
 
     def functionGenerate(funcName: Ident, paramList: List[Param], body: Statement): List[AssemblyLine] = {
@@ -178,6 +178,7 @@ object CodeGenerator {
           refFunctions += readIntFunc
         case BaseT("char") =>
           refFunctions += readCharFunc
+        case _ =>
       }
       val lvalueLines = generateAssembly(lvalue, allocator, dest)
       Comment("Start of read") ::
@@ -266,6 +267,7 @@ object CodeGenerator {
           refFunctions += printCharOrIntFunc(true)
         case BaseT("string") =>
           refFunctions += printStrFunc
+        case _ =>
       }
       val expLines = generateAssembly(exp, allocator, dest)
       Comment("Start of print") ::
