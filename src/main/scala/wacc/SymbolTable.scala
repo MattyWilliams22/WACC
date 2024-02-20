@@ -12,12 +12,7 @@ class SymbolTable(var parent: Option[SymbolTable],
 
   private var varCounter: Int = 0
   private var funcCounter: Int = 0
-  private var topLevelSymbolTable: Option[SymbolTable] = None
-  
-  def setTopLevelSymbolTable(symbolTable: SymbolTable): Unit = {
-    topLevelSymbolTable = Some(symbolTable)
-    parent.foreach(_.setTopLevelSymbolTable(symbolTable))
-  }
+  private val topLevelSymbolTable: Option[SymbolTable] = None
 
   private def incrementVarCounter(): Unit = {
     varCounter += 1
@@ -29,16 +24,16 @@ class SymbolTable(var parent: Option[SymbolTable],
     topLevelSymbolTable.foreach(_.incrementTotalFuncCount())
   }
 
-  def addFunction(name: String, node: Function): String = {
-    val uniqueName = generateUniqueFuncName(name)
+  private def addFunction(name: String, node: Function): String = {
+    val uniqueName = generateUniqueFuncName()
     node.ident.nickname = Some(uniqueName)
     funcMap.put(name, node)
     incrementFuncCounter()
     uniqueName
   }
 
-  def addVariable(name: String, node: ASTNode): String = {
-    val uniqueName = generateUniqueVarName(name)
+  private def addVariable(name: String, node: ASTNode): String = {
+    val uniqueName = generateUniqueVarName()
     node match {
       case d: Declare => d.ident.nickname = Some(uniqueName)
       case p: Param => p.ident.nickname = Some(uniqueName)
@@ -52,8 +47,8 @@ class SymbolTable(var parent: Option[SymbolTable],
   private def incrementTotalVarCount(): Unit = topLevelSymbolTable.foreach(_.incrementTotalVarCount())
   private def incrementTotalFuncCount(): Unit = topLevelSymbolTable.foreach(_.incrementTotalFuncCount())
   
-  private def generateUniqueVarName(name: String): String = s"var_$varCounter"
-  private def generateUniqueFuncName(name: String): String = s"func_$funcCounter"
+  private def generateUniqueVarName(): String = s"var_$varCounter"
+  private def generateUniqueFuncName(): String = s"func_$funcCounter"
 
   def generateSymbolTable(node: ASTNode): Unit = {
     node match {
@@ -107,8 +102,8 @@ class SymbolTable(var parent: Option[SymbolTable],
     }
   }
 
-  def lookupFunction(name: String): Option[Function] = funcMap.get(name)
-  def lookupVariable(name: String): Option[ASTNode] = varMap.get(name)
+  private def lookupFunction(name: String): Option[Function] = funcMap.get(name)
+  private def lookupVariable(name: String): Option[ASTNode] = varMap.get(name)
 
   def lookupAllVariables(name: String): Option[ASTNode] = {
     var table: Option[SymbolTable] = Option(this)
@@ -118,7 +113,7 @@ class SymbolTable(var parent: Option[SymbolTable],
         if (res.isDefined) {
           return res
         }
-        table = table.get.getParent()
+        table = table.get.getParent
       }
       None
     } else {
@@ -134,11 +129,11 @@ class SymbolTable(var parent: Option[SymbolTable],
       if (res.isDefined) {
         return res
       }
-      table = table.get.getParent()
+      table = table.get.getParent
     }
     None
   }
 
-  private def getParent(): Option[SymbolTable] = parent
+  private def getParent: Option[SymbolTable] = parent
 }
 

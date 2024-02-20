@@ -3,8 +3,132 @@ package wacc.backend
 import wacc.ASTNodes._
 import wacc.backend.Instructions._
 
+import scala.collection.mutable.Set
+
 object CodeGenerator {
-  var labelCounter: Int = -1
+  private var labelCounter: Int = -1
+  private val refFunctions: Set[AssemblyLine] = Set()
+
+  private lazy val exitFunc: List[AssemblyLine] = List(
+    Comment("Exit function"),
+    Label("_exit"),
+    PushMultiple(List(FP, LR)),
+    Mov(FP, SP),
+    BicInstr(SP, SP, ImmVal(7)),
+    BlInstr("exit"),
+    Mov(SP, FP),
+    PopMultiple(List(FP, PC))
+  )
+
+  private def printCharOrIntFunc(isChar: Boolean): List[AssemblyLine] = {
+    var _type: String = ""
+    var formatSpecifier: String = ""
+
+    if (isChar) {
+      _type = "c"
+      formatSpecifier = "%c"
+    } else {
+      _type = "i"
+      formatSpecifier = "%d"
+    }
+
+    List(
+      AscizInstr(s"L._print${_type}_str0", formatSpecifier),
+      Comment(s"Print$_type function"),
+      Label(s"_print$_type"),
+      PushMultiple(List(FP, LR)),
+      Mov(FP, SP),
+      BicInstr(SP, SP, ImmVal(7)),
+      Mov(R1, R0),
+      // Adr(R0, s"L._print${_type}_str0"),
+      BlInstr("printf"),
+      Mov(R0, ImmVal(0)),
+      BlInstr("fflush"),
+      Mov(SP, FP),
+      PopMultiple(List(FP, PC))
+    )
+  }
+
+  private lazy val printStrFunc: List[AssemblyLine] = List(
+    AscizInstr("L._prints_str0", "%.*s"),
+    Comment("Print string function"),
+    Label("_prints"),
+    PushMultiple(List(FP, LR)),
+    Mov(FP, SP),
+    BicInstr(SP, SP, ImmVal(7)),
+    Mov(R2, R0),
+    //Ldr(R1, [r0, #-4]),
+    //Adr(R0, "L._prints_str0"),
+    BlInstr("printf"),
+    Mov(R0, ImmVal(0)),
+    BlInstr("fflush"),
+    Mov(SP, FP),
+    PopMultiple(List(FP, PC))
+  )
+
+  private lazy val printLnFunc: List[AssemblyLine] = List(
+    AscizInstr("L._println_str0", ""),
+    Comment("Println function"),
+    Label("_println"),
+    PushMultiple(List(FP, LR)),
+    Mov(FP, SP),
+    BicInstr(SP, SP, ImmVal(7)),
+    //Adr(R0, "L._println_str0"),
+    BlInstr("puts"),
+    Mov(R0, ImmVal(0)),
+    BlInstr("fflush"),
+    Mov(SP, FP),
+    PopMultiple(List(FP, PC))
+  )
+
+  private lazy val mallocFunc: List[AssemblyLine] = List(
+    Comment("Malloc function"),
+    Label("_malloc"),
+    PushMultiple(List(FP, LR)),
+    Mov(FP, SP),
+    BicInstr(SP, SP, ImmVal(7)),
+    BlInstr("malloc"),
+    CmpInstr(R0, ImmVal(0)),
+    BeqInstr("_errOutOfMemory"),
+    Mov(SP, FP),
+    PopMultiple(List(FP, PC))
+  )
+
+  private lazy val readIntFunc: List[AssemblyLine] = List(
+    AscizInstr("L._readi_str0", "%d"),
+    Comment("Read int function"),
+    Label("_readi"),
+    PushMultiple(List(FP, LR)),
+    Mov(FP, SP),
+    BicInstr(SP, SP, ImmVal(7)),
+    SubInstr(SP, SP, ImmVal(8)),
+    // StrInstr(R0, [SP, ImmVal(0)]),
+    Mov(R1, SP),
+    // Adr(R0, "L._readi_str0"),
+    BlInstr("scanf"),
+    // Ldr(R0, [SP, ImmVal(0)]),
+    AddInstr(SP, SP, ImmVal(8)),
+    Mov(SP, FP),
+    PopMultiple(List(FP, PC))
+  )
+
+  private lazy val readCharFunc: List[AssemblyLine] = List(
+    AscizInstr("L._readc_str0", " %c"),
+    Comment("Read char function"),
+    Label("_readc"),
+    PushMultiple(List(FP, LR)),
+    Mov(FP, SP),
+    BicInstr(SP, SP, ImmVal(7)),
+    SubInstr(SP, SP, ImmVal(8)),
+    // StrInstr(R0, [SP, ImmVal(0)]),
+    Mov(R1, SP),
+    // Adr(R0, "L._readc_str0"),
+    BlInstr("scanf"),
+    // Ldr(R0, [SP, ImmVal(0)]),
+    AddInstr(SP, SP, ImmVal(8)),
+    Mov(SP, FP),
+    PopMultiple(List(FP, PC))
+  )
 
   private def getUniqueLabel: String = {
     labelCounter += 1
@@ -19,7 +143,8 @@ object CodeGenerator {
       Comment("Start of program") :: funcLines ++
       List(Label("main"), PushMultiple(List(FP, LR)), Mov(FP, SP)) ++
       stmtLines ++
-      List(PopMultiple(List(FP, PC)))
+      List(PopMultiple(List(FP, PC))) ++
+        refFunctions.toList
     }
 
     def functionGenerate(funcName: Ident, paramList: List[Param], body: Statement): List[AssemblyLine] = {
@@ -48,6 +173,12 @@ object CodeGenerator {
     }
 
     def readGenerate(lvalue: LValue): List[AssemblyLine] = {
+      lvalue.getType match {
+        case BaseT("int") =>
+          refFunctions += readIntFunc
+        case BaseT("char") =>
+          refFunctions += readCharFunc
+      }
       val lvalueLines = generateAssembly(lvalue, allocator, dest)
       Comment("Start of read") ::
       lvalueLines ++
@@ -120,6 +251,7 @@ object CodeGenerator {
     }
 
     def exitGenerate(exp: Expr): List[AssemblyLine] = {
+      refFunctions += exitFunc
       val expLines = generateAssembly(exp, allocator, dest)
       Comment("Start of exit") ::
       expLines ++
@@ -127,6 +259,14 @@ object CodeGenerator {
     }
 
     def printGenerate(exp: Expr): List[AssemblyLine] = {
+      exp.getType match {
+        case BaseT("int") =>
+          refFunctions += printCharOrIntFunc(false)
+        case BaseT("char") =>
+          refFunctions += printCharOrIntFunc(true)
+        case BaseT("string") =>
+          refFunctions += printStrFunc
+      }
       val expLines = generateAssembly(exp, allocator, dest)
       Comment("Start of print") ::
       expLines ++
@@ -134,6 +274,7 @@ object CodeGenerator {
     }
 
     def printlnGenerate(exp: Expr): List[AssemblyLine] = {
+      refFunctions += printLnFunc
       val expLines = generateAssembly(exp, allocator, dest)
       Comment("Start of println") ::
       expLines ++

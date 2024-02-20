@@ -113,7 +113,7 @@ object Instructions {
   }
 
   case class AscizInstr(label: String, string: String) extends AssemblyLine {
-    override def format: String = s"$label:\n   .asciz $string"
+    override def format: String = s"   .word ${string.length}\n$label:\n   .asciz $string"
   }
 
   case class RetInstr() extends AssemblyLine {
