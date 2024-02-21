@@ -99,11 +99,8 @@ def compile_run_assembly_file(fname, assembly_file):
     return False
 
 def run_tests(tests_to_run):
-  syntaxTotal = 0
-  semanticTotal = 0
   syntaxPasses = 0
   semanticPasses = 0
-  validTotal = 0
   validPasses = 0
 
   for test in tests_to_run:
@@ -113,14 +110,6 @@ def run_tests(tests_to_run):
 
       actual = proc.returncode
       expected = parser_code(fname)
-
-      if fname.startswith("wacc_examples/in"):
-        if "syntax" in fname:
-          syntaxTotal += 1
-        elif "semantic" in fname:
-          semanticTotal += 1
-      else:
-        validTotal += 1
 
       if actual == expected:
         if fname.startswith("wacc_examples/in"):
@@ -145,7 +134,7 @@ def run_tests(tests_to_run):
       else:
         print(f"Failed test {fname}. Expected exit code {expected} but got {actual}")
         errorTests.append(fname)
-  return (syntaxTotal, semanticTotal, syntaxPasses, semanticPasses, validTotal, validPasses)
+  return (syntaxPasses, semanticPasses, validPasses)
 
 base = "wacc_examples/"
 tests = add_tests_to_dict(base)
@@ -158,49 +147,60 @@ elif sys.argv[1] == "--syntax":
   runningTests = tests["invalid-syntax"] + tests["valid"]
 elif sys.argv[1] == "--semantic":
   runningTests = tests["invalid-semantic"] + tests["valid"]
-else :
-  tag = '-'.join(sys.argv[1:])
-  if tag in tests:
-    runningTests = tests[tag]
+elif len(sys.argv) == 2:
+  runningTests = tests[sys.argv[1]]
+else:
+  if sys.argv[1] == "valid":
+    tags = ['-'.join([sys.argv[1], tag]) for tag in sys.argv[2:]]
+    runningTests = tests["invalid"]
   else:
-    print(f"Test tag {tag} not found")
-    sys.exit(1)
+    if len(sys.argv) == 3:
+      tags = ['-'.join(sys.argv[1:])]
+    else:
+      tags = ['-'.join([sys.argv[1], sys.argv[2], tag]) for tag in sys.argv[3:]]
+  for tag in tags:
+    if tag in tests:
+      runningTests += tests[tag]
+    else:
+      print(f"Test tag {tag} not found")
+      sys.exit(1)
 
 errorTests = []
 
 print("Running tests...")
 
 # Run the tests
-syntaxTotal, semanticTotal, syntaxPasses, semanticPasses, validTotal, validPasses = run_tests(runningTests)
+syntaxPasses, semanticPasses, validPasses = run_tests(runningTests)
+syntaxTotal = len(tests["invalid-syntax"])
+semanticTotal = len(tests["invalid-semantic"])
+validTotal = len(tests["valid"])
 
 totalPasses = validPasses + syntaxPasses + semanticPasses
 total = validTotal + syntaxTotal + semanticTotal
+numberTests = len(tests['valid'] + tests['invalid'])
+numberIgnored = len(tests['valid'] + tests['invalid']) - len(runningTests)
 
 print("")
-if len(sys.argv) < 2:
+if sys.argv[1] == "--syntax":
+  print(f"Finished running tests. Results: ")
+  print(f"    Valid: {validPasses} / {validTotal}")
+  print(f"    Syntax: {syntaxPasses} / {syntaxTotal}")
+  print(f"Total: {totalPasses} / {numberTests}")
+  print(f"Ignored: {numberIgnored} tests")
+elif sys.argv[1] == "--semantic":
+  print(f"Finished running tests. Results: ")
+  print(f"    Valid: {validPasses} / {validTotal}")
+  print(f"    Semantic: {semanticPasses} / {semanticTotal}")
+  print(f"Total: {totalPasses} / {numberTests}")
+  print(f"Ignored: {numberIgnored} tests")
+else:
   print("Finished running tests. Results: ")
   print(f"Valid: {validPasses} / {validTotal}")
   print(f"Invalid: {syntaxPasses + semanticPasses} / {syntaxTotal + semanticTotal}")
   print(f"    Syntax: {syntaxPasses} / {syntaxTotal}")
   print(f"    Semantic: {semanticPasses} / {semanticTotal}")
-  print(f"Total: {totalPasses} / {total}")
-  print("Ignored: 0 tests")
-elif sys.argv[1] == "--syntax":
-  print(f"Finished running tests. Results: ")
-  print(f"    Valid: {validPasses} / {validTotal}")
-  print(f"    Syntax: {syntaxPasses} / {syntaxTotal}")
-  print(f"Total: {totalPasses} / {total}")
-  print(f"Ignored: {len(tests['valid'] + tests['invalid']) - total} tests")
-elif sys.argv[1] == "--semantic":
-  print(f"Finished running tests. Results: ")
-  print(f"    Valid: {validPasses} / {validTotal}")
-  print(f"    Semantic: {semanticPasses} / {semanticTotal}")
-  print(f"Total: {totalPasses} / {total}")
-  print(f"Ignored: {len(tests['valid'] + tests['invalid']) - total} tests")
-else:
-  print(f"Finished running tests {'-'.join(sys.argv[1:])}. Results: "
-        f"{totalPasses} / {total}")
-  print(f"Ignored {len(tests['valid'] + tests['invalid']) - total} tests")
+  print(f"Total: {totalPasses} / {numberTests}")
+  print(f"Ignored: {numberIgnored} tests")
 
 if len(errorTests) > 0:
   print("")

@@ -3,11 +3,11 @@ package wacc.backend
 import wacc.ASTNodes._
 import wacc.backend.Instructions._
 
-import scala.collection.mutable.Set
+import scala.collection.mutable
 
 object CodeGenerator {
   private var labelCounter: Int = -1
-  private val refFunctions: Set[List[AssemblyLine]] = Set()
+  private val refFunctions: mutable.Set[List[AssemblyLine]] = mutable.Set()
 
   private lazy val exitFunc: List[AssemblyLine] = List(
     Comment("Exit function"),
