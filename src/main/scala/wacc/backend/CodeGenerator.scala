@@ -17,6 +17,7 @@ object CodeGenerator {
   }
 
   private lazy val exitFunc: List[AssemblyLine] = List(
+    NewLine(),
     Comment("Exit function"),
     Label("_exit"),
     PushMultiple(List(FP, LR)),
@@ -39,16 +40,17 @@ object CodeGenerator {
       formatSpecifier = "%d"
     }
 
-    stringPool += AscizInstr(s".L._print${_type}_str0", formatSpecifier)
-
     List(
+      NewLine(),
+      AscizInstr(s".L._print${_type}_str0", formatSpecifier),
+      Command("align 4"),
       Comment(s"Print${_type} function"),
       Label(s"_print${_type}"),
       PushMultiple(List(FP, LR)),
       Mov(FP, SP),
       BicInstr(SP, SP, ImmVal(7)),
       Mov(R1, R0),
-      // Adr(R0, s"L._print${_type}_str0"),
+      AdrInstr(R0, s".L._print${_type}_str0"),
       BlInstr("printf"),
       Mov(R0, ImmVal(0)),
       BlInstr("fflush"),
@@ -58,16 +60,18 @@ object CodeGenerator {
   }
 
   private lazy val printStrFunc: List[AssemblyLine] = {
-    stringPool += AscizInstr(".L._prints_str0", "%.*s")
     List(
+      NewLine(),
+      AscizInstr(".L._prints_str0", "%.*s"),
+      Command("align 4"),
       Comment("Print string function"),
       Label("_prints"),
       PushMultiple(List(FP, LR)),
       Mov(FP, SP),
       BicInstr(SP, SP, ImmVal(7)),
       Mov(R2, R0),
-      //LdrAddr(R1, [r0, #-4]),
-      //Adr(R0, "L._prints_str0"),
+      LdrAddr(R1, R0, ImmVal(-4)),
+      AdrInstr(R0, ".L._prints_str0"),
       BlInstr("printf"),
       Mov(R0, ImmVal(0)),
       BlInstr("fflush"),
@@ -77,14 +81,16 @@ object CodeGenerator {
   }
 
   private lazy val printLnFunc: List[AssemblyLine] = {
-    stringPool += AscizInstr(".L._println_str0", "")
     List(
+      NewLine(),
+      AscizInstr(".L._println_str0", ""),
+      Command("align 4"),
       Comment("Println function"),
       Label("_println"),
       PushMultiple(List(FP, LR)),
       Mov(FP, SP),
       BicInstr(SP, SP, ImmVal(7)),
-      //Adr(R0, "L._println_str0"),
+      AdrInstr(R0, ".L._println_str0"),
       BlInstr("puts"),
       Mov(R0, ImmVal(0)),
       BlInstr("fflush"),
@@ -94,6 +100,7 @@ object CodeGenerator {
   }
 
   private lazy val mallocFunc: List[AssemblyLine] = List(
+    NewLine(),
     Comment("Malloc function"),
     Label("_malloc"),
     PushMultiple(List(FP, LR)),
@@ -107,19 +114,21 @@ object CodeGenerator {
   )
 
   private lazy val readIntFunc: List[AssemblyLine] = {
-    stringPool += AscizInstr(".L._readi_str0", "%d")
     List(
+      NewLine(),
+      AscizInstr(".L._readi_str0", "%d"),
+      Command("align 4"),
       Comment("Read int function"),
       Label("_readi"),
       PushMultiple(List(FP, LR)),
       Mov(FP, SP),
       BicInstr(SP, SP, ImmVal(7)),
       SubInstr(SP, SP, ImmVal(8)),
-      // StrInstr(R0, [SP, ImmVal(0)]),
+      StoreInstr(R0, SP, ImmVal(0)),
       Mov(R1, SP),
-      // Adr(R0, "L._readi_str0"),
+      AdrInstr(R0, ".L._readi_str0"),
       BlInstr("scanf"),
-      // LdrAddr(R0, [SP, ImmVal(0)]),
+      LdrAddr(R0, SP, ImmVal(0)),
       AddInstr(SP, SP, ImmVal(8)),
       Mov(SP, FP),
       PopMultiple(List(FP, PC))
@@ -127,24 +136,38 @@ object CodeGenerator {
   }
 
   private lazy val readCharFunc: List[AssemblyLine] = {
-    stringPool += AscizInstr(".L._readc_str0", " %c")
     List(
+      NewLine(),
+      AscizInstr(".L._readc_str0", " %c"),
+      Command("align 4"),
       Comment("Read char function"),
       Label("_readc"),
       PushMultiple(List(FP, LR)),
       Mov(FP, SP),
       BicInstr(SP, SP, ImmVal(7)),
       SubInstr(SP, SP, ImmVal(8)),
-      // StrInstr(R0, [SP, ImmVal(0)]),
+      StoreInstr(R0, SP, ImmVal(0)),
       Mov(R1, SP),
-      // Adr(R0, "L._readc_str0"),
+      AdrInstr(R0, ".L._readc_str0"),
       BlInstr("scanf"),
-      // LdrAddr(R0, [SP, ImmVal(0)]),
+      LdrAddr(R0, SP, ImmVal(0)),
       AddInstr(SP, SP, ImmVal(8)),
       Mov(SP, FP),
       PopMultiple(List(FP, PC))
     )
   }
+
+  private lazy val freeFunc: List[AssemblyLine] = List(
+    NewLine(),
+    Comment("Free function"),
+    Label("_free"),
+    PushMultiple(List(FP, LR)),
+    Mov(FP, SP),
+    BicInstr(SP, SP, ImmVal(7)),
+    BlInstr("free"),
+    Mov(SP, FP),
+    PopMultiple(List(FP, PC))
+  )
 
   private def getUniqueLabel: String = {
     labelCounter += 1
@@ -212,17 +235,25 @@ object CodeGenerator {
     }
 
     def readGenerate(lvalue: LValue): List[AssemblyLine] = {
-      lvalue.getType match {
-        case BaseT("int") =>
+      val _type = (lvalue.getType match {
+        case BaseT("int") => {
           refFunctions += readIntFunc
-        case BaseT("char") =>
+          "i"
+        }
+        case BaseT("char") => {
           refFunctions += readCharFunc
-        case _ =>
-      }
+          "c"
+        }
+        case _ => ""
+      })
       val lvalueLines = generateAssembly(lvalue, allocator, dest)
       Comment("Start of read") ::
       lvalueLines ++
-      List(Comment("Read Logic"))
+      List(
+        Comment("Read Logic"),
+        Mov(R0, dest),
+        BlInstr(s"_read${_type}")
+      )
     }
 
     def ifGenerate(cond: Expr, thenS: Statement, elseS: Statement): List[AssemblyLine] = {
@@ -274,10 +305,15 @@ object CodeGenerator {
     }
 
     def freeGenerate(exp: Expr): List[AssemblyLine] = {
+      refFunctions += freeFunc
       val expLines = generateAssembly(exp, allocator, dest)
       Comment("Start of free") ::
       expLines ++
-      List(Comment("Free Logic"))
+      List(
+        Comment("Free Logic"),
+        Mov(R0, dest),
+        BlInstr("_free")
+      )
     }
 
     def returnGenerate(exp: Expr): List[AssemblyLine] = {
@@ -383,7 +419,13 @@ object CodeGenerator {
       Comment("Start of division") ::
       exp1Lines ++
       exp2Lines ++
-      List(DivInstr(dest, dest, next))
+      List(
+        Comment("Div Logic"),
+        Mov(R0, dest),
+        Mov(R1, next),
+        BlInstr("__aeabi_idivmod"),
+        Mov(dest, R0)
+      )
     }
 
     def modGenerate(exp1: Expr, exp2: Expr): List[AssemblyLine] = {

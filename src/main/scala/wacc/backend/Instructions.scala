@@ -52,12 +52,16 @@ object Instructions {
     override def format: String = s"    pop {${regs.map(_.format).mkString(", ")}}"
   }
 
-  case class LdrAddr(reg: Register, address: Register) extends AssemblyLine {
-    override def format: String = s"    ldr ${reg.format}, [${address.format}]"
+  case class LdrAddr(reg: Register, address: Register, offset: ImmVal) extends AssemblyLine {
+    override def format: String = s"    ldr ${reg.format}, [${address.format}, ${offset.format}]"
   }
 
   case class LdrLabel(reg: Register, label: LabelAddr) extends AssemblyLine {
     override def format: String = s"    ldr ${reg.format}, ${label.format}"
+  }
+
+  case class AdrInstr(reg: Register, label: String) extends AssemblyLine {
+    override def format: String = s"    adr ${reg.format}, $label"
   }
 
   case class Mov(reg: Register, operand: Operand) extends AssemblyLine {
@@ -130,6 +134,14 @@ object Instructions {
 
   case class AscizInstr(label: String, string: String) extends AssemblyLine {
     override def format: String = s"   .word ${string.length}\n$label:\n   .asciz \"$string\""
+  }
+
+  case class StoreInstr(reg: Register, address: Register, offset: ImmVal) extends AssemblyLine {
+    override def format: String = s"    str ${reg.format}, [${address.format}, ${offset.format}]"
+  }
+
+  case class NewLine() extends AssemblyLine {
+    override def format: String = s""
   }
 
 }
