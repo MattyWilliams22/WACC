@@ -143,8 +143,11 @@ object CodeGenerator {
       Comment("Start of program") :: funcLines ++
       List(Label("main"), PushMultiple(List(FP, LR)), Mov(FP, SP)) ++
       stmtLines ++
-      List(PopMultiple(List(FP, PC))) ++
-        refFunctions.foldLeft(List[AssemblyLine]())(_ ++ _)
+      List(
+        Mov(R0, ImmVal(0)),
+        PopMultiple(List(FP, PC))
+      ) ++
+      refFunctions.foldLeft(List[AssemblyLine]())(_ ++ _)
     }
 
     def functionGenerate(funcName: Ident, paramList: List[Param], body: Statement): List[AssemblyLine] = {
@@ -155,8 +158,7 @@ object CodeGenerator {
       PushMultiple(List(FP, LR)) ::
       Mov(FP, SP) ::
       paramLines ++
-      bodyLines ++
-      List(PopMultiple(List(FP, PC)))
+      bodyLines
     }
 
     def declareGenerate(value: RValue): List[AssemblyLine] = {
@@ -247,7 +249,9 @@ object CodeGenerator {
       expLines ++
       List(
         Comment("Return Logic"),
-        RetInstr()
+        Mov(R0, dest),
+        Mov(SP, FP),
+        PopMultiple(List(FP, PC))
       )
     }
 
@@ -256,23 +260,34 @@ object CodeGenerator {
       val expLines = generateAssembly(exp, allocator, dest)
       Comment("Start of exit") ::
       expLines ++
-      List(Comment("Exit Logic"))
+      List(
+        Comment("Exit Logic"),
+        Mov(R0, dest),
+        BlInstr("_exit")
+      )
     }
 
     def printGenerate(exp: Expr): List[AssemblyLine] = {
-      exp.getType match {
+      val _type = exp.getType match {
         case BaseT("int") =>
           refFunctions += printCharOrIntFunc(false)
+          "i"
         case BaseT("char") =>
           refFunctions += printCharOrIntFunc(true)
+          "c"
         case BaseT("string") =>
           refFunctions += printStrFunc
-        case _ =>
+          "s"
+        case _ => ""
       }
       val expLines = generateAssembly(exp, allocator, dest)
       Comment("Start of print") ::
       expLines ++
-      List(Comment("Print Logic"))
+      List(
+        Comment("Print Logic"),
+        Mov(R0, dest),
+        BlInstr(s"_print${_type}")
+      )
     }
 
     def printlnGenerate(exp: Expr): List[AssemblyLine] = {
@@ -280,7 +295,11 @@ object CodeGenerator {
       val expLines = generateAssembly(exp, allocator, dest)
       Comment("Start of println") ::
       expLines ++
-      List(Comment("Println Logic"))
+      List(
+        Comment("Println Logic"),
+        Mov(R0, dest),
+        BlInstr("_println")
+      )
     }
 
     def arrayLiterGenerate(elems: List[Expr]): List[AssemblyLine] = {
