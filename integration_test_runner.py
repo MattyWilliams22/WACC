@@ -181,13 +181,13 @@ numberTests = len(tests['valid'] + tests['invalid'])
 numberIgnored = len(tests['valid'] + tests['invalid']) - len(runningTests)
 
 print("")
-if sys.argv[1] == "--syntax":
+if len(sys.argv) >= 2 and sys.argv[1] == "--syntax":
   print(f"Finished running tests. Results: ")
   print(f"    Valid: {validPasses} / {validTotal}")
   print(f"    Syntax: {syntaxPasses} / {syntaxTotal}")
   print(f"Total: {totalPasses} / {numberTests}")
   print(f"Ignored: {numberIgnored} tests")
-elif sys.argv[1] == "--semantic":
+elif len(sys.argv) >=2 and sys.argv[1] == "--semantic":
   print(f"Finished running tests. Results: ")
   print(f"    Valid: {validPasses} / {validTotal}")
   print(f"    Semantic: {semanticPasses} / {semanticTotal}")
