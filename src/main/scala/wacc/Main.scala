@@ -92,7 +92,7 @@ object Main {
                |.global main
                  """.stripMargin)
           val registerAllocator = new BasicRegisterAllocator
-          val reg = registerAllocator.allocateRegister()
+          val reg = registerAllocator.allocateRegister(None)
           val assemblyLines = generateAssembly(x, registerAllocator, reg)
           assemblyLines.foreach(line => writer.write(line.format + "\n"))
           assemblyLines.foreach(line => println(line.format))
