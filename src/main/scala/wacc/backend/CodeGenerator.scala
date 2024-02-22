@@ -7,7 +7,14 @@ import scala.collection.mutable
 
 object CodeGenerator {
   private var labelCounter: Int = -1
+  private var stringCounter: Int = -1
   private val refFunctions: mutable.Set[List[AssemblyLine]] = mutable.Set()
+  private val stringPool: mutable.Set[AscizInstr] = mutable.Set()
+
+  private def getStringLabel: String = {
+    stringCounter += 1
+    ".L._str" + stringCounter
+  }
 
   private lazy val exitFunc: List[AssemblyLine] = List(
     Comment("Exit function"),
@@ -57,7 +64,7 @@ object CodeGenerator {
     Mov(FP, SP),
     BicInstr(SP, SP, ImmVal(7)),
     Mov(R2, R0),
-    //Ldr(R1, [r0, #-4]),
+    //LdrAddr(R1, [r0, #-4]),
     //Adr(R0, "L._prints_str0"),
     BlInstr("printf"),
     Mov(R0, ImmVal(0)),
@@ -106,7 +113,7 @@ object CodeGenerator {
     Mov(R1, SP),
     // Adr(R0, "L._readi_str0"),
     BlInstr("scanf"),
-    // Ldr(R0, [SP, ImmVal(0)]),
+    // LdrAddr(R0, [SP, ImmVal(0)]),
     AddInstr(SP, SP, ImmVal(8)),
     Mov(SP, FP),
     PopMultiple(List(FP, PC))
@@ -124,7 +131,7 @@ object CodeGenerator {
     Mov(R1, SP),
     // Adr(R0, "L._readc_str0"),
     BlInstr("scanf"),
-    // Ldr(R0, [SP, ImmVal(0)]),
+    // LdrAddr(R0, [SP, ImmVal(0)]),
     AddInstr(SP, SP, ImmVal(8)),
     Mov(SP, FP),
     PopMultiple(List(FP, PC))
@@ -140,13 +147,25 @@ object CodeGenerator {
     def programGenerate(funcs: List[Function], stmts: Statement): List[AssemblyLine] = {
       val funcLines = funcs.flatMap(generateAssembly(_, allocator, dest))
       val stmtLines = generateAssembly(stmts, allocator, dest)
-      Comment("Start of program") :: funcLines ++
-      List(Label("main"), PushMultiple(List(FP, LR)), Mov(FP, SP)) ++
+      List(
+        Comment("Start of program"),
+        Command("data")
+      ) ++
+      stringPool.toList ++
+      List(
+        Command("align 4"),
+        Command("text"),
+        Command("global main"),
+        Label("main"), 
+        PushMultiple(List(FP, LR)), 
+        Mov(FP, SP)
+      ) ++
       stmtLines ++
       List(
         Mov(R0, ImmVal(0)),
         PopMultiple(List(FP, PC))
       ) ++
+      funcLines ++
       refFunctions.foldLeft(List[AssemblyLine]())(_ ++ _)
     }
 
@@ -626,6 +645,16 @@ object CodeGenerator {
       })
     }
 
+    def strGenerate(s: String): List[AssemblyLine] = {
+      val label = getStringLabel
+      val asciz = AscizInstr(label, s)
+      stringPool += asciz
+      Comment("Start of string") ::
+      List(
+        LdrLabel(dest, LabelAddr(label))
+      )
+    }
+
     ast match {
       case Program(funcs, stmts) =>
         programGenerate(funcs, stmts)
@@ -767,7 +796,7 @@ object CodeGenerator {
         chGenerate(c)
 
       case Str(s) =>
-        List(Comment("Start of string"))
+        strGenerate(s)
 
       case PairLiter(_) =>
         List(Comment("Start of pair literal"))

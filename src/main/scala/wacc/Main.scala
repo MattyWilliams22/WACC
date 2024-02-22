@@ -82,15 +82,6 @@ object Main {
 
           // Write a main function to the file
           val writer = new PrintWriter(file)
-          
-          // String pool goes between .align 4 and .text
-           writer.write(
-             """
-               |.data
-               |.align 4
-               |.text
-               |.global main
-                 """.stripMargin)
           val registerAllocator = new BasicRegisterAllocator
           val reg = registerAllocator.allocateRegister(None)
           val assemblyLines = generateAssembly(x, registerAllocator, reg)

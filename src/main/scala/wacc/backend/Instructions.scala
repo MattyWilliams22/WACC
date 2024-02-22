@@ -12,12 +12,24 @@ object Instructions {
     override def format: String = "#" + value.toString
   }
 
+  case class LabelAddr(label: String) extends Operand {
+    override def format: String = "=" + label
+  }
+
   sealed trait AssemblyLine {
     def format: String
   }
 
   case class Comment(comment: String) extends AssemblyLine {
     override def format: String = s"@ $comment"
+  }
+
+  case class DataSection() extends AssemblyLine {
+    override def format: String = ".data"
+  }
+
+  case class Command(str: String) extends AssemblyLine {
+    override def format: String = "." + str
   }
 
   case class Label(name: String) extends AssemblyLine {
@@ -40,8 +52,12 @@ object Instructions {
     override def format: String = s"    pop {${regs.map(_.format).mkString(", ")}}"
   }
 
-  case class Ldr(reg: Register, address: Register) extends AssemblyLine {
+  case class LdrAddr(reg: Register, address: Register) extends AssemblyLine {
     override def format: String = s"    ldr ${reg.format}, [${address.format}]"
+  }
+
+  case class LdrLabel(reg: Register, label: LabelAddr) extends AssemblyLine {
+    override def format: String = s"    ldr ${reg.format}, ${label.format}"
   }
 
   case class Mov(reg: Register, operand: Operand) extends AssemblyLine {
@@ -114,11 +130,6 @@ object Instructions {
 
   case class AscizInstr(label: String, string: String) extends AssemblyLine {
     override def format: String = s"   .word ${string.length}\n$label:\n   .asciz \"$string\""
-  }
-
-  case class RetInstr() extends AssemblyLine {
-    // Must check this works correctly with BLInstr
-    override def format: String = s"    mov ${LR.format}, ${PC.format}"
   }
 
 }
