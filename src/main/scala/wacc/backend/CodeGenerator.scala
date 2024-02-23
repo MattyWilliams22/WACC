@@ -129,19 +129,22 @@ object CodeGenerator {
     )
   }
 
-  private lazy val mallocFunc: List[AssemblyLine] = List(
-    NewLine(),
-    Comment("Malloc function"),
-    Label("_malloc"),
-    PushMultiple(List(FP, LR)),
-    Mov(FP, SP),
-    BicInstr(SP, SP, ImmVal(7)),
-    BlInstr("malloc"),
-    CmpInstr(R0, ImmVal(0)),
-    BeqInstr("_errOutOfMemory"),
-    Mov(SP, FP),
-    PopMultiple(List(FP, PC))
-  )
+  private lazy val mallocFunc: List[AssemblyLine] = {
+    refFunctions += errorOutOfMemoryFunc
+    List(
+      NewLine(),
+      Comment("Malloc function"),
+      Label("_malloc"),
+      PushMultiple(List(FP, LR)),
+      Mov(FP, SP),
+      BicInstr(SP, SP, ImmVal(7)),
+      BlInstr("malloc"),
+      CmpInstr(R0, ImmVal(0)),
+      BeqInstr("_errOutOfMemory"),
+      Mov(SP, FP),
+      PopMultiple(List(FP, PC))
+    )
+  }
 
   private lazy val readIntFunc: List[AssemblyLine] = {
     List(
@@ -199,21 +202,90 @@ object CodeGenerator {
     PopMultiple(List(FP, PC))
   )
 
-  private lazy val arrayLoad4Func: List[AssemblyLine] = List(
+  private lazy val arrayLoad4Func: List[AssemblyLine] = {
+    refFunctions += errorOutOfBoundsFunc
+    List(
+      NewLine(),
+      Comment("Array load function"),
+      Label("_arrLoad4"),
+      Push(LR),
+      CmpInstr(R10, ImmVal(0)),
+      Movlt(R1, R10),
+      BlltInstr("_errOutOfBounds"),
+      LdrAddr(LR, R3, ImmVal(-4)),
+      CmpInstr(R10, LR),
+      Movge(R1, R10),
+      BlgeInstr("_errOutOfBounds"),
+      LdrShift(R3, R3, R10, ShiftLeft(2)),
+      Pop(PC)
+    )
+  }
+
+  private lazy val arrayStore4Func: List[AssemblyLine] = {
+    refFunctions += errorOutOfBoundsFunc
+    List(
+      NewLine(),
+      Comment("Array store function"),
+      Label("_arrStore4"),
+      Push(LR),
+      CmpInstr(R10, ImmVal(0)),
+      Movlt(R1, R10),
+      BlltInstr("_errOutOfBounds"),
+      LdrAddr(LR, R3, ImmVal(-4)),
+      CmpInstr(R10, LR),
+      Movge(R1, R10),
+      BlgeInstr("_errOutOfBounds"),
+      StoreShift(R8, R3, R10, ShiftLeft(2)),
+      Pop(PC)
+    )
+  }
+
+  private lazy val errorOutOfMemoryFunc: List[AssemblyLine] = {
+    refFunctions += printStrFunc
+    List(
+      NewLine(),
+      Comment("Error out of memory function"),
+      AscizInstr(".L._errOutOfMemory_str0", "Error: Out of memory"),
+      Command("align 4"),
+      Label("_errOutOfMemory"),
+      BicInstr(SP, SP, ImmVal(7)),
+      AdrInstr(R0, ".L._errOutOfMemory_str0"),
+      BlInstr("_prints"),
+      Mov(R0, ImmVal(255)),
+      BlInstr("exit"),
+    )
+  }
+
+  private lazy val errorOutOfBoundsFunc: List[AssemblyLine] = List(
     NewLine(),
-    Comment("Array load function"),
-    Label("_arrLoad4"),
-    Push(LR),
-    CmpInstr(R10, ImmVal(0)),
-    Movlt(R1, R10),
-    BlltInstr("_errOutOfBounds"),
-    LdrAddr(LR, R3, ImmVal(-4)),
-    CmpInstr(R10, LR),
-    Movge(R1, R10),
-    BlgeInstr("_errOutOfBounds"),
-    LdrShift(R3, R3, R10, ShiftLeft(2)),
-    Pop(PC)
+    Comment("Error out of bounds function"),
+    AscizInstr(".L._errOutOfBounds_str0", "Error: Array index out of bounds"),
+    Command("align 4"),
+    Label("_errOutOfBounds"),
+    BicInstr(SP, SP, ImmVal(7)),
+    AdrInstr(R0, ".L._errOutOfBounds_str0"),
+    BlInstr("printf"),
+    Mov(R0, ImmVal(0)),
+    BlInstr("fflush"),
+    Mov(R0, ImmVal(255)),
+    BlInstr("exit")
   )
+
+  private lazy val errorNullFunc: List[AssemblyLine] = {
+    refFunctions += printStrFunc
+    List(
+      NewLine(),
+      Comment("Error null pointer function"),
+      AscizInstr(".L._errNull_str0", "Error: Null pair dereferenced"),
+      Command("align 4"),
+      Label("_errNull"),
+      BicInstr(SP, SP, ImmVal(7)),
+      AdrInstr(R0, ".L._errNull_str0"),
+      BlInstr("_prints"),
+      Mov(R0, ImmVal(255)),
+      BlInstr("exit")
+    )
+  }
 
   private def getUniqueLabel: String = {
     labelCounter += 1
@@ -493,21 +565,53 @@ object CodeGenerator {
     }
 
     def newPairGenerate(exp1: Expr, exp2: Expr): List[AssemblyLine] = {
-      val exp1Lines = generateAssembly(exp1, allocator, dest)
+      refFunctions += mallocFunc
+      val size1 = getSize(exp1)
+      val size2 = getSize(exp2)
       val next = allocator.allocateRegister(None)
-      val exp2Lines = generateAssembly(exp2, allocator, next)
+      val newpairLines = Comment("Start of new pair") ::
+      List(
+        Comment("NewPair Logic"),
+        Mov(R0, ImmVal(size1 + size2)),
+        BlInstr("_malloc"),
+        Mov(dest, R0),
+      ) ++
+      generateAssembly(exp1, allocator, next) ++
+      List(
+        StoreInstr(next, dest, ImmVal(0))
+      ) ++
+      generateAssembly(exp2, allocator, next) ++
+      List(
+        StoreInstr(next, dest, ImmVal(size1)),
+        Mov(dest, dest)
+      )
       allocator.deallocateRegister(next)
-      Comment("Start of new pair") ::
-      exp1Lines ++
-      exp2Lines ++
-      List(Comment("NewPair Logic"))
+      newpairLines
     }
 
-    def pairElemGenerate(lvalue: LValue): List[AssemblyLine] = {
-      val lvalueLines = generateAssembly(lvalue, allocator, dest)
+    def pairElemGenerate(func: String, lvalue: LValue): List[AssemblyLine] = {
+      refFunctions += errorNullFunc
+      val next = allocator.allocateRegister(None)
+      val lvalueLines = generateAssembly(lvalue, allocator, next)
+      allocator.deallocateRegister(next)
+      val funcLines = func match {
+        case "fst" =>
+          List(
+            LdrAddr(dest, next, ImmVal(0))
+          )
+        case "snd" =>
+          List(
+            LdrAddr(dest, next, ImmVal(4))
+          )
+      }
       Comment("Start of pair element") ::
       lvalueLines ++
-      List(Comment("PairElem Logic"))
+      List(
+        Comment("PairElem Logic"),
+        CmpInstr(next, ImmVal(0)),
+        BeqInstr("_errNull")
+      ) ++
+      funcLines
     }
 
     def mulGenerate(exp1: Expr, exp2: Expr): List[AssemblyLine] = {
@@ -930,8 +1034,8 @@ object CodeGenerator {
       case NewPair(exp1, exp2) =>
         newPairGenerate(exp1, exp2)
 
-      case PairElem(_, lvalue) =>
-        pairElemGenerate(lvalue)
+      case PairElem(func, lvalue) =>
+        pairElemGenerate(func, lvalue)
 
       case Call(funcName, args) =>
         callGenerate(funcName, args)
@@ -1020,8 +1124,11 @@ object CodeGenerator {
           Mov(dest, ImmVal(0))
         )
 
-      case Ident(_, n) =>
-        identGenerate(n.get)
+      case Ident(s, n) =>
+        n match {
+          case Some(v) => identGenerate(v)
+          case None => identGenerate(s)
+        }
 
       case ArrayElem(f, p) =>
         arrayElemGenerate(f, p)

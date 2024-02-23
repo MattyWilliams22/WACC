@@ -156,6 +156,10 @@ object Instructions {
     override def format: String = s"    str ${reg.format}, [${address.format}, ${offset.format}]"
   }
 
+  case class StoreShift(reg1: Register, reg2: Register, reg3: Register, shift: ShiftLeft) extends AssemblyLine {
+    override def format: String = s"    str ${reg1.format}, [${reg2.format}, ${reg3.format}, ${shift.format}]"
+  }
+
   case class NewLine() extends AssemblyLine {
     override def format: String = s""
   }
