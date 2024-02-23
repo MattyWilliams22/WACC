@@ -201,6 +201,10 @@ total = validTotal + syntaxTotal + semanticTotal
 numberTests = len(tests['valid'] + tests['invalid'])
 numberIgnored = len(tests['valid'] + tests['invalid']) - len(runningTests)
 
+os.remove("execFile")
+for file in glob.glob(os.path.join(".", '*.s')):
+  os.remove(file)
+
 if len(sys.argv) >= 2 and sys.argv[1] == "--syntax":
   print(f"Finished running tests. Results: ")
   print(f"    Valid: {validPasses} / {validTotal}")

@@ -8,10 +8,10 @@ all:
 	scala-cli --power package . --server=false --jvm system --force -o wacc-compiler
 
 clean:
-	scala-cli clean . && rm -f wacc-compiler
+	scala-cli clean . && rm -f wacc-compiler *.s execFile
 
 test: all
-	python3 integration_test_runner.py invalid
+	python3 integration_test_runner.py valid basic variables
 
 test-%: all
 	python3 integration_test_runner.py $*
