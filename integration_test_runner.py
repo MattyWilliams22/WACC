@@ -97,8 +97,6 @@ def compile_run_assembly_file(fname, assembly_file):
   output = subprocess.run(["qemu-arm", "-L", "/usr/arm-linux-gnueabi/", "execFile"], input=input_data_str, text=True, capture_output=True)
 
   expected_output = extract_expected_output(fname)
-  print(f"Expected output: {expected_output}")
-  print(f"Actual output: {output.stdout.strip()}")
 
   if output.stdout.strip() == expected_output:
     print("Output matches expected!")
@@ -110,6 +108,8 @@ def compile_run_assembly_file(fname, assembly_file):
       return True
   else:
     print("Output does not match expected.")
+    print(f"Expected output: {expected_output}")
+    print(f"Actual output: {output.stdout.strip()}")
     errorTests.append(fname)
     return False
 
@@ -149,6 +149,7 @@ def run_tests(tests_to_run):
       else:
         print(f"Failed test {fname}. Expected exit code {expected} but got {actual}")
         errorTests.append(fname)
+    print("")
   return (syntaxPasses, semanticPasses, validPasses)
 
 base = "wacc_examples/"

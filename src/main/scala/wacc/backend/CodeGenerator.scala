@@ -324,7 +324,8 @@ object CodeGenerator {
       List(
         Comment("Read Logic"),
         Mov(R0, dest),
-        BlInstr(s"_read${_type}")
+        BlInstr(s"_read${_type}"),
+        Mov(dest, R0)
       )
     }
 
