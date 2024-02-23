@@ -1,9 +1,10 @@
 package wacc.backend
 
+import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
+
 import wacc.ASTNodes._
 import wacc.backend.Instructions._
-
-import scala.collection.mutable
 
 object CodeGenerator {
   private var labelCounter: Int = -1
@@ -72,6 +73,35 @@ object CodeGenerator {
       Mov(R2, R0),
       LdrAddr(R1, R0, ImmVal(-4)),
       AdrInstr(R0, ".L._prints_str0"),
+      BlInstr("printf"),
+      Mov(R0, ImmVal(0)),
+      BlInstr("fflush"),
+      Mov(SP, FP),
+      PopMultiple(List(FP, PC))
+    )
+  }
+
+  private lazy val printBoolFunc: List[AssemblyLine] = {
+    List(
+      NewLine(),
+      AscizInstr(".L._printb_str0", "false"),
+      AscizInstr(".L._printb_str1", "true"),
+      AscizInstr(".L._printb_str2", "%.*s"),
+      Command("align 4"),
+      Comment("Print bool function"),
+      Label("_printb"),
+      PushMultiple(List(FP, LR)),
+      Mov(FP, SP),
+      BicInstr(SP, SP, ImmVal(7)),
+      CmpInstr(R0, ImmVal(0)),
+      BneInstr(".L._printb0"),
+      AdrInstr(R2, ".L._printb_str0"),
+      BInstr(".L._printb1"),
+      Label(".L._printb0"),
+      AdrInstr(R0, ".L._printb_str1"),
+      Label(".L._printb1"),
+      LdrAddr(R1, R2, ImmVal(-4)),
+      AdrInstr(R0, ".L._printb_str2"),
       BlInstr("printf"),
       Mov(R0, ImmVal(0)),
       BlInstr("fflush"),
@@ -201,15 +231,41 @@ object CodeGenerator {
       refFunctions.foldLeft(List[AssemblyLine]())(_ ++ _)
     }
 
-    def functionGenerate(funcName: Ident, paramList: List[Param], body: Statement): List[AssemblyLine] = {
-      val paramLines = paramList.flatMap(generateAssembly(_, allocator, dest))
-      val bodyLines = generateAssembly(body, allocator, dest)
+    def functionGenerate(funcName: Ident, params: List[Param], body: Statement): List[AssemblyLine] = {
       Comment("Start of function") ::
       Label(funcName.nickname.get) ::
       PushMultiple(List(FP, LR)) ::
       Mov(FP, SP) ::
-      paramLines ++
-      bodyLines
+      paramsGenerate(params) ++
+      generateAssembly(body, allocator, dest)
+    }
+
+    def paramsGenerate(params: List[Param]): List[AssemblyLine] = {
+      var paramLines = new ListBuffer[AssemblyLine]()
+      var regNum = 0
+      for (param <- params) {
+        val next = allocator.allocateRegister(None)
+        regNum match {
+          case 0 => {
+            paramLines += Mov(next, R0)
+            regNum += 1
+          }
+          case 1 => {
+            paramLines += Mov(next, R1)
+            regNum += 1
+          }
+          case 2 => {
+            paramLines += Mov(next, R2)
+            regNum += 1
+          }
+          case 3 => {
+            paramLines += Mov(next, R3)
+            regNum += 1
+          }
+          case _ => paramLines += Push(next)
+        }
+      }
+      paramLines.toList
     }
 
     def declareGenerate(id: Ident, value: RValue): List[AssemblyLine] = {
@@ -351,7 +407,13 @@ object CodeGenerator {
         case BaseT("string") =>
           refFunctions += printStrFunc
           "s"
-        case _ => ""
+        case ArrayT(BaseT("char"), 1) =>
+          refFunctions += printStrFunc
+          "s"
+        case BaseT("bool") =>
+          refFunctions += printBoolFunc
+          "b"
+        case _ => "error"
       }
       val expLines = generateAssembly(exp, allocator, dest)
       Comment("Start of print") ::
@@ -365,14 +427,8 @@ object CodeGenerator {
 
     def printlnGenerate(exp: Expr): List[AssemblyLine] = {
       refFunctions += printLnFunc
-      val expLines = generateAssembly(exp, allocator, dest)
-      Comment("Start of println") ::
-      expLines ++
-      List(
-        Comment("Println Logic"),
-        Mov(R0, dest),
-        BlInstr("_println")
-      )
+      printGenerate(exp) ++
+      List(BlInstr("_println"))
     }
 
     def arrayLiterGenerate(elems: List[Expr]): List[AssemblyLine] = {
@@ -706,15 +762,57 @@ object CodeGenerator {
       )
     }
 
+    def arrayElemGenerate(id: Ident, indices: List[Expr]) = {
+      Comment("Start of array element") ::
+      List(Comment("ArrayElem Logic"))
+    }
+
+    def callGenerate(funcName: Ident, args: List[Expr]): List[AssemblyLine] = {
+      Comment("Start of function call") ::
+      argsGenerate(args) ++
+      List(
+        Comment("Call Logic"),
+        BlInstr(funcName.nickname.get)
+      )
+    }
+
+    def argsGenerate(args: List[Expr]): List[AssemblyLine] = {
+      var argsLines = new ListBuffer[AssemblyLine]()
+      var regNum = 0
+      for (arg <- args) {
+        val next = allocator.allocateRegister(None)
+        val argLines = generateAssembly(arg, allocator, next)
+        argsLines ++= argLines
+        allocator.deallocateRegister(next)
+        regNum match {
+          case 0 => {
+            argsLines += Mov(R0, next)
+            regNum += 1
+          }
+          case 1 => {
+            argsLines += Mov(R1, next)
+            regNum += 1
+          }
+          case 2 => {
+            argsLines += Mov(R2, next)
+            regNum += 1
+          }
+          case 3 => {
+            argsLines += Mov(R3, next)
+            regNum += 1
+          }
+          case _ => argsLines += Push(next)
+        }
+      }
+      argsLines.toList
+    }
+
     ast match {
       case Program(funcs, stmts) =>
         programGenerate(funcs, stmts)
 
       case Function(_, funcName, paramList, body) =>
         functionGenerate(funcName, paramList, body)
-
-      case Param(_, _) =>
-        List(Comment("Start of parameter"))
 
       case Skip() =>
         List(Comment("Skip"))
@@ -765,11 +863,8 @@ object CodeGenerator {
       case PairElem(_, lvalue) =>
         pairElemGenerate(lvalue)
 
-      case Call(funcName, _) =>
-        List(
-          Comment("Start of function call"),
-          BlInstr(funcName.nickname.get)
-        )
+      case Call(funcName, args) =>
+        callGenerate(funcName, args)
 
       case x: BinOp =>
         x match {
@@ -850,13 +945,16 @@ object CodeGenerator {
         strGenerate(s)
 
       case PairLiter(_) =>
-        List(Comment("Start of pair literal"))
+        List(
+          Comment("Start of pair literal"),
+          Mov(dest, ImmVal(0))
+        )
 
       case Ident(_, n) =>
         identGenerate(n.get)
 
-      case ArrayElem(_, _) =>
-        List(Comment("Start of array element"))
+      case ArrayElem(f, p) =>
+        arrayElemGenerate(f, p)
 
       case _ => List()
     }
