@@ -199,6 +199,22 @@ object CodeGenerator {
     PopMultiple(List(FP, PC))
   )
 
+  private lazy val arrayLoad4Func: List[AssemblyLine] = List(
+    NewLine(),
+    Comment("Array load function"),
+    Label("_arrLoad4"),
+    Push(LR),
+    CmpInstr(R10, ImmVal(0)),
+    Movlt(R1, R10),
+    BlltInstr("_errOutOfBounds"),
+    LdrAddr(LR, R3, ImmVal(-4)),
+    CmpInstr(R10, LR),
+    Movge(R1, R10),
+    BlgeInstr("_errOutOfBounds"),
+    LdrShift(R3, R3, R10, ShiftLeft(2)),
+    Pop(PC)
+  )
+
   private def getUniqueLabel: String = {
     labelCounter += 1
     "L" + labelCounter
@@ -432,10 +448,47 @@ object CodeGenerator {
     }
 
     def arrayLiterGenerate(elems: List[Expr]): List[AssemblyLine] = {
-      val elemLines = elems.flatMap(generateAssembly(_, allocator, dest))
+      val pointer = allocator.allocateRegister(None)
+      val arrayLines = new ListBuffer[AssemblyLine]()
+      var totalSize = 4
+      for (elem <- elems) {
+        val next = allocator.allocateRegister(None)
+        val elemLines = generateAssembly(elem, allocator, next)
+        val size = getSize(elem)
+        arrayLines ++= elemLines
+        arrayLines ++= List(
+          Mov(dest, next), 
+          StoreInstr(dest, pointer, ImmVal(totalSize - 4))
+        )
+        totalSize += size
+        allocator.deallocateRegister(next)
+      }
+      allocator.deallocateRegister(pointer)
       Comment("Start of array literal") ::
-      elemLines ++
-      List(Comment("ArrayLiter Logic"))
+      List(
+        Mov(R0, ImmVal(totalSize)),
+        BlInstr("_malloc"),
+        Mov(pointer, R0),
+        AddInstr(pointer, pointer, ImmVal(totalSize - 4))
+      ) ++
+      arrayLines.toList ++
+      List(
+        Mov(dest, ImmVal(elems.length)),
+        StoreInstr(dest, pointer, ImmVal(-4)),
+        Mov(dest, pointer)
+      )
+    }
+
+    def getSize(expr: Expr): Int = {
+      expr.getType match {
+        case BaseT("int") => 4
+        case BaseT("char") => 1
+        case BaseT("bool") => 1
+        case BaseT("string") => 4
+        case ArrayT(_, _) => 4
+        case PairT(_, _) => 4
+        case _ => 0
+      }
     }
 
     def newPairGenerate(exp1: Expr, exp2: Expr): List[AssemblyLine] = {
@@ -763,8 +816,24 @@ object CodeGenerator {
     }
 
     def arrayElemGenerate(id: Ident, indices: List[Expr]) = {
+      val idLines = generateAssembly(id, allocator, dest)
+      val indicesLines = new ListBuffer[AssemblyLine]()
+      // Must check size of array elements and call different _arrLoad function
+      for (index <- indices) {
+        val next = allocator.allocateRegister(None)
+        val indexLines = generateAssembly(index, allocator, next)
+        indicesLines ++= indexLines
+        indicesLines ++= List(
+          Mov(R10, next),
+          Mov(R3, dest),
+          BlInstr("_arrLoad4"),
+          Mov(dest, R3)
+        )
+        allocator.deallocateRegister(next)
+      }
       Comment("Start of array element") ::
-      List(Comment("ArrayElem Logic"))
+      idLines ++
+      indicesLines.toList
     }
 
     def callGenerate(funcName: Ident, args: List[Expr]): List[AssemblyLine] = {

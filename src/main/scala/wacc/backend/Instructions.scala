@@ -12,6 +12,10 @@ object Instructions {
     override def format: String = "#" + value.toString
   }
 
+  case class ShiftLeft(n: Int) extends Operand {
+    override def format: String = "lsl #" + n.toString
+  }
+
   case class LabelAddr(label: String) extends Operand {
     override def format: String = "=" + label
   }
@@ -58,6 +62,10 @@ object Instructions {
 
   case class LdrLabel(reg: Register, label: LabelAddr) extends AssemblyLine {
     override def format: String = s"    ldr ${reg.format}, ${label.format}"
+  }
+
+  case class LdrShift(reg1: Register, reg2: Register, reg3: Register, shift: ShiftLeft) extends AssemblyLine {
+    override def format: String = s"    ldr ${reg1.format}, [${reg2.format}, ${reg3.format}, ${shift.format}]"
   }
 
   case class AdrInstr(reg: Register, label: String) extends AssemblyLine {
@@ -130,6 +138,14 @@ object Instructions {
 
   case class BeqInstr(label: String) extends AssemblyLine {
     override def format: String = s"    beq $label"
+  }
+
+  case class BlltInstr(label: String) extends AssemblyLine {
+    override def format: String = s"    bllt $label"
+  }
+
+  case class BlgeInstr(label: String) extends AssemblyLine {
+    override def format: String = s"    blge $label"
   }
 
   case class AscizInstr(label: String, string: String) extends AssemblyLine {
