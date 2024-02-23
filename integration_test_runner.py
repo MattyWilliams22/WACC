@@ -41,7 +41,7 @@ def extract_expected_output(fname):
     for i, line in enumerate(lines):
       if line.startswith("# Output:"):
         output_line_found = True
-      elif output_line_found and (line == "# Program:\n" or line == "# Exit:\n"):
+      elif output_line_found and (line == "\n"):
         break
       elif output_line_found:
         if (lines[i + 1].startswith("#") and not (lines[i + 1] == "#\n")):
@@ -94,14 +94,16 @@ def compile_run_assembly_file(fname, assembly_file):
 
   # Run the executable file
   print("qemu-arm -L /usr/arm-linux-gnueabi/ execFile")
-  output = subprocess.run(["qemu-arm", "-L", "/usr/arm-linux-gnueabi/", "execFile"], input=input_data_str, text=True, capture_output=True)
+  output_str = subprocess.run(["qemu-arm", "-L", "/usr/arm-linux-gnueabi/", "execFile"], input=input_data_str.encode(), capture_output=True)
+
+  output = output_str.stdout.decode('utf-8', errors='replace')
 
   expected_output = extract_expected_output(fname)
 
-  if output.stdout.strip() == expected_output:
+  if output.strip() == expected_output:
     print("Output matches expected!")
-    if output.returncode != get_return_code(fname):
-      print(f"Expected return code {get_return_code(fname)} but got {output.returncode}")
+    if output_str.returncode != get_return_code(fname):
+      print(f"Expected return code {get_return_code(fname)} but got {output_str.returncode}")
       errorTests.append(fname)
       return False
     else:
@@ -109,7 +111,7 @@ def compile_run_assembly_file(fname, assembly_file):
   else:
     print("Output does not match expected.")
     print(f"Expected output: {expected_output}")
-    print(f"Actual output: {output.stdout.strip()}")
+    print(f"Actual output: {output.strip()}")
     errorTests.append(fname)
     return False
 
@@ -199,7 +201,6 @@ total = validTotal + syntaxTotal + semanticTotal
 numberTests = len(tests['valid'] + tests['invalid'])
 numberIgnored = len(tests['valid'] + tests['invalid']) - len(runningTests)
 
-print("")
 if len(sys.argv) >= 2 and sys.argv[1] == "--syntax":
   print(f"Finished running tests. Results: ")
   print(f"    Valid: {validPasses} / {validTotal}")
