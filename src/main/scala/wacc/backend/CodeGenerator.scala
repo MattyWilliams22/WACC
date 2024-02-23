@@ -81,6 +81,26 @@ object CodeGenerator {
     )
   }
 
+  private lazy val printPairFunc: List[AssemblyLine] = {
+    List(
+      NewLine(),
+      AscizInstr(".L._printp_str0", "%p"),
+      Command("align 4"),
+      Comment("Print pair function"),
+      Label("_printp"),
+      PushMultiple(List(FP, LR)),
+      Mov(FP, SP),
+      BicInstr(SP, SP, ImmVal(7)),
+      Mov(R1, R0),
+      AdrInstr(R0, ".L._printp_str0"),
+      BlInstr("printf"),
+      Mov(R0, ImmVal(0)),
+      BlInstr("fflush"),
+      Mov(SP, FP),
+      PopMultiple(List(FP, PC))
+    )
+  }
+
   private lazy val printBoolFunc: List[AssemblyLine] = {
     List(
       NewLine(),
@@ -323,9 +343,14 @@ object CodeGenerator {
       Comment("Start of function") ::
       Label(funcName.nickname.get) ::
       PushMultiple(List(FP, LR)) ::
-      Mov(FP, SP) ::
+      allocator.saveRegisters() ++
+      List(Mov(FP, SP)) ++
       paramsGenerate(params) ++
-      generateAssembly(body, allocator, dest)
+      generateAssembly(body, allocator, dest) ++
+      List(
+        Mov(SP, FP),
+        PopMultiple(List(FP, PC))
+      )
     }
 
     def paramsGenerate(params: List[Param]): List[AssemblyLine] = {
@@ -502,6 +527,12 @@ object CodeGenerator {
         case BaseT("bool") =>
           refFunctions += printBoolFunc
           "b"
+        case PairT(_, _) =>
+          refFunctions += printPairFunc
+          "p"
+        case ArrayT(_, _) => 
+          refFunctions += printPairFunc
+          "p"
         case _ => "error"
       }
       val expLines = generateAssembly(exp, allocator, dest)
@@ -521,6 +552,7 @@ object CodeGenerator {
     }
 
     def arrayLiterGenerate(elems: List[Expr]): List[AssemblyLine] = {
+      refFunctions += mallocFunc
       val pointer = allocator.allocateRegister(None)
       val arrayLines = new ListBuffer[AssemblyLine]()
       var totalSize = 4
@@ -921,6 +953,7 @@ object CodeGenerator {
     }
 
     def arrayElemGenerate(id: Ident, indices: List[Expr]) = {
+      refFunctions += arrayLoad4Func
       val idLines = generateAssembly(id, allocator, dest)
       val indicesLines = new ListBuffer[AssemblyLine]()
       // Must check size of array elements and call different _arrLoad function
