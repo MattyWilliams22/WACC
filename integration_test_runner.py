@@ -23,6 +23,14 @@ def parser_code(fname):
       return 200
     else:
       return 0
+    
+def input_data(fname):
+    with open(fname) as f:
+        lines = f.readlines()
+        for line in lines:
+            if line.startswith("# Input:"):
+                return line[len("# Input:"):].replace(' ', '\n')
+    return ""
 
 # Extract expected output from comments in WACC file
 def extract_expected_output(fname):
@@ -36,7 +44,7 @@ def extract_expected_output(fname):
       elif output_line_found and (line == "# Program:\n" or line == "# Exit:\n"):
         break
       elif output_line_found:
-        expected_output += line[2:]
+        expected_output += line[2:-1]
   return expected_output
 
 # Returns a list of all the directories in the base directory
@@ -79,13 +87,15 @@ def compile_run_assembly_file(fname, assembly_file):
   print(f"arm-linux-gnueabi-gcc -o execFile -z noexecstack -march=armv6 {assembly_file}")
   subprocess.run(["arm-linux-gnueabi-gcc", "-o", "execFile", "-z", "noexecstack", "-march=armv6", assembly_file])
 
+  input_data_str = input_data(fname)
+
   # Run the executable file
   print("qemu-arm -L /usr/arm-linux-gnueabi/ execFile")
-  output = subprocess.run(["qemu-arm", "-L", "/usr/arm-linux-gnueabi/", "execFile"], capture_output=True)
+  output = subprocess.run(["qemu-arm", "-L", "/usr/arm-linux-gnueabi/", "execFile"], input=input_data_str, text=True, capture_output=True)
 
   expected_output = extract_expected_output(fname)
 
-  if output.stdout.decode().strip() == expected_output:
+  if output.stdout.strip() == expected_output:
     print("Output matches expected!")
     if output.returncode != get_return_code(fname):
       print(f"Expected return code {get_return_code(fname)} but got {output.returncode}")
@@ -151,8 +161,11 @@ elif len(sys.argv) == 2:
   runningTests = tests[sys.argv[1]]
 else:
   if sys.argv[1] == "valid":
+    if not ('-debug' in sys.argv):
+      runningTests = tests["invalid"]
+    else:
+      sys.argv = sys.argv[:-1]
     tags = ['-'.join([sys.argv[1], tag]) for tag in sys.argv[2:]]
-    runningTests = tests["invalid"]
   else:
     if len(sys.argv) == 3:
       tags = ['-'.join(sys.argv[1:])]
