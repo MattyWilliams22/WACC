@@ -98,7 +98,7 @@ object CodeGenerator {
       AdrInstr(R2, ".L._printb_str0"),
       BInstr(".L._printb1"),
       Label(".L._printb0"),
-      AdrInstr(R0, ".L._printb_str1"),
+      AdrInstr(R2, ".L._printb_str1"),
       Label(".L._printb1"),
       LdrAddr(R1, R2, ImmVal(-4)),
       AdrInstr(R0, ".L._printb_str2"),

@@ -38,14 +38,17 @@ def extract_expected_output(fname):
   with open(fname) as f:
     lines = f.readlines()
     output_line_found = False
-    for line in lines:
+    for i, line in enumerate(lines):
       if line.startswith("# Output:"):
         output_line_found = True
       elif output_line_found and (line == "# Program:\n" or line == "# Exit:\n"):
         break
       elif output_line_found:
-        expected_output += line[2:-1]
-  return expected_output
+        if (lines[i + 1].startswith("#") and not (lines[i + 1] == "#\n")):
+          expected_output += line[2:]
+        else:
+          expected_output += line[2:-1]
+    return expected_output
 
 # Returns a list of all the directories in the base directory
 def list_directories_in_directory(base):
@@ -94,6 +97,8 @@ def compile_run_assembly_file(fname, assembly_file):
   output = subprocess.run(["qemu-arm", "-L", "/usr/arm-linux-gnueabi/", "execFile"], input=input_data_str, text=True, capture_output=True)
 
   expected_output = extract_expected_output(fname)
+  print(f"Expected output: {expected_output}")
+  print(f"Actual output: {output.stdout.strip()}")
 
   if output.stdout.strip() == expected_output:
     print("Output matches expected!")
