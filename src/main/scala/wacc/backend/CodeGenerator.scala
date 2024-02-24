@@ -357,7 +357,7 @@ object CodeGenerator {
       var paramLines = new ListBuffer[AssemblyLine]()
       var regNum = 0
       for (param <- params) {
-        val next = allocator.allocateRegister(None)
+        val next = allocator.allocateRegister()
         regNum match {
           case 0 => {
             paramLines += Mov(next, R0)
@@ -391,7 +391,7 @@ object CodeGenerator {
 
     def assignGenerate(lvalue: LValue, rvalue: RValue): List[AssemblyLine] = {
       val lvalueLines = generateAssembly(lvalue, allocator, dest)
-      val next = allocator.allocateRegister(None)
+      val next = allocator.allocateRegister()
       val rvalueLines = generateAssembly(rvalue, allocator, next)
       allocator.deallocateRegister(next)
       Comment("Start of assign") ::
@@ -553,11 +553,11 @@ object CodeGenerator {
 
     def arrayLiterGenerate(elems: List[Expr]): List[AssemblyLine] = {
       refFunctions += mallocFunc
-      val pointer = allocator.allocateRegister(None)
+      val pointer = allocator.allocateRegister()
       val arrayLines = new ListBuffer[AssemblyLine]()
       var totalSize = 4
       for (elem <- elems) {
-        val next = allocator.allocateRegister(None)
+        val next = allocator.allocateRegister()
         val elemLines = generateAssembly(elem, allocator, next)
         val size = getSize(elem)
         arrayLines ++= elemLines
@@ -600,7 +600,7 @@ object CodeGenerator {
       refFunctions += mallocFunc
       val size1 = getSize(exp1)
       val size2 = getSize(exp2)
-      val next = allocator.allocateRegister(None)
+      val next = allocator.allocateRegister()
       val newpairLines = Comment("Start of new pair") ::
       List(
         Comment("NewPair Logic"),
@@ -623,7 +623,7 @@ object CodeGenerator {
 
     def pairElemGenerate(func: String, lvalue: LValue): List[AssemblyLine] = {
       refFunctions += errorNullFunc
-      val next = allocator.allocateRegister(None)
+      val next = allocator.allocateRegister()
       val lvalueLines = generateAssembly(lvalue, allocator, next)
       allocator.deallocateRegister(next)
       val funcLines = func match {
@@ -648,7 +648,7 @@ object CodeGenerator {
 
     def mulGenerate(exp1: Expr, exp2: Expr): List[AssemblyLine] = {
       val exp1Lines = generateAssembly(exp1, allocator, dest)
-      val next = allocator.allocateRegister(None)
+      val next = allocator.allocateRegister()
       val exp2Lines = generateAssembly(exp2, allocator, next)
       allocator.deallocateRegister(next)
       Comment("Start of multiplication") ::
@@ -659,7 +659,7 @@ object CodeGenerator {
 
     def divGenerate(exp1: Expr, exp2: Expr): List[AssemblyLine] = {
       val exp1Lines = generateAssembly(exp1, allocator, dest)
-      val next = allocator.allocateRegister(None)
+      val next = allocator.allocateRegister()
       val exp2Lines = generateAssembly(exp2, allocator, next)
       allocator.deallocateRegister(next)
       Comment("Start of division") ::
@@ -676,7 +676,7 @@ object CodeGenerator {
 
     def modGenerate(exp1: Expr, exp2: Expr): List[AssemblyLine] = {
       val exp1Lines = generateAssembly(exp1, allocator, dest)
-      val next = allocator.allocateRegister(None)
+      val next = allocator.allocateRegister()
       val exp2Lines = generateAssembly(exp2, allocator, next)
       allocator.deallocateRegister(next)
       Comment("Start of modulo") ::
@@ -693,7 +693,7 @@ object CodeGenerator {
 
     def addGenerate(exp1: Expr, exp2: Expr): List[AssemblyLine] = {
       val exp1Lines = generateAssembly(exp1, allocator, dest)
-      val next = allocator.allocateRegister(None)
+      val next = allocator.allocateRegister()
       val exp2Lines = generateAssembly(exp2, allocator, next)
       allocator.deallocateRegister(next)
       Comment("Start of addition") ::
@@ -704,7 +704,7 @@ object CodeGenerator {
 
     def subGenerate(exp1: Expr, exp2: Expr): List[AssemblyLine] = {
       val exp1Lines = generateAssembly(exp1, allocator, dest)
-      val next = allocator.allocateRegister(None)
+      val next = allocator.allocateRegister()
       val exp2Lines = generateAssembly(exp2, allocator, next)
       allocator.deallocateRegister(next)
       Comment("Start of subtraction") ::
@@ -715,7 +715,7 @@ object CodeGenerator {
 
     def gtGenerate(exp1: Expr, exp2: Expr): List[AssemblyLine] = {
       val exp1Lines = generateAssembly(exp1, allocator, dest)
-      val next = allocator.allocateRegister(None)
+      val next = allocator.allocateRegister()
       val exp2Lines = generateAssembly(exp2, allocator, next)
       allocator.deallocateRegister(next)
       Comment("Start of greater than") ::
@@ -731,7 +731,7 @@ object CodeGenerator {
 
     def gteqGenerate(exp1: Expr, exp2: Expr): List[AssemblyLine] = {
       val exp1Lines = generateAssembly(exp1, allocator, dest)
-      val next = allocator.allocateRegister(None)
+      val next = allocator.allocateRegister()
       val exp2Lines = generateAssembly(exp2, allocator, next)
       allocator.deallocateRegister(next)
       Comment("Start of greater than or equal to") ::
@@ -747,7 +747,7 @@ object CodeGenerator {
 
     def ltGenerate(exp1: Expr, exp2: Expr): List[AssemblyLine] = {
       val exp1Lines = generateAssembly(exp1, allocator, dest)
-      val next = allocator.allocateRegister(None)
+      val next = allocator.allocateRegister()
       val exp2Lines = generateAssembly(exp2, allocator, next)
       allocator.deallocateRegister(next)
       Comment("Start of less than") ::
@@ -763,7 +763,7 @@ object CodeGenerator {
 
     def lteqGenerate(exp1: Expr, exp2: Expr): List[AssemblyLine] = {
       val exp1Lines = generateAssembly(exp1, allocator, dest)
-      val next = allocator.allocateRegister(None)
+      val next = allocator.allocateRegister()
       val exp2Lines = generateAssembly(exp2, allocator, next)
       allocator.deallocateRegister(next)
       Comment("Start of less than or equal to") ::
@@ -788,7 +788,7 @@ object CodeGenerator {
 
     def eqGenerate(exp1: Expr, exp2: Expr): List[AssemblyLine] = {
       val exp1Lines = generateAssembly(exp1, allocator, dest)
-      val next = allocator.allocateRegister(None)
+      val next = allocator.allocateRegister()
       val exp2Lines = generateAssembly(exp2, allocator, next)
       allocator.deallocateRegister(next)
       Comment("Start of equality") ::
@@ -799,7 +799,7 @@ object CodeGenerator {
 
     def neqGenerate(exp1: Expr, exp2: Expr): List[AssemblyLine] = {
       val exp1Lines = generateAssembly(exp1, allocator, dest)
-      val next = allocator.allocateRegister(None)
+      val next = allocator.allocateRegister()
       val exp2Lines = generateAssembly(exp2, allocator, next)
       allocator.deallocateRegister(next)
       Comment("Start of not equal to") ::
@@ -819,7 +819,7 @@ object CodeGenerator {
 
     def andGenerate(exp1: Expr, exp2: Expr): List[AssemblyLine] = {
       val exp1Lines = generateAssembly(exp1, allocator, dest)
-      val next = allocator.allocateRegister(None)
+      val next = allocator.allocateRegister()
       val exp2Lines = generateAssembly(exp2, allocator, next)
       allocator.deallocateRegister(next)
       Comment("Start of and") ::
@@ -838,7 +838,7 @@ object CodeGenerator {
 
     def orGenerate(exp1: Expr, exp2: Expr): List[AssemblyLine] = {
       val exp1Lines = generateAssembly(exp1, allocator, dest)
-      val next = allocator.allocateRegister(None)
+      val next = allocator.allocateRegister()
       val exp2Lines = generateAssembly(exp2, allocator, next)
       allocator.deallocateRegister(next)
       Comment("Start of or") ::
@@ -864,7 +864,7 @@ object CodeGenerator {
     }
 
     def negGenerate(exp: Expr): List[AssemblyLine] = {
-      val tempReg = allocator.allocateRegister(None)
+      val tempReg = allocator.allocateRegister()
       val expLines = generateAssembly(exp, allocator, tempReg)
       allocator.deallocateRegister(tempReg)
       Comment("Start of negation") ::
@@ -926,17 +926,17 @@ object CodeGenerator {
     }
 
     def identGenerate(n: String): List[AssemblyLine] = {
-      val reg: Option[Register] = allocator.lookupRegister(n)
+      val location: Option[VariableLocation] = allocator.lookupLocation(n)
       Comment("Start of identifier") ::
-      (reg match {
-        case Some(r) => { 
-          allocator.changeRegister(n, dest)
+      (location match {
+        case Some(VariableLocation(reg, off, size)) => {
+          allocator.setLocation(n, VariableLocation(dest, 0, size))
           List(
-            Mov(dest, r)
+            Mov(dest, reg)
           )
         }
         case None => {
-          allocator.changeRegister(n, dest)
+          allocator.setLocation(n, VariableLocation(dest, 0, 4))
           List()
         }
       })
@@ -958,7 +958,7 @@ object CodeGenerator {
       val indicesLines = new ListBuffer[AssemblyLine]()
       // Must check size of array elements and call different _arrLoad function
       for (index <- indices) {
-        val next = allocator.allocateRegister(None)
+        val next = allocator.allocateRegister()
         val indexLines = generateAssembly(index, allocator, next)
         indicesLines ++= indexLines
         indicesLines ++= List(
@@ -987,7 +987,7 @@ object CodeGenerator {
       var argsLines = new ListBuffer[AssemblyLine]()
       var regNum = 0
       for (arg <- args) {
-        val next = allocator.allocateRegister(None)
+        val next = allocator.allocateRegister()
         val argLines = generateAssembly(arg, allocator, next)
         argsLines ++= argLines
         allocator.deallocateRegister(next)

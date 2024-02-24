@@ -4,8 +4,10 @@ import scala.collection.mutable
 
 import wacc.backend.Instructions.{Push, Pop, AssemblyLine}
 
+case class VariableLocation(val register: Register, val offset: Int, val size: Int)
+
 sealed trait RegisterAllocator {
-  def allocateRegister(varName: Option[String]): Register
+  def allocateRegister(): Register
 }
 
 /* Basic register allocator that allocates registers by always putting the result in the register
@@ -15,46 +17,31 @@ class BasicRegisterAllocator extends RegisterAllocator {
 
   private var availableRegisters: List[Register] = List(R4, R5, R6, R7, R8, R9, R10)
 
-  private var varMap: mutable.Map[String, Register] = mutable.Map.empty[String, Register]
+  private var varMap: mutable.Map[String, VariableLocation] = mutable.Map.empty[String, VariableLocation]
 
-  def allocateRegister(varName: Option[String]): Register = {
+  def allocateRegister(): Register = {
     val result = availableRegisters.head
     println(s"Allocated register: $result")
-
-    if (varName.isDefined)
-      changeRegister(varName.get, result)
 
     /* Remove the allocated register from the list of available registers */
     availableRegisters = availableRegisters.tail
     result
   }
 
-  def lookupRegister(varName: String): Option[Register] = {
+  def lookupLocation(varName: String): Option[VariableLocation] = {
     varMap.get(varName)
   }
 
-  def changeRegister(varName: String, register: Register): Unit = {
-    if (varMap.contains(varName)) {
-      val oldRegister = varMap(varName)
-      availableRegisters = oldRegister :: availableRegisters.filterNot(_ == register)
-    } else {
-      availableRegisters = availableRegisters.filterNot(_ == register)
-    }
-    varMap(varName) = register
+  def setLocation(varName: String, location: VariableLocation): Unit = {
+    varMap(varName) = location
   }
 
   def removeVariable(varName: String): Unit = {
-    availableRegisters = varMap(varName) :: availableRegisters
     varMap -= varName
   }
 
   def deallocateRegister(register: Register): Unit = {
     println(s"Deallocated register: $register")
-
-    if (varMap.exists(_._2 == register)) {
-      val varName = varMap.find(_._2 == register).get._1
-      varMap -= varName
-    }
 
     /* Add the deallocated register to the list of available registers */
     availableRegisters = register :: availableRegisters

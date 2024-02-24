@@ -83,7 +83,7 @@ object Main {
           // Write a main function to the file
           val writer = new PrintWriter(file)
           val registerAllocator = new BasicRegisterAllocator
-          val reg = registerAllocator.allocateRegister(None)
+          val reg = registerAllocator.allocateRegister()
           val assemblyLines = generateAssembly(x, registerAllocator, reg)
           assemblyLines.foreach(line => writer.write(line.format + "\n"))
           assemblyLines.foreach(line => println(line.format))
