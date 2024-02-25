@@ -307,6 +307,38 @@ object CodeGenerator {
     )
   }
 
+  private lazy val errorOverflowFunc: List[AssemblyLine] = {
+    refFunctions += printStrFunc
+    List(
+      NewLine(),
+      Comment("Error overflow function"),
+      AscizInstr(".L._errOverflow_str0", "Error: Integer overflow or underflow occured"),
+      Command("align 4"),
+      Label("_errOverflow"),
+      BicInstr(SP, SP, ImmVal(7)),
+      AdrInstr(R0, ".L._errOverflow_str0"),
+      BlInstr("_prints"),
+      Mov(R0, ImmVal(255)),
+      BlInstr("exit")
+    )
+  }
+
+  private lazy val errorDivByZeroFunc: List[AssemblyLine] = {
+    refFunctions += printStrFunc
+    List(
+      NewLine(),
+      Comment("Error division by zero function"),
+      AscizInstr(".L._errDivZero_str0", "Error: Division by zero"),
+      Command("align 4"),
+      Label("_errDivZero"),
+      BicInstr(SP, SP, ImmVal(7)),
+      AdrInstr(R0, ".L._errDivZero_str0"),
+      BlInstr("_prints"),
+      Mov(R0, ImmVal(255)),
+      BlInstr("exit")
+    )
+  }
+
   private def getUniqueLabel: String = {
     labelCounter += 1
     "L" + labelCounter
@@ -647,51 +679,60 @@ object CodeGenerator {
     }
 
     def mulGenerate(exp1: Expr, exp2: Expr): List[AssemblyLine] = {
+      refFunctions += errorOverflowFunc
       val exp1Lines = generateAssembly(exp1, allocator, dest)
-      val next = allocator.allocateRegister()
-      val exp2Lines = generateAssembly(exp2, allocator, next)
-      allocator.deallocateRegister(next)
+      val val1 = allocator.allocateRegister()
+      val exp2Lines = generateAssembly(exp2, allocator, dest)
+      allocator.deallocateRegister(val1)
+      val hi = allocator.allocateRegister()
+      val val2 = allocator.allocateRegister()
+      allocator.deallocateRegister(hi)
+      allocator.deallocateRegister(val2)
       Comment("Start of multiplication") ::
       exp1Lines ++
+      List(Mov(val1, dest)) ++
       exp2Lines ++
-      List(MulInstr(dest, dest, next))
+      List(Mov(val2, dest)) ++
+      List(
+        SmullInstr(dest, hi, val1, val2),
+        CmpShift(hi, dest, ShiftRight(31)),
+        BlneInstr("_errOverflow")
+      )
     }
 
     def divGenerate(exp1: Expr, exp2: Expr): List[AssemblyLine] = {
       val exp1Lines = generateAssembly(exp1, allocator, dest)
-      val next = allocator.allocateRegister()
-      val exp2Lines = generateAssembly(exp2, allocator, next)
-      allocator.deallocateRegister(next)
+      val exp2Lines = generateAssembly(exp2, allocator, dest)
       Comment("Start of division") ::
       exp1Lines ++
+      List(Mov(R0, dest)) ++
       exp2Lines ++
       List(
-        Comment("Div Logic"),
-        Mov(R0, dest),
-        Mov(R1, next),
+        Mov(R1, dest),
+        BleqInstr("_errDivZero"),
         BlInstr("__aeabi_idivmod"),
         Mov(dest, R0)
       )
     }
 
     def modGenerate(exp1: Expr, exp2: Expr): List[AssemblyLine] = {
+      refFunctions += errorDivByZeroFunc
       val exp1Lines = generateAssembly(exp1, allocator, dest)
-      val next = allocator.allocateRegister()
-      val exp2Lines = generateAssembly(exp2, allocator, next)
-      allocator.deallocateRegister(next)
+      val exp2Lines = generateAssembly(exp2, allocator, dest)
       Comment("Start of modulo") ::
       exp1Lines ++
+      List(Mov(R0, dest)) ++
       exp2Lines ++
       List(
-        Comment("Mod Logic"),
-        Mov(R0, dest),
-        Mov(R1, next),
+        Mov(R1, dest),
+        BleqInstr("_errDivZero"),
         BlInstr("__aeabi_idivmod"),
         Mov(dest, R1)
       )
     }
 
     def addGenerate(exp1: Expr, exp2: Expr): List[AssemblyLine] = {
+      refFunctions += errorOverflowFunc
       val exp1Lines = generateAssembly(exp1, allocator, dest)
       val next = allocator.allocateRegister()
       val exp2Lines = generateAssembly(exp2, allocator, next)
@@ -699,10 +740,14 @@ object CodeGenerator {
       Comment("Start of addition") ::
       exp1Lines ++
       exp2Lines ++
-      List(AddInstr(dest, dest, next))
+      List(
+        AddsInstr(dest, dest, next),
+        BlvsInstr("_errOverflow")
+      )
     }
 
     def subGenerate(exp1: Expr, exp2: Expr): List[AssemblyLine] = {
+      refFunctions += errorOverflowFunc
       val exp1Lines = generateAssembly(exp1, allocator, dest)
       val next = allocator.allocateRegister()
       val exp2Lines = generateAssembly(exp2, allocator, next)
@@ -710,7 +755,10 @@ object CodeGenerator {
       Comment("Start of subtraction") ::
       exp1Lines ++
       exp2Lines ++
-      List(SubInstr(dest, dest, next))
+      List(
+        SubsInstr(dest, dest, next),
+        BlvsInstr("_errOverflow")
+      )
     }
 
     def gtGenerate(exp1: Expr, exp2: Expr): List[AssemblyLine] = {
@@ -877,10 +925,15 @@ object CodeGenerator {
     }
 
     def lenGenerate(exp: Expr): List[AssemblyLine] = {
-      val expLines = generateAssembly(exp, allocator, dest)
+      val next = allocator.allocateRegister()
+      val expLines = generateAssembly(exp, allocator, next)
+      allocator.deallocateRegister(next)
       Comment("Start of length") ::
       expLines ++
-      List(Comment("len Logic"))
+      List(
+        Comment("len Logic"),
+        LdrAddr(dest, next, ImmVal(-4))
+      )
     }
 
     def ordGenerate(exp: Expr): List[AssemblyLine] = {

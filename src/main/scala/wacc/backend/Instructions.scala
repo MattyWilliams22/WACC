@@ -8,12 +8,20 @@ object Instructions {
     def format: String
   }
 
+  sealed trait Shift extends Operand {
+    def format: String
+  } 
+
   case class ImmVal(value: Int) extends Operand {
     override def format: String = "#" + value.toString
   }
 
-  case class ShiftLeft(n: Int) extends Operand {
+  case class ShiftLeft(n: Int) extends Operand with Shift {
     override def format: String = "lsl #" + n.toString
+  }
+
+  case class ShiftRight(n: Int) extends Operand with Shift {
+    override def format: String = "lsr #" + n.toString
   }
 
   case class LabelAddr(label: String) extends Operand {
@@ -64,7 +72,7 @@ object Instructions {
     override def format: String = s"    ldr ${reg.format}, ${label.format}"
   }
 
-  case class LdrShift(reg1: Register, reg2: Register, reg3: Register, shift: ShiftLeft) extends AssemblyLine {
+  case class LdrShift(reg1: Register, reg2: Register, reg3: Register, shift: Shift) extends AssemblyLine {
     override def format: String = s"    ldr ${reg1.format}, [${reg2.format}, ${reg3.format}, ${shift.format}]"
   }
 
@@ -104,12 +112,24 @@ object Instructions {
     override def format: String = s"    add ${reg.format}, ${operand1.format}, ${operand2.format}"
   }
 
+  case class AddsInstr(reg: Register, operand1: Register, operand2: Operand) extends AssemblyLine {
+    override def format: String = s"    adds ${reg.format}, ${operand1.format}, ${operand2.format}"
+  }
+
   case class SubInstr(reg: Register, operand1: Register, operand2: Operand) extends AssemblyLine {
     override def format: String = s"    sub ${reg.format}, ${operand1.format}, ${operand2.format}"
+  }
+
+  case class SubsInstr(reg: Register, operand1: Register, operand2: Operand) extends AssemblyLine {
+    override def format: String = s"    subs ${reg.format}, ${operand1.format}, ${operand2.format}"
   }
   
   case class MulInstr(reg: Register, operand1: Register, operand2: Operand) extends AssemblyLine {
     override def format: String = s"    mul ${reg.format}, ${operand1.format}, ${operand2.format}"
+  }
+
+  case class SmullInstr(reg1: Register, reg2: Register, operand1: Register, operand2: Operand) extends AssemblyLine {
+    override def format: String = s"    smull ${reg1.format}, ${reg2.format}, ${operand1.format}, ${operand2.format}"
   }
 
   case class DivInstr(reg: Register, operand1: Register, operand2: Operand) extends AssemblyLine {
@@ -118,6 +138,10 @@ object Instructions {
 
   case class CmpInstr(operand1: Register, operand2: Operand) extends AssemblyLine {
     override def format: String = s"    cmp ${operand1.format}, ${operand2.format}"
+  }
+
+  case class CmpShift(operand1: Register, operand2: Register, shift: Shift) extends AssemblyLine {
+    override def format: String = s"    cmp ${operand1.format}, ${operand2.format}, ${shift.format}"
   }
 
   case class BInstr(label: String) extends AssemblyLine {
@@ -148,6 +172,18 @@ object Instructions {
     override def format: String = s"    blge $label"
   }
 
+  case class BlvsInstr(label: String) extends AssemblyLine {
+    override def format: String = s"    blvs $label"
+  }
+
+  case class BlneInstr(label: String) extends AssemblyLine {
+    override def format: String = s"    blne $label"
+  }
+
+  case class BleqInstr(label: String) extends AssemblyLine {
+    override def format: String = s"    bleq $label"
+  }
+
   case class AscizInstr(label: String, string: String) extends AssemblyLine {
     override def format: String = s"   .word ${string.length}\n$label:\n   .asciz \"$string\""
   }
@@ -156,7 +192,7 @@ object Instructions {
     override def format: String = s"    str ${reg.format}, [${address.format}, ${offset.format}]"
   }
 
-  case class StoreShift(reg1: Register, reg2: Register, reg3: Register, shift: ShiftLeft) extends AssemblyLine {
+  case class StoreShift(reg1: Register, reg2: Register, reg3: Register, shift: Shift) extends AssemblyLine {
     override def format: String = s"    str ${reg1.format}, [${reg2.format}, ${reg3.format}, ${shift.format}]"
   }
 

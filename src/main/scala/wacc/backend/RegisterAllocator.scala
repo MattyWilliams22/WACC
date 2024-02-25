@@ -58,6 +58,4 @@ class BasicRegisterAllocator extends RegisterAllocator {
     println("Restoring registers")
     (allRegisters diff availableRegisters).reverse.map(reg => Pop(reg))
   }
-
-  def getStartRegisters: List[Register] = List(R4, R5, R6, R7, R8, R9, R10)
 }
