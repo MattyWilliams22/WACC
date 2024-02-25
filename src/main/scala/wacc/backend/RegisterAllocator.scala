@@ -50,13 +50,13 @@ class BasicRegisterAllocator extends RegisterAllocator {
   /* Push all registers that are currently being used onto the stack */
   def saveRegisters(): List[AssemblyLine] = {
     println("Saving registers")
-    (allRegisters diff availableRegisters).map(reg => Push(reg))
+    (allRegisters diff availableRegisters).map(reg => Push(List(reg)))
   }
 
   /* Pop all registers that were saved onto the stack from the stack */
   def restoreRegisters(): List[AssemblyLine] = {
     println("Restoring registers")
-    (allRegisters diff availableRegisters).reverse.map(reg => Pop(reg))
+    (allRegisters diff availableRegisters).reverse.map(reg => Pop(List(reg)))
   }
 
   def getStartRegisters: List[Register] = List(R4, R5, R6, R7, R8, R9, R10)

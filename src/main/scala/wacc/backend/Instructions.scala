@@ -39,20 +39,12 @@ object Instructions {
   case class Label(name: String) extends AssemblyLine {
     override def format: String = name + ":"
   }
-  
-  case class Push(reg: Register) extends AssemblyLine {
-    override def format: String = s"    push {${reg.format}}"
-  }
 
-  case class PushMultiple(regs: List[Register]) extends AssemblyLine {
+  case class Push(regs: List[Register]) extends AssemblyLine {
     override def format: String = s"    push {${regs.map(_.format).mkString(", ")}}"
   }
 
-  case class Pop(reg: Register) extends AssemblyLine {
-    override def format: String = s"    pop {${reg.format}}"
-  }
-
-  case class PopMultiple(regs: List[Register]) extends AssemblyLine {
+  case class Pop(regs: List[Register]) extends AssemblyLine {
     override def format: String = s"    pop {${regs.map(_.format).mkString(", ")}}"
   }
 
@@ -72,32 +64,8 @@ object Instructions {
     override def format: String = s"    adr ${reg.format}, $label"
   }
 
-  case class Mov(reg: Register, operand: Operand) extends AssemblyLine {
-    override def format: String = s"    mov ${reg.format}, ${operand.format}"
-  }
-
-  case class Movge(reg: Register, operand: Operand) extends AssemblyLine {
-    override def format: String = s"    movge ${reg.format}, ${operand.format}"
-  }
-
-  case class Movlt(reg: Register, operand: Operand) extends AssemblyLine {
-    override def format: String = s"    movlt ${reg.format}, ${operand.format}"
-  }
-
-  case class Moveq(reg: Register, operand: Operand) extends AssemblyLine {
-    override def format: String = s"    moveq ${reg.format}, ${operand.format}"
-  }
-
-  case class Movne(reg: Register, operand: Operand) extends AssemblyLine {
-    override def format: String = s"    movne ${reg.format}, ${operand.format}"
-  }
-
-  case class Movgt(reg: Register, operand: Operand) extends AssemblyLine {
-    override def format: String = s"    movgt ${reg.format}, ${operand.format}"
-  }
-
-  case class Movle(reg: Register, operand: Operand) extends AssemblyLine {
-    override def format: String = s"    movle ${reg.format}, ${operand.format}"
+  case class Mov(reg: Register, operand: Operand, condition: Condition = noCondition) extends AssemblyLine {
+    override def format: String = s"    mov${condition.format} ${reg.format}, ${operand.format}"
   }
 
   case class AddInstr(reg: Register, operand1: Register, operand2: Operand) extends AssemblyLine {
@@ -120,32 +88,16 @@ object Instructions {
     override def format: String = s"    cmp ${operand1.format}, ${operand2.format}"
   }
 
-  case class BInstr(label: String) extends AssemblyLine {
-    override def format: String = s"    b $label"
+  case class BInstr(label: String, condition: Condition = noCondition) extends AssemblyLine {
+    override def format: String = s"    b${condition.format} $label"
   }
 
-  case class BlInstr(label: String) extends AssemblyLine {
-    override def format: String = s"    bl $label"
+  case class BlInstr(label: String, condition: Condition = noCondition) extends AssemblyLine {
+    override def format: String = s"    bl${condition.format} $label"
   }
 
   case class BicInstr(reg: Register, operand1: Register, operand2: Operand) extends AssemblyLine {
     override def format: String = s"    bic ${reg.format}, ${operand1.format}, ${operand2.format}"
-  }
-
-  case class BneInstr(label: String) extends AssemblyLine {
-    override def format: String = s"    bne $label"
-  }
-
-  case class BeqInstr(label: String) extends AssemblyLine {
-    override def format: String = s"    beq $label"
-  }
-
-  case class BlltInstr(label: String) extends AssemblyLine {
-    override def format: String = s"    bllt $label"
-  }
-
-  case class BlgeInstr(label: String) extends AssemblyLine {
-    override def format: String = s"    blge $label"
   }
 
   case class AscizInstr(label: String, string: String) extends AssemblyLine {
@@ -162,6 +114,38 @@ object Instructions {
 
   case class NewLine() extends AssemblyLine {
     override def format: String = s""
+  }
+
+  sealed trait Condition {
+    def format: String
+  }
+
+  case object noCondition extends Condition {
+    override def format: String = ""
+  }
+
+  case object EQcond extends Condition {
+    override def format: String = "eq"
+  }
+
+  case object NEcond extends Condition {
+    override def format: String = "ne"
+  }
+
+  case object GEcond extends Condition {
+    override def format: String = "ge"
+  }
+
+  case object LTcond extends Condition {
+    override def format: String = "lt"
+  }
+
+  case object GTcond extends Condition {
+    override def format: String = "gt"
+  }
+
+  case object LEcond extends Condition {
+    override def format: String = "le"
   }
 
 }

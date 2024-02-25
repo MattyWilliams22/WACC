@@ -21,12 +21,12 @@ object CodeGenerator {
     NewLine(),
     Comment("Exit function"),
     Label("_exit"),
-    PushMultiple(List(FP, LR)),
+    Push(List(FP, LR)),
     Mov(FP, SP),
     BicInstr(SP, SP, ImmVal(7)),
     BlInstr("exit"),
     Mov(SP, FP),
-    PopMultiple(List(FP, PC))
+    Pop(List(FP, PC))
   )
 
   private def printCharOrIntFunc(isChar: Boolean): List[AssemblyLine] = {
@@ -47,7 +47,7 @@ object CodeGenerator {
       Command("align 4"),
       Comment(s"Print${_type} function"),
       Label(s"_print${_type}"),
-      PushMultiple(List(FP, LR)),
+      Push(List(FP, LR)),
       Mov(FP, SP),
       BicInstr(SP, SP, ImmVal(7)),
       Mov(R1, R0),
@@ -56,7 +56,7 @@ object CodeGenerator {
       Mov(R0, ImmVal(0)),
       BlInstr("fflush"),
       Mov(SP, FP),
-      PopMultiple(List(FP, PC))
+      Pop(List(FP, PC))
     )
   }
 
@@ -67,7 +67,7 @@ object CodeGenerator {
       Command("align 4"),
       Comment("Print string function"),
       Label("_prints"),
-      PushMultiple(List(FP, LR)),
+      Push(List(FP, LR)),
       Mov(FP, SP),
       BicInstr(SP, SP, ImmVal(7)),
       Mov(R2, R0),
@@ -77,7 +77,7 @@ object CodeGenerator {
       Mov(R0, ImmVal(0)),
       BlInstr("fflush"),
       Mov(SP, FP),
-      PopMultiple(List(FP, PC))
+      Pop(List(FP, PC))
     )
   }
 
@@ -88,7 +88,7 @@ object CodeGenerator {
       Command("align 4"),
       Comment("Print pair function"),
       Label("_printp"),
-      PushMultiple(List(FP, LR)),
+      Push(List(FP, LR)),
       Mov(FP, SP),
       BicInstr(SP, SP, ImmVal(7)),
       Mov(R1, R0),
@@ -97,7 +97,7 @@ object CodeGenerator {
       Mov(R0, ImmVal(0)),
       BlInstr("fflush"),
       Mov(SP, FP),
-      PopMultiple(List(FP, PC))
+      Pop(List(FP, PC))
     )
   }
 
@@ -110,11 +110,11 @@ object CodeGenerator {
       Command("align 4"),
       Comment("Print bool function"),
       Label("_printb"),
-      PushMultiple(List(FP, LR)),
+      Push(List(FP, LR)),
       Mov(FP, SP),
       BicInstr(SP, SP, ImmVal(7)),
       CmpInstr(R0, ImmVal(0)),
-      BneInstr(".L._printb0"),
+      BInstr(".L._printb0", NEcond),
       AdrInstr(R2, ".L._printb_str0"),
       BInstr(".L._printb1"),
       Label(".L._printb0"),
@@ -126,7 +126,7 @@ object CodeGenerator {
       Mov(R0, ImmVal(0)),
       BlInstr("fflush"),
       Mov(SP, FP),
-      PopMultiple(List(FP, PC))
+      Pop(List(FP, PC))
     )
   }
 
@@ -137,7 +137,7 @@ object CodeGenerator {
       Command("align 4"),
       Comment("Println function"),
       Label("_println"),
-      PushMultiple(List(FP, LR)),
+      Push(List(FP, LR)),
       Mov(FP, SP),
       BicInstr(SP, SP, ImmVal(7)),
       AdrInstr(R0, ".L._println_str0"),
@@ -145,7 +145,7 @@ object CodeGenerator {
       Mov(R0, ImmVal(0)),
       BlInstr("fflush"),
       Mov(SP, FP),
-      PopMultiple(List(FP, PC))
+      Pop(List(FP, PC))
     )
   }
 
@@ -155,14 +155,14 @@ object CodeGenerator {
       NewLine(),
       Comment("Malloc function"),
       Label("_malloc"),
-      PushMultiple(List(FP, LR)),
+      Push(List(FP, LR)),
       Mov(FP, SP),
       BicInstr(SP, SP, ImmVal(7)),
       BlInstr("malloc"),
       CmpInstr(R0, ImmVal(0)),
-      BeqInstr("_errOutOfMemory"),
+      BInstr("_errOutOfMemory", EQcond),
       Mov(SP, FP),
-      PopMultiple(List(FP, PC))
+      Pop(List(FP, PC))
     )
   }
 
@@ -173,7 +173,7 @@ object CodeGenerator {
       Command("align 4"),
       Comment("Read int function"),
       Label("_readi"),
-      PushMultiple(List(FP, LR)),
+      Push(List(FP, LR)),
       Mov(FP, SP),
       BicInstr(SP, SP, ImmVal(7)),
       SubInstr(SP, SP, ImmVal(8)),
@@ -184,7 +184,7 @@ object CodeGenerator {
       LdrAddr(R0, SP, ImmVal(0)),
       AddInstr(SP, SP, ImmVal(8)),
       Mov(SP, FP),
-      PopMultiple(List(FP, PC))
+      Pop(List(FP, PC))
     )
   }
 
@@ -195,7 +195,7 @@ object CodeGenerator {
       Command("align 4"),
       Comment("Read char function"),
       Label("_readc"),
-      PushMultiple(List(FP, LR)),
+      Push(List(FP, LR)),
       Mov(FP, SP),
       BicInstr(SP, SP, ImmVal(7)),
       SubInstr(SP, SP, ImmVal(8)),
@@ -206,7 +206,7 @@ object CodeGenerator {
       LdrAddr(R0, SP, ImmVal(0)),
       AddInstr(SP, SP, ImmVal(8)),
       Mov(SP, FP),
-      PopMultiple(List(FP, PC))
+      Pop(List(FP, PC))
     )
   }
 
@@ -214,12 +214,12 @@ object CodeGenerator {
     NewLine(),
     Comment("Free function"),
     Label("_free"),
-    PushMultiple(List(FP, LR)),
+    Push(List(FP, LR)),
     Mov(FP, SP),
     BicInstr(SP, SP, ImmVal(7)),
     BlInstr("free"),
     Mov(SP, FP),
-    PopMultiple(List(FP, PC))
+    Pop(List(FP, PC))
   )
 
   private lazy val arrayLoad4Func: List[AssemblyLine] = {
@@ -228,16 +228,16 @@ object CodeGenerator {
       NewLine(),
       Comment("Array load function"),
       Label("_arrLoad4"),
-      Push(LR),
+      Push(List(LR)),
       CmpInstr(R10, ImmVal(0)),
-      Movlt(R1, R10),
-      BlltInstr("_errOutOfBounds"),
+      Mov(R1, R10, LTcond),
+      BlInstr("_errOutOfBounds", LTcond),
       LdrAddr(LR, R3, ImmVal(-4)),
       CmpInstr(R10, LR),
-      Movge(R1, R10),
-      BlgeInstr("_errOutOfBounds"),
+      Mov(R1, R10, GEcond),
+      BlInstr("_errOutOfBounds", GEcond),
       LdrShift(R3, R3, R10, ShiftLeft(2)),
-      Pop(PC)
+      Pop(List(PC))
     )
   }
 
@@ -247,16 +247,16 @@ object CodeGenerator {
       NewLine(),
       Comment("Array store function"),
       Label("_arrStore4"),
-      Push(LR),
+      Push(List(LR)),
       CmpInstr(R10, ImmVal(0)),
-      Movlt(R1, R10),
-      BlltInstr("_errOutOfBounds"),
+      Mov(R1, R10, LTcond),
+      BlInstr("_errOutOfBounds", LTcond),
       LdrAddr(LR, R3, ImmVal(-4)),
       CmpInstr(R10, LR),
-      Movge(R1, R10),
-      BlgeInstr("_errOutOfBounds"),
+      Mov(R1, R10, GEcond),
+      BlInstr("_errOutOfBounds", GEcond),
       StoreShift(R8, R3, R10, ShiftLeft(2)),
-      Pop(PC)
+      Pop(List(PC))
     )
   }
 
@@ -327,13 +327,13 @@ object CodeGenerator {
         Command("text"),
         Command("global main"),
         Label("main"), 
-        PushMultiple(List(FP, LR)), 
+        Push(List(FP, LR)), 
         Mov(FP, SP)
       ) ++
       stmtLines ++
       List(
         Mov(R0, ImmVal(0)),
-        PopMultiple(List(FP, PC))
+        Pop(List(FP, PC))
       ) ++
       funcLines ++
       refFunctions.foldLeft(List[AssemblyLine]())(_ ++ _)
@@ -342,14 +342,14 @@ object CodeGenerator {
     def functionGenerate(funcName: Ident, params: List[Param], body: Statement): List[AssemblyLine] = {
       Comment("Start of function") ::
       Label(funcName.nickname.get) ::
-      PushMultiple(List(FP, LR)) ::
+      Push(List(FP, LR)) ::
       allocator.saveRegisters() ++
       List(Mov(FP, SP)) ++
       paramsGenerate(params) ++
       generateAssembly(body, allocator, dest) ++
       List(
         Mov(SP, FP),
-        PopMultiple(List(FP, PC))
+        Pop(List(FP, PC))
       )
     }
 
@@ -375,7 +375,7 @@ object CodeGenerator {
             paramLines += Mov(next, R3)
             regNum += 1
           }
-          case _ => paramLines += Push(next)
+          case _ => paramLines += Push(List(next))
         }
       }
       paramLines.toList
@@ -437,7 +437,7 @@ object CodeGenerator {
       List(
         Comment("If statement condition logic"),
         CmpInstr(dest, ImmVal(1)),
-        BneInstr(elseLabel)
+        BInstr(elseLabel, NEcond)
       ) ++
       thenLines ++
       List(BInstr(endLabel), Label(elseLabel)) ++
@@ -494,7 +494,7 @@ object CodeGenerator {
         Comment("Return Logic"),
         Mov(R0, dest),
         Mov(SP, FP),
-        PopMultiple(List(FP, PC))
+        Pop(List(FP, PC))
       )
     }
 
@@ -641,7 +641,7 @@ object CodeGenerator {
       List(
         Comment("PairElem Logic"),
         CmpInstr(next, ImmVal(0)),
-        BeqInstr("_errNull")
+        BInstr("_errNull", EQcond)
       ) ++
       funcLines
     }
@@ -725,7 +725,7 @@ object CodeGenerator {
         Comment("GT Logic"),
         CmpInstr(dest, next),
         Mov(dest, ImmVal(0)),
-        Movgt(dest, ImmVal(1))
+        Mov(dest, ImmVal(1), GTcond)
       )
     }
 
@@ -741,7 +741,7 @@ object CodeGenerator {
         Comment("GTEQ Logic"),
         CmpInstr(dest, next),
         Mov(dest, ImmVal(0)),
-        Movge(dest, ImmVal(1))
+        Mov(dest, ImmVal(1), GEcond)
       )
     }
 
@@ -757,7 +757,7 @@ object CodeGenerator {
         Comment("LT Logic"),
         CmpInstr(dest, next),
         Mov(dest, ImmVal(0)),
-        Movlt(dest, ImmVal(1))
+        Mov(dest, ImmVal(1), LTcond)
       )
     }
 
@@ -773,7 +773,7 @@ object CodeGenerator {
         Comment("LTEQ Logic"),
         CmpInstr(dest, next),
         Mov(dest, ImmVal(0)),
-        Movle(dest, ImmVal(1))
+        Mov(dest, ImmVal(1), LEcond)
       )
     }
 
@@ -782,7 +782,7 @@ object CodeGenerator {
         Comment("EQ Logic"),
         CmpInstr(dest, next),
         Mov(dest, ImmVal(0)),
-        Moveq(dest, ImmVal(1))
+        Mov(dest, ImmVal(1), EQcond)
       )
     }
 
@@ -813,7 +813,7 @@ object CodeGenerator {
       List(
         Comment("and Logic"),
         CmpInstr(next, ImmVal(0)),
-        Moveq(dest, ImmVal(0)),
+        Mov(dest, ImmVal(0), EQcond),
       )
     }
 
@@ -832,7 +832,7 @@ object CodeGenerator {
       List(
         Comment("or Logic"),
         CmpInstr(next, ImmVal(1)),
-        Moveq(dest, ImmVal(1)),
+        Mov(dest, ImmVal(1), EQcond),
       )
     }
 
@@ -851,8 +851,8 @@ object CodeGenerator {
       List(
         Comment("not Logic"),
         CmpInstr(dest, ImmVal(0)),
-        Movne(dest, ImmVal(0)),
-        Moveq(dest, ImmVal(1))
+        Mov(dest, ImmVal(0), NEcond),
+        Mov(dest, ImmVal(1), EQcond)
       )
     }
 
@@ -1008,7 +1008,7 @@ object CodeGenerator {
             argsLines += Mov(R3, next)
             regNum += 1
           }
-          case _ => argsLines += Push(next)
+          case _ => argsLines += Push(List(next))
         }
       }
       argsLines.toList
