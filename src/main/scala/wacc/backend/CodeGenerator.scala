@@ -696,7 +696,7 @@ object CodeGenerator {
       List(
         SmullInstr(dest, hi, val1, val2),
         CmpShift(hi, dest, ShiftRight(31)),
-        BlneInstr("_errOverflow")
+        BlInstr("_errOverflow", NEcond)
       )
     }
 
@@ -709,7 +709,7 @@ object CodeGenerator {
       exp2Lines ++
       List(
         Mov(R1, dest),
-        BleqInstr("_errDivZero"),
+        BlInstr("_errDivZero", EQcond),
         BlInstr("__aeabi_idivmod"),
         Mov(dest, R0)
       )
@@ -725,7 +725,7 @@ object CodeGenerator {
       exp2Lines ++
       List(
         Mov(R1, dest),
-        BleqInstr("_errDivZero"),
+        BlInstr("_errDivZero", EQcond),
         BlInstr("__aeabi_idivmod"),
         Mov(dest, R1)
       )
@@ -742,7 +742,7 @@ object CodeGenerator {
       exp2Lines ++
       List(
         AddsInstr(dest, dest, next),
-        BlvsInstr("_errOverflow")
+        BlInstr("_errOverflow", VScond)
       )
     }
 
@@ -757,7 +757,7 @@ object CodeGenerator {
       exp2Lines ++
       List(
         SubsInstr(dest, dest, next),
-        BlvsInstr("_errOverflow")
+        BlInstr("_errOverflow", VScond)
       )
     }
 

@@ -172,4 +172,8 @@ object Instructions {
     override def format: String = "le"
   }
 
+  case object VScond extends Condition {
+    override def format: String = "vs"
+  }
+
 }
