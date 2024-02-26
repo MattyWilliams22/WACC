@@ -69,7 +69,7 @@ object Instructions {
   }
 
   case class LdrShift(reg1: Register, reg2: Register, reg3: Register, shift: Shift) extends AssemblyLine {
-    override def format: String = s"    ldr ${reg1.format}, [${reg2.format}, ${reg3.format}, ${shift.format}]"
+    override def format: String = s"    ldr ${reg1.format}, [${reg2.format}, ${reg3.format}${shift.format}]"
   }
 
   case class AdrInstr(reg: Register, label: String) extends AssemblyLine {

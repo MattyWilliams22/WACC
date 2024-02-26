@@ -395,35 +395,36 @@ object CodeGenerator {
         regNum match {
           case 0 => {
             paramLines += Mov(next, R0)
-            allocator.setLocation(param.ident.nickname.get, VariableLocation(next, 0, 4))
+            allocator.setLocation(param.ident.nickname.get, VariableLocation(next, 0, 4, param._type))
             regNum += 1
           }
           case 1 => {
             paramLines += Mov(next, R1)
-            allocator.setLocation(param.ident.nickname.get, VariableLocation(next, 0, 4))
+            allocator.setLocation(param.ident.nickname.get, VariableLocation(next, 0, 4, param._type))
             regNum += 1
           }
           case 2 => {
             paramLines += Mov(next, R2)
-            allocator.setLocation(param.ident.nickname.get, VariableLocation(next, 0, 4))
+            allocator.setLocation(param.ident.nickname.get, VariableLocation(next, 0, 4, param._type))
             regNum += 1
           }
           case 3 => {
             paramLines += Mov(next, R3)
-            allocator.setLocation(param.ident.nickname.get, VariableLocation(next, 0, 4))
+            allocator.setLocation(param.ident.nickname.get, VariableLocation(next, 0, 4, param._type))
             regNum += 1
           }
           case _ => {
             paramLines += Pop(List(next))
-            allocator.setLocation(param.ident.nickname.get, VariableLocation(next, 0, 4))
+            allocator.setLocation(param.ident.nickname.get, VariableLocation(next, 0, 4, param._type))
           }
         }
       }
       paramLines.toList
     }
 
-    def declareGenerate(id: Ident, value: RValue): List[AssemblyLine] = {
+    def declareGenerate(_type: Type, id: Ident, value: RValue): List[AssemblyLine] = {
       val newDest = allocator.allocateRegister()
+      allocator.setLocation(id.nickname.get, VariableLocation(newDest, 0, 4, _type))
       val idLines = generateAssembly(id, allocator, newDest)
       val valueLines = generateAssembly(value, allocator, newDest)
       Comment("Start of declare") ::
@@ -432,17 +433,75 @@ object CodeGenerator {
     }
 
     def assignGenerate(lvalue: LValue, rvalue: RValue): List[AssemblyLine] = {
-      val lvalueLines = generateAssembly(lvalue, allocator, dest)
-      val next = allocator.allocateRegister()
-      val rvalueLines = generateAssembly(rvalue, allocator, next)
-      allocator.deallocateRegister(next)
+      val rvalueLines = generateAssembly(rvalue, allocator, dest)
+      val (lvalueLines, _) = getLvalueLocation(lvalue)
       Comment("Start of assign") ::
-      lvalueLines ++
       rvalueLines ++
-      List(
-        Comment("Assign Logic"),
-        Mov(dest, next)
-      )
+      lvalueLines
+    }
+
+    def getLvalueLocation(lvalue: LValue): (List[AssemblyLine], VariableLocation) = {
+      lvalue match {
+        case Ident(string, nickname) => {
+          val identLoc: VariableLocation = allocator.lookupLocation(nickname.get).get
+          (List(StoreInstr(dest, identLoc.register, ImmVal(identLoc.offset))), identLoc)
+        }
+        case ArrayElem(ident, indices) => {
+          val identLoc: VariableLocation = allocator.lookupLocation(ident.nickname.get).get
+          // val typeOfArray: Type = identLoc._type
+          // val sizeOfElem = typeOfArray match {
+          //   case ArrayT(t, _) => t.getSize
+          //   case _ => 0
+          // }
+          // val idLines = generateAssembly(id, allocator, dest)
+
+          // val beforeLines = new ListBuffer[AssemblyLine]()
+          // val afterLines = new ListBuffer[AssemblyLine]()
+          // // Must check size of array elements and call different _arrLoad function
+          // var toDeallocate = new ListBuffer[Register]()
+          // val arrayReg = indexLoc.register
+          // for (index <- indices) {
+          //   val indexReg = allocator.allocateRegister()
+          //   val elemReg = allocator.allocateRegister()
+          //   toDeallocate += indexReg
+          //   toDeallocate += elemReg
+          //   val indexLines = generateAssembly(index, allocator, indexReg)
+          //   beforeLines ++= indexLines
+          //   beforeLines ++= List(
+          //     Mov(R10, indexReg),
+          //     Mov(R3, arrayReg),
+          //     BlInstr("_arrLoad4"),
+          //     Mov(elemReg, R3)
+          //   )
+          //   afterLines ++= List(
+          //     Mov(R10, indexReg),
+          //     Mov(R3, arrayReg),
+          //     Mov(R8, dest),
+          //     BlInstr("_arrStore4"),
+          //     Mov(arrayReg, R3)
+          //   )
+          // }
+          // for (reg <- toDeallocate) {
+          //   allocator.deallocateRegister(reg)
+          // }
+          // Comment("Start of array element") ::
+          // idLines ++
+          // indicesLines.toList
+          (List(), identLoc)
+        }
+        case PairElem(func, lvalue) => {
+          func match {
+            case "fst" => {
+              val (lvalueLines, lvalueLoc) = getLvalueLocation(lvalue)
+              (lvalueLines ++ List(StoreInstr(dest, lvalueLoc.register, ImmVal(lvalueLoc.offset))), lvalueLoc)
+            }
+            case "snd" => {
+              val (lvalueLines, lvalueLoc) = getLvalueLocation(lvalue)
+              (lvalueLines ++ List(StoreInstr(dest, lvalueLoc.register, ImmVal(lvalueLoc.offset + lvalueLoc.size))), lvalueLoc)
+            }
+          }
+        }
+      }
     }
 
     def readGenerate(lvalue: LValue): List[AssemblyLine] = {
@@ -994,15 +1053,12 @@ object CodeGenerator {
       val location: Option[VariableLocation] = allocator.lookupLocation(n)
       Comment("Start of identifier") ::
       (location match {
-        case Some(VariableLocation(reg, off, size)) => {
+        case Some(VariableLocation(reg, off, size, _type)) => {
           List(
             Mov(dest, reg)
           )
         }
-        case None => {
-          allocator.setLocation(n, VariableLocation(dest, 0, 4))
-          List()
-        }
+        case None => List()
       })
     }
 
@@ -1088,8 +1144,8 @@ object CodeGenerator {
       case Skip() =>
         List(Comment("Skip"))
 
-      case Declare(_, id, value) =>
-        declareGenerate(id, value)
+      case Declare(_type, id, value) =>
+        declareGenerate(_type, id, value)
 
       case Assign(lvalue, rvalue) =>
         assignGenerate(lvalue, rvalue)

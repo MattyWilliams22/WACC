@@ -2,9 +2,10 @@ package wacc.backend
 
 import scala.collection.mutable
 
+import wacc.ASTNodes._
 import wacc.backend.Instructions.{Push, Pop, AssemblyLine}
 
-case class VariableLocation(val register: Register, val offset: Int, val size: Int)
+case class VariableLocation(val register: Register, val offset: Int, val size: Int, val _type: Type)
 
 sealed trait RegisterAllocator {
   def allocateRegister(): Register
