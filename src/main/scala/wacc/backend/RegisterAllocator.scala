@@ -21,10 +21,20 @@ class BasicRegisterAllocator extends RegisterAllocator {
 
   def allocateRegister(): Register = {
     var result: Register = R4
+    // var instructions: List[AssemblyLine] = List.empty[AssemblyLine]
     
     if (!(availableRegisters.isEmpty)) {
       result = availableRegisters.head
     }
+    // } else {
+    //   result = (allRegisters diff availableRegisters).head
+    //   instructions = List(Push(List(result)))
+    //   val varName: Option[String] = varMap.find { case (key, v) => v.register == result }.map(_._1)
+    //   varName match {
+    //     case Some(name) => varMap(name) = VariableLocation(SP, varMap(name).offset, varMap(name).size)
+    //     case _ =>
+    //   }
+    // }
 
     println(s"Allocated register: $result")
 

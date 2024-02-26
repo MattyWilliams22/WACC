@@ -67,8 +67,10 @@ def list_files_in_directory(base):
 def compare_output(expected_output, actual_output):
   if not expected_output.strip() == actual_output:
     if '#' in expected_output:
-      expected_output = re.sub(r'#.*?#', '.*', expected_output, flags=re.DOTALL)
-      return re.fullmatch(expected_output, actual_output.strip()) is not None
+      expected_output = re.sub(r'#.*#', '.*', expected_output, flags=re.DOTALL)
+      expected_output = expected_output.replace("(", "\(").replace(")", "\)")
+      pattern = re.compile(expected_output, flags=re.DOTALL)
+      return pattern.fullmatch(actual_output.strip()) is not None
     else:
       return False
   return True
