@@ -721,6 +721,7 @@ object CodeGenerator {
       exp2Lines ++
       List(
         Mov(R1, dest),
+        CmpInstr(R1, ImmVal(0)),
         BlInstr("_errDivZero", EQcond),
         BlInstr("__aeabi_idivmod"),
         Mov(dest, R0)
@@ -737,6 +738,7 @@ object CodeGenerator {
       exp2Lines ++
       List(
         Mov(R1, dest),
+        CmpInstr(R1, ImmVal(0)),
         BlInstr("_errDivZero", EQcond),
         BlInstr("__aeabi_idivmod"),
         Mov(dest, R1)
