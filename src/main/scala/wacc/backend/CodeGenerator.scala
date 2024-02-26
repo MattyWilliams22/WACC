@@ -372,15 +372,17 @@ object CodeGenerator {
     }
 
     def functionGenerate(funcName: Ident, params: List[Param], body: Statement): List[AssemblyLine] = {
+      val regsToSave = allocator.saveRegisters()
       Comment("Start of function") ::
       Label(funcName.nickname.get) ::
       Push(List(FP, LR)) ::
-      allocator.saveRegisters() ++
+      Push(regsToSave) ::
       List(Mov(FP, SP)) ++
       paramsGenerate(params) ++
       generateAssembly(body, allocator, dest) ++
       List(
         Mov(SP, FP),
+        Pop(regsToSave),
         Pop(List(FP, PC))
       )
     }
@@ -393,21 +395,28 @@ object CodeGenerator {
         regNum match {
           case 0 => {
             paramLines += Mov(next, R0)
+            allocator.setLocation(param.ident.nickname.get, VariableLocation(next, 0, 4))
             regNum += 1
           }
           case 1 => {
             paramLines += Mov(next, R1)
+            allocator.setLocation(param.ident.nickname.get, VariableLocation(next, 0, 4))
             regNum += 1
           }
           case 2 => {
             paramLines += Mov(next, R2)
+            allocator.setLocation(param.ident.nickname.get, VariableLocation(next, 0, 4))
             regNum += 1
           }
           case 3 => {
             paramLines += Mov(next, R3)
+            allocator.setLocation(param.ident.nickname.get, VariableLocation(next, 0, 4))
             regNum += 1
           }
-          case _ => paramLines += Push(List(next))
+          case _ => {
+            paramLines += Pop(List(next))
+            allocator.setLocation(param.ident.nickname.get, VariableLocation(next, 0, 4))
+          }
         }
       }
       paramLines.toList
@@ -986,7 +995,6 @@ object CodeGenerator {
       Comment("Start of identifier") ::
       (location match {
         case Some(VariableLocation(reg, off, size)) => {
-          allocator.setLocation(n, VariableLocation(dest, 0, size))
           List(
             Mov(dest, reg)
           )

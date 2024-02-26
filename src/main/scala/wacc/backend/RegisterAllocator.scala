@@ -13,9 +13,9 @@ sealed trait RegisterAllocator {
 /* Basic register allocator that allocates registers by always putting the result in the register
    that is at the front of the list of available registers */
 class BasicRegisterAllocator extends RegisterAllocator {
-  private val allRegisters: List[Register] = List(R0, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10)
+  private val allRegisters: List[Register] = List(R4, R5, R6, R7, R8, R9, R10)
 
-  private var availableRegisters: List[Register] = List(R4, R5, R6, R7, R8, R9, R10)
+  private var availableRegisters: List[Register] = allRegisters
 
   private var varMap: mutable.Map[String, VariableLocation] = mutable.Map.empty[String, VariableLocation]
 
@@ -57,14 +57,14 @@ class BasicRegisterAllocator extends RegisterAllocator {
   }
 
   /* Push all registers that are currently being used onto the stack */
-  def saveRegisters(): List[AssemblyLine] = {
+  def saveRegisters(): List[Register] = {
     println("Saving registers")
-    (allRegisters diff availableRegisters).map(reg => Push(List(reg)))
+    (allRegisters diff availableRegisters)
   }
 
-  /* Pop all registers that were saved onto the stack from the stack */
-  def restoreRegisters(): List[AssemblyLine] = {
-    println("Restoring registers")
-    (allRegisters diff availableRegisters).reverse.map(reg => Pop(List(reg)))
-  }
+  // /* Pop all registers that were saved onto the stack from the stack */
+  // def restoreRegisters(): List[AssemblyLine] = {
+  //   println("Restoring registers")
+  //   (allRegisters diff availableRegisters).reverse.map(reg => Pop(List(reg)))
+  // }
 }
