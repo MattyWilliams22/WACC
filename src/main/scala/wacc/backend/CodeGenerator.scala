@@ -448,46 +448,8 @@ object CodeGenerator {
         }
         case ArrayElem(ident, indices) => {
           val identLoc: VariableLocation = allocator.lookupLocation(ident.nickname.get).get
-          // val typeOfArray: Type = identLoc._type
-          // val sizeOfElem = typeOfArray match {
-          //   case ArrayT(t, _) => t.getSize
-          //   case _ => 0
-          // }
-          // val idLines = generateAssembly(id, allocator, dest)
-
-          // val beforeLines = new ListBuffer[AssemblyLine]()
-          // val afterLines = new ListBuffer[AssemblyLine]()
-          // // Must check size of array elements and call different _arrLoad function
-          // var toDeallocate = new ListBuffer[Register]()
-          // val arrayReg = indexLoc.register
-          // for (index <- indices) {
-          //   val indexReg = allocator.allocateRegister()
-          //   val elemReg = allocator.allocateRegister()
-          //   toDeallocate += indexReg
-          //   toDeallocate += elemReg
-          //   val indexLines = generateAssembly(index, allocator, indexReg)
-          //   beforeLines ++= indexLines
-          //   beforeLines ++= List(
-          //     Mov(R10, indexReg),
-          //     Mov(R3, arrayReg),
-          //     BlInstr("_arrLoad4"),
-          //     Mov(elemReg, R3)
-          //   )
-          //   afterLines ++= List(
-          //     Mov(R10, indexReg),
-          //     Mov(R3, arrayReg),
-          //     Mov(R8, dest),
-          //     BlInstr("_arrStore4"),
-          //     Mov(arrayReg, R3)
-          //   )
-          // }
-          // for (reg <- toDeallocate) {
-          //   allocator.deallocateRegister(reg)
-          // }
-          // Comment("Start of array element") ::
-          // idLines ++
-          // indicesLines.toList
-          (List(), identLoc)
+          val (before, after, target) = getArrayElemLocation(identLoc.register, indices)
+          (before ++ List(Mov(target, dest)) ++ after, identLoc)
         }
         case PairElem(func, lvalue) => {
           func match {
@@ -504,6 +466,37 @@ object CodeGenerator {
       }
     }
 
+    def getArrayElemLocation(arrayReg: Register, indices: List[Expr]): (List[AssemblyLine], List[AssemblyLine], Register) = {
+      if (indices.isEmpty) {
+        return (List(), List(), arrayReg)
+      }
+      val beforeLines = new ListBuffer[AssemblyLine]()
+      val afterLines = new ListBuffer[AssemblyLine]()
+      val indexReg = allocator.allocateRegister()
+      val elemReg = allocator.allocateRegister()
+      val indexLines = generateAssembly(indices.head, allocator, indexReg)
+      beforeLines ++= indexLines
+      beforeLines ++= List(
+        Mov(R10, indexReg),
+        Mov(R3, arrayReg),
+        BlInstr("_arrLoad4"),
+        Mov(elemReg, R3)
+      )
+      val (before, after, target) = getArrayElemLocation(elemReg, indices.tail)
+      beforeLines ++= before
+      afterLines ++= after
+      afterLines ++= List(
+        Mov(R10, indexReg),
+        Mov(R3, arrayReg),
+        Mov(R8, elemReg),
+        BlInstr("_arrStore4"),
+        Mov(arrayReg, R3)
+      )
+      allocator.deallocateRegister(indexReg)
+      allocator.deallocateRegister(elemReg)
+      (beforeLines.toList, afterLines.toList, target)
+    }
+
     def readGenerate(lvalue: LValue): List[AssemblyLine] = {
       val _type = (lvalue.getType match {
         case BaseT("int") => {
@@ -516,15 +509,13 @@ object CodeGenerator {
         }
         case _ => ""
       })
-      val lvalueLines = generateAssembly(lvalue, allocator, dest)
+      val (lvalueLines, _) = getLvalueLocation(lvalue)
       Comment("Start of read") ::
-      lvalueLines ++
       List(
-        Comment("Read Logic"),
-        Mov(R0, dest),
         BlInstr(s"_read${_type}"),
         Mov(dest, R0)
-      )
+      ) ++
+      lvalueLines
     }
 
     def ifGenerate(cond: Expr, thenS: Statement, elseS: Statement): List[AssemblyLine] = {
