@@ -414,8 +414,9 @@ object CodeGenerator {
     }
 
     def declareGenerate(id: Ident, value: RValue): List[AssemblyLine] = {
-      val idLines = generateAssembly(id, allocator, dest)
-      val valueLines = generateAssembly(value, allocator, dest)
+      val newDest = allocator.allocateRegister()
+      val idLines = generateAssembly(id, allocator, newDest)
+      val valueLines = generateAssembly(value, allocator, newDest)
       Comment("Start of declare") ::
       idLines ++
       valueLines
@@ -481,15 +482,16 @@ object CodeGenerator {
       val startLabel = getUniqueLabel
       val endLabel = getUniqueLabel
       val condLines = generateAssembly(cond, allocator, dest)
-      val stmtLines = generateAssembly(stmt, allocator, dest)
+      val newDest = allocator.allocateRegister()
+      val stmtLines = generateAssembly(stmt, allocator, newDest)
       List(Comment("Start of while loop"))
       Label(startLabel) ::
       condLines ++
       List(
         Comment("While loop condition logic"),
-        // CmpInstr(dest, ImmVal(1)),
-        // BneInstr(endLabel)
-        BInstr(endLabel)  // Temporarily skip to end of while loop to avoid infinite loop
+        CmpInstr(dest, ImmVal(1)), 
+        BInstr(endLabel, NEcond)
+        //BInstr(endLabel)  // Temporarily skip to end of while loop to avoid infinite loop
       ) ++ 
       stmtLines ++
       List(
@@ -701,6 +703,7 @@ object CodeGenerator {
     }
 
     def divGenerate(exp1: Expr, exp2: Expr): List[AssemblyLine] = {
+      refFunctions += errorDivByZeroFunc
       val exp1Lines = generateAssembly(exp1, allocator, dest)
       val exp2Lines = generateAssembly(exp2, allocator, dest)
       Comment("Start of division") ::
