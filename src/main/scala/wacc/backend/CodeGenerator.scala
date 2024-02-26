@@ -489,9 +489,9 @@ object CodeGenerator {
       condLines ++
       List(
         Comment("While loop condition logic"),
-        CmpInstr(dest, ImmVal(1)), 
-        BInstr(endLabel, NEcond)
-        //BInstr(endLabel)  // Temporarily skip to end of while loop to avoid infinite loop
+        // CmpInstr(dest, ImmVal(1)), 
+        // BInstr(endLabel, NEcond)
+        BInstr(endLabel)  // Temporarily skip to end of while loop to avoid infinite loop
       ) ++ 
       stmtLines ++
       List(
