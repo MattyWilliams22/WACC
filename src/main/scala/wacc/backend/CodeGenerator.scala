@@ -697,7 +697,7 @@ object CodeGenerator {
       List(Mov(val2, dest)) ++
       List(
         SmullInstr(dest, hi, val1, val2),
-        CmpShift(hi, dest, ShiftRight(31)),
+        CmpInstr(hi, dest, ShiftRight(31)),
         BlInstr("_errOverflow", NEcond)
       )
     }
