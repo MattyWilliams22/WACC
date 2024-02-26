@@ -1,6 +1,6 @@
 package wacc.backend
 
-// Intel syntax arm32 instructions
+// Arm32 instructions
 
 object Instructions {
 
@@ -8,7 +8,7 @@ object Instructions {
     def format: String
   }
 
-  sealed trait Shift extends Operand {
+  sealed trait Shift {
     def format: String
   } 
 
@@ -16,12 +16,16 @@ object Instructions {
     override def format: String = "#" + value.toString
   }
 
-  case class ShiftLeft(n: Int) extends Operand with Shift {
-    override def format: String = "lsl #" + n.toString
+  case object noShift extends Shift {
+    override def format: String = ""
   }
 
-  case class ShiftRight(n: Int) extends Operand with Shift {
-    override def format: String = "lsr #" + n.toString
+  case class ShiftLeft(n: Int) extends Shift {
+    override def format: String = ", lsl #" + n.toString
+  }
+
+  case class ShiftRight(n: Int) extends Shift {
+    override def format: String = ", lsr #" + n.toString
   }
 
   case class LabelAddr(label: String) extends Operand {
@@ -104,12 +108,8 @@ object Instructions {
     override def format: String = s"    sdiv ${reg.format}, ${operand1.format}, ${operand2.format}"
   }
 
-  case class CmpInstr(operand1: Register, operand2: Operand) extends AssemblyLine {
-    override def format: String = s"    cmp ${operand1.format}, ${operand2.format}"
-  }
-
-  case class CmpShift(operand1: Register, operand2: Register, shift: Shift) extends AssemblyLine {
-    override def format: String = s"    cmp ${operand1.format}, ${operand2.format}, ${shift.format}"
+  case class CmpInstr(operand1: Register, operand2: Operand, shift: Shift = noShift) extends AssemblyLine {
+    override def format: String = s"    cmp ${operand1.format}, ${operand2.format}${shift.format}"
   }
 
   case class BInstr(label: String, condition: Condition = noCondition) extends AssemblyLine {
