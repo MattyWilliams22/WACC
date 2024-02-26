@@ -64,6 +64,15 @@ def list_files_in_directory(base):
             file_paths.append(os.path.join(root, file))
     return file_paths
 
+def compare_output(expected_output, actual_output):
+  if not expected_output.strip() == actual_output:
+    if '#' in expected_output:
+      expected_output = re.sub(r'#.*?#', '.*', expected_output, flags=re.DOTALL)
+      return re.fullmatch(expected_output, actual_output.strip()) is not None
+    else:
+      return False
+  return True
+
 # Adds all the tests to the tests dictionary
 def add_tests_to_dict(base):
   tests = dict()
@@ -100,7 +109,7 @@ def compile_run_assembly_file(fname, assembly_file):
 
   expected_output = extract_expected_output(fname)
 
-  if output.strip() == expected_output:
+  if compare_output(expected_output, output.strip()):
     print("Output matches expected!")
     if output_str.returncode != get_return_code(fname):
       print(f"Expected return code {get_return_code(fname)} but got {output_str.returncode}")
