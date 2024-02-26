@@ -120,6 +120,23 @@ def run_tests(tests_to_run):
   semanticPasses = 0
   validPasses = 0
 
+  # Dictionary of test categories to their respective counts
+  validSubTests = {
+    "basic": (0, 0, "Basic"),
+    "sequence": (0, 0, "Sequence"),
+    "IO": (0, 0, "Input/Output"),
+    "variables": (0, 0, "Variable"),
+    "expressions": (0, 0, "Expression"),
+    "array": (0, 0, "Array"),
+    "if": (0, 0, "Conditional"),
+    "while": (0, 0, "Loop"),
+    "scope": (0, 0, "Scope"),
+    "simple_functions": (0, 0, "Simple Function"),
+    "nested_functions": (0, 0, "Nested Function"),
+    "runtimeErr": (0, 0, "Runtime Error"),
+    "heap": (0, 0, "Heap")
+  }
+
   for test in tests_to_run:
     for fname in glob.glob(test):
       print(f"sh compile {fname}")
@@ -139,9 +156,26 @@ def run_tests(tests_to_run):
           assembly_file = os.path.basename(fname).replace('.wacc', '.s')
 
           if os.path.exists(assembly_file):
+            validSubDir = ""
+
+            if "simple_functions/" in fname:
+              validSubDir = "simple_functions"
+            elif "nested_functions/" in fname:
+              validSubDir = "nested_functions"
+            elif "pairs/" in fname:
+              validSubDir = "heap"
+            else:
+              fileNameParts = fname.split("/")
+              validSubDir = fileNameParts[2]
+
+            value = validSubTests[validSubDir]
+            validSubTests[validSubDir] = (value[0], value[1] + 1, value[2])
+
             # Compile the assembly file
             if compile_run_assembly_file(fname, assembly_file):
               validPasses += 1
+              value = validSubTests[validSubDir]
+              validSubTests[validSubDir] = (value[0] + 1, value[1], value[2])
 
             # Remove the assembly and executable files
             os.remove(assembly_file)
@@ -152,7 +186,7 @@ def run_tests(tests_to_run):
         print(f"Failed test {fname}. Expected exit code {expected} but got {actual}")
         errorTests.append(fname)
     print("")
-  return (syntaxPasses, semanticPasses, validPasses)
+  return (syntaxPasses, semanticPasses, validPasses, validSubTests)
 
 base = "wacc_examples/"
 tests = add_tests_to_dict(base)
@@ -191,7 +225,7 @@ errorTests = []
 print("Running tests...")
 
 # Run the tests
-syntaxPasses, semanticPasses, validPasses = run_tests(runningTests)
+syntaxPasses, semanticPasses, validPasses, validSubTests = run_tests(runningTests)
 syntaxTotal = len(tests["invalid-syntax"])
 semanticTotal = len(tests["invalid-semantic"])
 validTotal = len(tests["valid"])
@@ -208,18 +242,33 @@ for file in glob.glob(os.path.join(".", '*.s')):
 if len(sys.argv) >= 2 and sys.argv[1] == "--syntax":
   print(f"Finished running tests. Results: ")
   print(f"    Valid: {validPasses} / {validTotal}")
+
+  for argName, countsAndPrintName in validSubTests.items():
+    passCount, totalCount, printName = countsAndPrintName
+    print(f"    {printName} Tests: {passCount} / {totalCount}")
+
   print(f"    Syntax: {syntaxPasses} / {syntaxTotal}")
   print(f"Total: {totalPasses} / {numberTests}")
   print(f"Ignored: {numberIgnored} tests")
 elif len(sys.argv) >=2 and sys.argv[1] == "--semantic":
   print(f"Finished running tests. Results: ")
   print(f"    Valid: {validPasses} / {validTotal}")
+
+  for argName, countsAndPrintName in validSubTests.items():
+    passCount, totalCount, printName = countsAndPrintName
+    print(f"    {printName} Tests: {passCount} / {totalCount}")
+
   print(f"    Semantic: {semanticPasses} / {semanticTotal}")
   print(f"Total: {totalPasses} / {numberTests}")
   print(f"Ignored: {numberIgnored} tests")
 else:
   print("Finished running tests. Results: ")
   print(f"Valid: {validPasses} / {validTotal}")
+
+  for argName, countsAndPrintName in validSubTests.items():
+    passCount, totalCount, printName = countsAndPrintName
+    print(f"    {printName} Tests: {passCount} / {totalCount}")
+
   print(f"Invalid: {syntaxPasses + semanticPasses} / {syntaxTotal + semanticTotal}")
   print(f"    Syntax: {syntaxPasses} / {syntaxTotal}")
   print(f"    Semantic: {semanticPasses} / {semanticTotal}")

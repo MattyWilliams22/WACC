@@ -20,11 +20,20 @@ class BasicRegisterAllocator extends RegisterAllocator {
   private var varMap: mutable.Map[String, VariableLocation] = mutable.Map.empty[String, VariableLocation]
 
   def allocateRegister(): Register = {
-    val result = availableRegisters.head
+    var result: Register = R4
+    
+    if (!(availableRegisters.isEmpty)) {
+      result = availableRegisters.head
+    }
+
     println(s"Allocated register: $result")
 
     /* Remove the allocated register from the list of available registers */
-    availableRegisters = availableRegisters.tail
+    if (availableRegisters.length < 2) {
+      availableRegisters = List.empty[Register]
+    } else {
+      availableRegisters = availableRegisters.tail
+    }
     result
   }
 
