@@ -579,6 +579,9 @@ object CodeGenerator {
         case BaseT("char") =>
           refFunctions += printCharOrIntFunc(true)
           "c"
+        case PairLiter(_) =>
+          refFunctions += printPairFunc
+          "p"
         case BaseT("string") =>
           refFunctions += printStrFunc
           "s"
@@ -1028,7 +1031,7 @@ object CodeGenerator {
       Comment("Start of identifier") ::
       (location match {
         case Some(VariableLocation(reg, off, size)) => {
-          // allocator.setLocation(n, VariableLocation(dest, off, size))
+          allocator.setLocation(n, VariableLocation(dest, off, size))
           // allocator.deallocateRegister(reg)
           List(
             Mov(dest, reg)
