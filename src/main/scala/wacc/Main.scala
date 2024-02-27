@@ -6,9 +6,12 @@ import parsley.{Failure, Result, Success}
 import wacc.ASTNodes._
 import wacc.backend.CodeGenerator._
 import wacc.backend.BasicRegisterAllocator
+import wacc.backend.Register
 import wacc.frontend.ErrorOutput._
 import wacc.frontend.Error._
 import wacc.frontend.{SemanticAnalyser, parser}
+
+class DestRegister(var reg: Register)
 
 object Main {
   val FILE_ERR_CODE = 150
@@ -84,7 +87,8 @@ object Main {
           val writer = new PrintWriter(file)
           val registerAllocator = new BasicRegisterAllocator
           val reg = registerAllocator.allocateRegister()
-          val assemblyLines = generateAssembly(x, registerAllocator, reg)
+          val dest = new DestRegister(reg)
+          val assemblyLines = generateAssembly(x, registerAllocator, dest)
           assemblyLines.foreach(line => writer.write(line.format + "\n"))
           assemblyLines.foreach(line => println(line.format))
           writer.close()
