@@ -462,7 +462,15 @@ object CodeGenerator {
       lvalue match {
         case Ident(string, nickname) => {
           val identLoc: VariableLocation = allocator.lookupLocation(nickname.get).get
-          (List(StoreInstr(dest, identLoc.register, ImmVal(identLoc.offset))), identLoc)
+          identLoc._type match {
+            case ArrayT(_, _) => {
+              (List(StoreInstr(dest, identLoc.register, ImmVal(identLoc.offset))), identLoc)
+            }
+            case PairT(_, _) => {
+              (List(StoreInstr(dest, identLoc.register, ImmVal(identLoc.offset))), identLoc)
+            }
+            case _ =>  (List(Mov(identLoc.register, dest)), identLoc)
+          }
         }
         case ArrayElem(ident, indices) => {
           val identLoc: VariableLocation = allocator.lookupLocation(ident.nickname.get).get
@@ -477,7 +485,7 @@ object CodeGenerator {
             }
             case "snd" => {
               val (lvalueLines, lvalueLoc) = getLvalueLocation(lvalue)
-              (lvalueLines ++ List(StoreInstr(dest, lvalueLoc.register, ImmVal(lvalueLoc.offset + lvalueLoc.size))), lvalueLoc)
+              (lvalueLines ++ List(StoreInstr(dest, lvalueLoc.register, ImmVal(lvalueLoc.offset + 4))), lvalueLoc)
             }
           }
         }
@@ -527,9 +535,10 @@ object CodeGenerator {
         }
         case _ => ""
       })
-      val (lvalueLines, _) = getLvalueLocation(lvalue)
+      val (lvalueLines, lvalueLoc): (List[AssemblyLine], VariableLocation) = getLvalueLocation(lvalue)
       Comment("Start of read") ::
       List(
+        Mov(R0, lvalueLoc.register),
         BlInstr(s"_read${_type}"),
         Mov(dest, R0)
       ) ++
