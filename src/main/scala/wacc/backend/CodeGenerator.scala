@@ -720,6 +720,8 @@ object CodeGenerator {
       val exp2Lines = generateAssembly(exp2, allocator, val2)
       val hi = allocator.allocateRegister()
       allocator.deallocateRegister(hi)
+      allocator.deallocateRegister(val1.reg)
+      allocator.deallocateRegister(val2.reg)
 
       Comment("Start of multiplication") ::
       exp1Lines ++
@@ -737,6 +739,8 @@ object CodeGenerator {
       val exp1Lines = generateAssembly(exp1, allocator, val1)
       val val2 = new DestRegister(allocator.allocateRegister())
       val exp2Lines = generateAssembly(exp2, allocator, val2)
+      allocator.deallocateRegister(val1.reg)
+      allocator.deallocateRegister(val2.reg)
 
       Comment("Start of division") ::
       exp1Lines ++
@@ -757,6 +761,9 @@ object CodeGenerator {
       val exp1Lines = generateAssembly(exp1, allocator, val1)
       val val2 = new DestRegister(allocator.allocateRegister())
       val exp2Lines = generateAssembly(exp2, allocator, val2)
+      allocator.deallocateRegister(val1.reg)
+      allocator.deallocateRegister(val2.reg)
+
       Comment("Start of modulo") ::
       exp1Lines ++
       List(Mov(R0, val1.reg)) ++
@@ -776,6 +783,8 @@ object CodeGenerator {
       val exp1Lines = generateAssembly(exp1, allocator, val1)
       val val2 = new DestRegister(allocator.allocateRegister())
       val exp2Lines = generateAssembly(exp2, allocator, val2)
+      allocator.deallocateRegister(val1.reg)
+      allocator.deallocateRegister(val2.reg)
 
       Comment("Start of addition") ::
       exp1Lines ++
@@ -792,6 +801,9 @@ object CodeGenerator {
       val exp1Lines = generateAssembly(exp1, allocator, val1)
       val val2 = new DestRegister(allocator.allocateRegister())
       val exp2Lines = generateAssembly(exp2, allocator, val2)
+      allocator.deallocateRegister(val1.reg)
+      allocator.deallocateRegister(val2.reg)
+      
       Comment("Start of subtraction") ::
       exp1Lines ++
       exp2Lines ++

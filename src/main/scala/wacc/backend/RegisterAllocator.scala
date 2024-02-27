@@ -60,10 +60,12 @@ class BasicRegisterAllocator extends RegisterAllocator {
   }
 
   def deallocateRegister(register: Register): Unit = {
-    println(s"Deallocated register: $register")
+    if (!varMap.values.exists(_.register == register)) {
+      println(s"Deallocated register: $register")
 
-    /* Add the deallocated register to the list of available registers */
-    availableRegisters = register :: availableRegisters
+      /* Add the deallocated register to the list of available registers */
+      availableRegisters = register :: availableRegisters
+    }
   }
 
   /* Push all registers that are currently being used onto the stack */
