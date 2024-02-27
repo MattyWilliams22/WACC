@@ -771,10 +771,10 @@ object CodeGenerator {
 
     def mulGenerate(exp1: Expr, exp2: Expr): List[AssemblyLine] = {
       refFunctions += errorOverflowFunc
+      val exp1Lines = generateAssembly(exp1, allocator, dest)
+      val exp2Lines = generateAssembly(exp2, allocator, dest)
       val val1 = allocator.allocateRegister()
-      val exp1Lines = generateAssembly(exp1, allocator, val1)
       val val2 = allocator.allocateRegister()
-      val exp2Lines = generateAssembly(exp2, allocator, val2)
       val hi = allocator.allocateRegister()
       allocator.deallocateRegister(hi)
       allocator.deallocateRegister(val1)
@@ -782,8 +782,11 @@ object CodeGenerator {
 
       Comment("Start of multiplication") ::
       exp1Lines ++
+      List(Push(List(dest))) ++
       exp2Lines ++
       List(
+        Push(List(dest)),
+        Pop(List(val1, val2)),
         SmullInstr(dest, hi, val1, val2),
         CmpInstr(hi, dest, ShiftRight(31)),
         BlInstr("_errOverflow", NEcond)
@@ -827,13 +830,15 @@ object CodeGenerator {
     def addGenerate(exp1: Expr, exp2: Expr): List[AssemblyLine] = {
       refFunctions += errorOverflowFunc
       val exp1Lines = generateAssembly(exp1, allocator, dest)
+      val exp2Lines = generateAssembly(exp2, allocator, dest)
       val next = allocator.allocateRegister()
-      val exp2Lines = generateAssembly(exp2, allocator, next)
       allocator.deallocateRegister(next)
       Comment("Start of addition") ::
-      exp1Lines ++
       exp2Lines ++
+      List(Push(List(dest))) ++
+      exp1Lines ++
       List(
+        Pop(List(next)),
         AddsInstr(dest, dest, next),
         BlInstr("_errOverflow", VScond)
       )
