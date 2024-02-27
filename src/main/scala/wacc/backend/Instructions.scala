@@ -60,6 +60,10 @@ object Instructions {
     override def format: String = s"    pop {${regs.map(_.format).mkString(", ")}}"
   }
 
+  case class LdrImm(reg: Register, immVal: Int) extends AssemblyLine {
+    override def format: String = s"    ldr ${reg.format}, =${immVal.toString}"
+  }
+
   case class LdrAddr(reg: Register, address: Register, offset: ImmVal) extends AssemblyLine {
     override def format: String = s"    ldr ${reg.format}, [${address.format}, ${offset.format}]"
   }
@@ -112,6 +116,10 @@ object Instructions {
     override def format: String = s"    cmp ${operand1.format}, ${operand2.format}${shift.format}"
   }
 
+  case class Tst(operand1: Register, operand2: Operand, shift: Shift = noShift) extends AssemblyLine {
+    override def format: String = s"    tst ${operand1.format}, ${operand2.format}${shift.format}"
+  }
+
   case class BInstr(label: String, condition: Condition = noCondition) extends AssemblyLine {
     override def format: String = s"    b${condition.format} $label"
   }
@@ -133,7 +141,7 @@ object Instructions {
   }
 
   case class StoreShift(reg1: Register, reg2: Register, reg3: Register, shift: Shift) extends AssemblyLine {
-    override def format: String = s"    str ${reg1.format}, [${reg2.format}, ${reg3.format}, ${shift.format}]"
+    override def format: String = s"    str ${reg1.format}, [${reg2.format}, ${reg3.format}${shift.format}]"
   }
 
   case class NewLine() extends AssemblyLine {

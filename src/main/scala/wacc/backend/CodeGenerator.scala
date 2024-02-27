@@ -339,6 +339,24 @@ object CodeGenerator {
     )
   }
 
+  private lazy val errorBadCharFunc: List[AssemblyLine] = {
+    refFunctions += printStrFunc
+    List(
+      NewLine(),
+      Comment("Error bad character function"),
+      AscizInstr(".L._errBadChar_str0", "fatal error: int %d is not ascii character 0-127 \n"),
+      Command("align 4"),
+      Label("_errBadChar"),
+      BicInstr(SP, SP, ImmVal(7)),
+      AdrInstr(R0, ".L._errBadChar_str0"),
+      BlInstr("printf"),
+      Mov(R0, ImmVal(0)),
+      BlInstr("fflush"),
+      Mov(R0, ImmVal(255)),
+      BlInstr("exit")
+    )
+  }
+
   private def getUniqueLabel: String = {
     labelCounter += 1
     "L" + labelCounter
@@ -611,6 +629,9 @@ object CodeGenerator {
         case BaseT("char") =>
           refFunctions += printCharOrIntFunc(true)
           "c"
+        case PairLiter(_) =>
+          refFunctions += printPairFunc
+          "p"
         case BaseT("string") =>
           refFunctions += printStrFunc
           "s"
@@ -741,19 +762,18 @@ object CodeGenerator {
 
     def mulGenerate(exp1: Expr, exp2: Expr): List[AssemblyLine] = {
       refFunctions += errorOverflowFunc
-      val exp1Lines = generateAssembly(exp1, allocator, dest)
       val val1 = allocator.allocateRegister()
-      val exp2Lines = generateAssembly(exp2, allocator, dest)
-      allocator.deallocateRegister(val1)
-      val hi = allocator.allocateRegister()
+      val exp1Lines = generateAssembly(exp1, allocator, val1)
       val val2 = allocator.allocateRegister()
+      val exp2Lines = generateAssembly(exp2, allocator, val2)
+      val hi = allocator.allocateRegister()
       allocator.deallocateRegister(hi)
+      allocator.deallocateRegister(val1)
       allocator.deallocateRegister(val2)
+
       Comment("Start of multiplication") ::
       exp1Lines ++
-      List(Mov(val1, dest)) ++
       exp2Lines ++
-      List(Mov(val2, dest)) ++
       List(
         SmullInstr(dest, hi, val1, val2),
         CmpInstr(hi, dest, ShiftRight(31)),
@@ -771,6 +791,7 @@ object CodeGenerator {
       exp2Lines ++
       List(
         Mov(R1, dest),
+        CmpInstr(R1, ImmVal(0)),
         BlInstr("_errDivZero", EQcond),
         BlInstr("__aeabi_idivmod"),
         Mov(dest, R0)
@@ -787,6 +808,7 @@ object CodeGenerator {
       exp2Lines ++
       List(
         Mov(R1, dest),
+        CmpInstr(R1, ImmVal(0)),
         BlInstr("_errDivZero", EQcond),
         BlInstr("__aeabi_idivmod"),
         Mov(dest, R1)
@@ -1006,16 +1028,30 @@ object CodeGenerator {
     }
 
     def chrGenerate(exp: Expr): List[AssemblyLine] = {
+      refFunctions += errorBadCharFunc
+      val next = allocator.allocateRegister()
       val expLines = generateAssembly(exp, allocator, dest)
       Comment("Start of chr") ::
       expLines ++
-      List(Comment("chr Logic"))
+      List(
+        Comment("chr Logic"),
+        Mov(next, ImmVal(-128)),
+        Tst(dest, next), 
+        Mov(R1, dest, NEcond),
+        BlInstr("_errBadChar", NEcond)
+      )
     }
 
     def numGenerate(n: Int): List[AssemblyLine] = {
+      val instr = if (n < 0 || n > 255) {
+        LdrImm(dest, n)
+      } else {
+        Mov(dest, ImmVal(n))
+      }
+
       List(
         Comment("Start of number"),
-        Mov(dest, ImmVal(n))
+        instr
       )
     }
 
