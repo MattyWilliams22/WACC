@@ -222,6 +222,24 @@ object CodeGenerator {
     Pop(List(FP, PC))
   )
 
+  private lazy val freePairFunc: List[AssemblyLine] = {
+    refFunctions += freeFunc
+    refFunctions += errorNullFunc
+    List(
+      NewLine(),
+      Comment("Free pair function"),
+      Label("_freepair"),
+      Push(List(FP, LR)),
+      Mov(FP, SP),
+      BicInstr(SP, SP, ImmVal(7)),
+      CmpInstr(R0, ImmVal(0)),
+      BlInstr("_errNull", EQcond),
+      BlInstr("_free", noCondition),
+      Mov(SP, FP),
+      Pop(List(FP, PC))
+    )
+  }
+
   private lazy val arrayLoad4Func: List[AssemblyLine] = {
     refFunctions += errorOutOfBoundsFunc
     List(
@@ -604,12 +622,20 @@ object CodeGenerator {
     def freeGenerate(exp: Expr): List[AssemblyLine] = {
       refFunctions += freeFunc
       val expLines = generateAssembly(exp, allocator, dest)
+      val (_type, tLines) = exp.getType match {
+        case PairT(_, _) => 
+          refFunctions += freePairFunc
+          ("pair", List())
+        case ArrayT(_, _) => 
+          ("", List(SubInstr(dest, dest, ImmVal(4))))
+        case _ => ("", List())
+      }
       Comment("Start of free") ::
       expLines ++
+      tLines ++
       List(
-        Comment("Free Logic"),
         Mov(R0, dest),
-        BlInstr("_free")
+        BlInstr("_free" + _type)
       )
     }
 
