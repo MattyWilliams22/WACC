@@ -469,43 +469,75 @@ object CodeGenerator {
 
     def assignGenerate(lvalue: LValue, rvalue: RValue): List[AssemblyLine] = {
       val rvalueLines = generateAssembly(rvalue, allocator, dest)
-      val (lvalueLines, _) = getLvalueLocation(lvalue)
+      val (beforeLines, afterLines, _) = getLvalueLocation(lvalue)
       Comment("Start of assign") ::
       rvalueLines ++
-      lvalueLines
+      beforeLines ++
+      afterLines
     }
 
-    def getLvalueLocation(lvalue: LValue): (List[AssemblyLine], VariableLocation) = {
+    def getLvalueLocation(lvalue: LValue): (List[AssemblyLine], List[AssemblyLine], VariableLocation) = {
       lvalue match {
         case Ident(string, nickname) => {
           val identLoc: VariableLocation = allocator.lookupLocation(nickname.get).get
           identLoc._type match {
             case ArrayT(_, _) => {
-              (List(StoreInstr(dest, identLoc.register, ImmVal(identLoc.offset))), identLoc)
+              (List(), List(StoreInstr(dest, identLoc.register, ImmVal(identLoc.offset))), identLoc)
             }
             case PairT(_, _) => {
-              (List(StoreInstr(dest, identLoc.register, ImmVal(identLoc.offset))), identLoc)
+              (List(), List(StoreInstr(dest, identLoc.register, ImmVal(identLoc.offset))), identLoc)
             }
-            case _ =>  (List(Mov(identLoc.register, dest)), identLoc)
+            case _ =>  (List(Mov(identLoc.register, dest)), List(), identLoc)
           }
         }
         case ArrayElem(ident, indices) => {
           val identLoc: VariableLocation = allocator.lookupLocation(ident.nickname.get).get
           val (before, after, target) = getArrayElemLocation(identLoc.register, indices)
-          (before ++ List(Mov(target, dest)) ++ after, identLoc)
+          (before ++ List(Mov(target, dest)), after, identLoc)
         }
         case PairElem(func, lvalue) => {
+          refFunctions += errorNullFunc
           func match {
             case "fst" => {
-              val (lvalueLines, lvalueLoc) = getLvalueLocation(lvalue)
-              (lvalueLines ++ List(StoreInstr(dest, lvalueLoc.register, ImmVal(lvalueLoc.offset))), lvalueLoc)
+              val (beforeLines, afterLines, lvalueLoc) = getLvalueLocation(lvalue)
+              (pairLines(lvalue, lvalueLoc) ++
+              List(
+                LdrAddr(dest, lvalueLoc.register, ImmVal(lvalueLoc.offset))
+              ) ++
+              beforeLines, 
+              afterLines ++
+              pairLines(lvalue, lvalueLoc) ++
+              List(
+                StoreInstr(dest, lvalueLoc.register, ImmVal(lvalueLoc.offset))
+              ), 
+              lvalueLoc)
             }
             case "snd" => {
-              val (lvalueLines, lvalueLoc) = getLvalueLocation(lvalue)
-              (lvalueLines ++ List(StoreInstr(dest, lvalueLoc.register, ImmVal(lvalueLoc.offset + 4))), lvalueLoc)
+              val (beforeLines, afterLines, lvalueLoc) = getLvalueLocation(lvalue)
+              (pairLines(lvalue, lvalueLoc) ++
+              List(
+                LdrAddr(dest, lvalueLoc.register, ImmVal(lvalueLoc.offset + 4))
+              ) ++
+              beforeLines, 
+              afterLines ++
+              pairLines(lvalue, lvalueLoc) ++
+              List(
+                StoreInstr(dest, lvalueLoc.register, ImmVal(lvalueLoc.offset + 4))
+              ), 
+              lvalueLoc)
             }
           }
         }
+      }
+    }
+
+    def pairLines(lvalue: LValue, loc: VariableLocation): List[AssemblyLine] = {
+      lvalue.getType match {
+        case PairT(_, _) => List(
+          CmpInstr(loc.register, ImmVal(0)),
+          BInstr("_errNull", EQcond),
+        )
+        case _ => List()
       }
     }
 
@@ -556,14 +588,15 @@ object CodeGenerator {
         }
         case _ => ""
       })
-      val (lvalueLines, lvalueLoc): (List[AssemblyLine], VariableLocation) = getLvalueLocation(lvalue)
+      val (beforeLines, afterLines, target): (List[AssemblyLine], List[AssemblyLine], VariableLocation) = getLvalueLocation(lvalue)
       Comment("Start of read") ::
+      beforeLines ++
       List(
-        Mov(R0, lvalueLoc.register),
+        Mov(R0, target.register),
         BlInstr(s"_read${_type}"),
-        Mov(dest, R0)
+        Mov(target.register, R0)
       ) ++
-      lvalueLines
+      afterLines
     }
 
     def ifGenerate(cond: Expr, thenS: Statement, elseS: Statement): List[AssemblyLine] = {
