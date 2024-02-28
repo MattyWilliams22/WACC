@@ -1057,6 +1057,7 @@ object CodeGenerator {
     }
 
     def negGenerate(exp: Expr): List[AssemblyLine] = {
+      refFunctions += errorOverflowFunc
       val (tempReg, rLines) = allocator.allocateRegister()
       val expLines = generateAssembly(exp, allocator, tempReg)
       allocator.deallocateRegister(tempReg)
@@ -1065,8 +1066,8 @@ object CodeGenerator {
       expLines ++
       List(
         Comment("neg Logic"),
-        Mov(dest, ImmVal(0)),
-        SubInstr(dest, dest, tempReg)
+        RsbsInstr(dest, tempReg),
+        BlInstr("_errOverflow", VScond)
       )
     }
 
