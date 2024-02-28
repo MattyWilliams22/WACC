@@ -144,6 +144,10 @@ object Instructions {
     override def format: String = s"    str ${reg1.format}, [${reg2.format}, ${reg3.format}${shift.format}]"
   }
 
+  case class LtorgInstr() extends AssemblyLine {
+    override def format: String = s"    .ltorg"
+  }
+
   case class NewLine() extends AssemblyLine {
     override def format: String = s""
   }

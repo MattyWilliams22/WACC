@@ -242,11 +242,11 @@ semanticTotal = len(tests["invalid-semantic"])
 validTotal = len(tests["valid"])
 
 totalPasses = validPasses + syntaxPasses + semanticPasses
-total = validTotal + syntaxTotal + semanticTotal
-numberTests = len(tests['valid'] + tests['invalid'])
-numberIgnored = len(tests['valid'] + tests['invalid']) - len(runningTests)
+numberTests = validTotal + syntaxTotal + semanticTotal
+numberIgnored = numberTests - len(runningTests)
 
-os.remove("execFile")
+if os.path.exists("execFile"):
+  os.remove("execFile")
 for file in glob.glob(os.path.join(".", '*.s')):
   os.remove(file)
 
