@@ -26,28 +26,28 @@ class ASTNodesSpec extends AnyFlatSpec with Matchers with BeforeAndAfterEach {
   }
 
   it should "return false if any function is invalid" in {
-    val invalidFunction = Function(BaseT("invalid"), Ident("func", None), List(), Skip())
+    val invalidFunction = Function(BaseT("invalid"), Ident("func", None, None), List(), Skip())
     val program = Program(List(invalidFunction), Skip())
     program.check()
     semanticErrors.toList should not be empty
   }
 
   it should "return false if the statement is invalid" in {
-    val program = Program(List(), Assign(Ident("x", None), Num(5)))
+    val program = Program(List(), Assign(Ident("x", None, None), Num(5)))
     program.check()
     semanticErrors.toList should not be empty
   }
 
   // Test for Function
   "Function" should "return false if type or identifier is invalid" in {
-    val invalidFunc = Function(BaseT("invalid"), Ident("func", None), List(), Skip())
+    val invalidFunc = Function(BaseT("invalid"), Ident("func", None, None), List(), Skip())
     invalidFunc.check()
     semanticErrors.toList should not be empty
   }
 
   // Test for Param
   "Param" should "return false if type or identifier is invalid" in {
-    val invalidParam = Param(BaseT("invalid"), Ident("param", None))
+    val invalidParam = Param(BaseT("invalid"), Ident("param", None, None))
     invalidParam.check()
     semanticErrors.toList should not be empty
   }
@@ -61,41 +61,41 @@ class ASTNodesSpec extends AnyFlatSpec with Matchers with BeforeAndAfterEach {
 
   // Test for Declare
   "Declare" should "check type, identifier, and value" in {
-    val declare = Declare(BaseT("int"), Ident("x", None), Num(5))
+    val declare = Declare(BaseT("int"), Ident("x", None, None), Num(5))
     declare.check()
     semanticErrors.toList shouldBe empty
   }
 
   it should "return false if type, identifier or value is invalid" in {
-    val invalidDeclare = Declare(BaseT("invalid"), Ident("x", None), Num(5))
+    val invalidDeclare = Declare(BaseT("invalid"), Ident("x", None, None), Num(5))
     invalidDeclare.check()
     semanticErrors.toList should not be empty
   }
 
   // Test for Assign
   "Assign" should "check lvalue and rvalue" in {
-    val assign = Assign(Ident("x", None), Num(5))
+    val assign = Assign(Ident("x", None, None), Num(5))
     assign.check() 
     semanticErrors.toList should not be empty
   }
 
   it should "return false if lvalue or rvalue is invalid" in {
-    val invalidAssign = Assign(Ident("x", None), Bool("int"))
+    val invalidAssign = Assign(Ident("x", None, None), Bool("int"))
     invalidAssign.check()
     semanticErrors.toList should not be empty
   }
 
   // Test for Read
   "Read" should "check lvalue" in {
-    val declare = Declare(BaseT("int"), Ident("x", None), Num(5))
+    val declare = Declare(BaseT("int"), Ident("x", None, None), Num(5))
     declare.check()
-    val read = Read(Ident("x", None))
+    val read = Read(Ident("x", None, None))
     read.check()
     semanticErrors.toList shouldBe empty
   }
 
   it should "return false if lvalue is invalid" in {
-    val invalidRead = Read(Ident("x", None))
+    val invalidRead = Read(Ident("x", None, None))
     invalidRead.check()
     semanticErrors.toList should not be empty
   }
@@ -134,22 +134,22 @@ class ASTNodesSpec extends AnyFlatSpec with Matchers with BeforeAndAfterEach {
   }
 
   it should "return false if body is invalid" in {
-    val invalidScope = Scope(Assign(Ident("x", None), Bool("4")))
+    val invalidScope = Scope(Assign(Ident("x", None, None), Bool("4")))
     invalidScope.check()
     semanticErrors.toList should not be empty
   }
 
   // Test for Statements
   "Statements" should "check all statements in the list" in {
-    val declare = Declare(BaseT("int"), Ident("x", None), Num(8))
+    val declare = Declare(BaseT("int"), Ident("x", None, None), Num(8))
     declare.check()
-    val statements = Statements(List(Skip(), Assign(Ident("x", None), Num(5))))
+    val statements = Statements(List(Skip(), Assign(Ident("x", None, None), Num(5))))
     statements.check()
     semanticErrors.toList shouldBe empty
   }
 
   it should "return false if any statement in the list is invalid" in {
-    val invalidStatements = Statements(List(Skip(), Assign(Ident("x", None), Bool("correct"))))
+    val invalidStatements = Statements(List(Skip(), Assign(Ident("x", None, None), Bool("correct"))))
     invalidStatements.check()
     semanticErrors.toList should not be empty
   }

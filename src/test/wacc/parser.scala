@@ -25,7 +25,7 @@ class ParserSpec extends AnyFlatSpec with Matchers {
         Program(
           List(),
           Statements(List(
-            Declare(BaseT("int"),Ident("x", None),Num(5)),Print(Ident("x", None))))))
+            Declare(BaseT("int"),Ident("x", None, None),Num(5)),Print(Ident("x", None, None))))))
   }
 
   it should "fail for a program with a missing 'end'" in {
@@ -56,13 +56,13 @@ class ParserSpec extends AnyFlatSpec with Matchers {
           List(
             Function(
               BaseT("int"), 
-              Ident("add", None), 
+              Ident("add", None, None), 
               List(
-                Param(BaseT("int"), Ident("a", None)), 
-                Param(BaseT("int"), Ident("b", None))
+                Param(BaseT("int"), Ident("a", None, None)), 
+                Param(BaseT("int"), Ident("b", None, None))
               ), 
               Statements(List(
-                Return(Add(Ident("a", None), Ident("b", None)))
+                Return(Add(Ident("a", None, None), Ident("b", None, None)))
               ))
             )
           ),
@@ -129,10 +129,10 @@ class ParserSpec extends AnyFlatSpec with Matchers {
         Program(
           List(), 
           Statements(List(
-            Declare(BaseT("int"), Ident("x", None), Num(5)),
+            Declare(BaseT("int"), Ident("x", None, None), Num(5)),
             While(
-              GT(Ident("x", None), Num(0)), 
-              Statements(List(Print(Ident("x", None))))
+              GT(Ident("x", None, None), Num(0)), 
+              Statements(List(Print(Ident("x", None, None))))
             )
           ))
         )
@@ -153,8 +153,8 @@ class ParserSpec extends AnyFlatSpec with Matchers {
         Program(
           List(), 
           Statements(List(
-            Declare(BaseT("int"), Ident("x", None), Num(5)), 
-            Assign(Ident("x", None), Add(Ident("x", None), Num(1)))
+            Declare(BaseT("int"), Ident("x", None, None), Num(5)), 
+            Assign(Ident("x", None, None), Add(Ident("x", None, None), Num(1)))
           ))
         )
       )
@@ -175,12 +175,12 @@ class ParserSpec extends AnyFlatSpec with Matchers {
         Program(
           List(), 
           Statements(List(
-            Declare(BaseT("int"), Ident("x", None), Num(5)), 
-            Declare(BaseT("int"), Ident("y", None), Num(10)), 
+            Declare(BaseT("int"), Ident("x", None, None), Num(5)), 
+            Declare(BaseT("int"), Ident("y", None, None), Num(10)), 
             Declare(
               BaseT("int"), 
-              Ident("z", None), 
-              Mul(Add(Ident("x", None), Ident("y", None)), Num(2))
+              Ident("z", None, None), 
+              Mul(Add(Ident("x", None, None), Ident("y", None, None)), Num(2))
             )
           ))
         )
@@ -202,7 +202,7 @@ class ParserSpec extends AnyFlatSpec with Matchers {
           Statements(List(
             Declare(
               ArrayT(BaseT("int"), 1), 
-              Ident("arr", None), 
+              Ident("arr", None, None), 
               ArrayLiter(List(Num(1), Num(2), Num(3)))
             )
           ))
@@ -225,7 +225,7 @@ class ParserSpec extends AnyFlatSpec with Matchers {
           Statements(List(
             Declare(
               PairT(BaseT("int"), BaseT("string")), 
-              Ident("p", None), 
+              Ident("p", None, None), 
               NewPair(Num(1), Str("hello"))
             )
           ))
@@ -250,20 +250,20 @@ class ParserSpec extends AnyFlatSpec with Matchers {
           List(
             Function(
               BaseT("int"), 
-              Ident("add", None), 
+              Ident("add", None, None), 
               List(
-                Param(BaseT("int"), Ident("a", None)), 
-                Param(BaseT("int"), Ident("b", None))), 
+                Param(BaseT("int"), Ident("a", None, None)), 
+                Param(BaseT("int"), Ident("b", None, None))), 
               Statements(List(
-                Return(Add(Ident("a", None), Ident("b", None)))
+                Return(Add(Ident("a", None, None), Ident("b", None, None)))
               ))
             )
           ), 
           Statements(List(
             Declare(
               BaseT("int"), 
-              Ident("result", None), 
-              Call(Ident("add", None), List(Num(3), Num(4)))
+              Ident("result", None, None), 
+              Call(Ident("add", None, None), List(Num(3), Num(4)))
             )
           ))
         )
@@ -303,10 +303,10 @@ class ParserSpec extends AnyFlatSpec with Matchers {
           List(), 
           Statements(List(
             If(
-              GT(Ident("x", None), Num(0)), 
+              GT(Ident("x", None, None), Num(0)), 
               Statements(List(
                 If(
-                  GT(Ident("y", None), Num(0)), 
+                  GT(Ident("y", None, None), Num(0)), 
                   Statements(List(
                     Print(Str("x and y are positive"))
                   )), 
@@ -341,15 +341,15 @@ class ParserSpec extends AnyFlatSpec with Matchers {
           List(), 
           Statements(List(
             While(
-              GT(Ident("x", None), Num(0)), 
+              GT(Ident("x", None, None), Num(0)), 
               Statements(List(
                 While(
-                  GT(Ident("y", None), Num(0)), 
+                  GT(Ident("y", None, None), Num(0)), 
                   Statements(List(
                     Print(Str("nested while loop"))
                   ))
                 ), 
-                Assign(Ident("x", None), Sub(Ident("x", None), Num(1)))
+                Assign(Ident("x", None, None), Sub(Ident("x", None, None), Num(1)))
               ))
             )
           ))
@@ -386,7 +386,7 @@ class ParserSpec extends AnyFlatSpec with Matchers {
           List(
             Function(
               BaseT("int"), 
-              Ident("simpleFunc", None), 
+              Ident("simpleFunc", None, None), 
               List(), 
               Statements(List(
                 Return(Num(42))
@@ -413,7 +413,7 @@ class ParserSpec extends AnyFlatSpec with Matchers {
           List(), 
           Statements(List(
             Assign(
-              Ident("stringConcat", None),
+              Ident("stringConcat", None, None),
               Add(Str("Hello, "), Str("World!"))
             )
           ))
@@ -454,12 +454,12 @@ class ParserSpec extends AnyFlatSpec with Matchers {
         Program(
           List(), 
           Statements(List(
-            Declare(BaseT("int"), Ident("x", None), Num(5)), 
+            Declare(BaseT("int"), Ident("x", None, None), Num(5)), 
             Scope(
               Statements(List(
-                Declare(BaseT("bool"), Ident("flag", None), Bool("true")), 
+                Declare(BaseT("bool"), Ident("flag", None, None), Bool("true")), 
                 If(
-                  Ident("flag", None), 
+                  Ident("flag", None, None), 
                   Statements(List(
                     Print(Str("Flag is true"))
                   )), 
@@ -500,13 +500,13 @@ class ParserSpec extends AnyFlatSpec with Matchers {
           Statements(List(
             Declare(
               BaseT("bool"), 
-              Ident("result", None), 
+              Ident("result", None, None), 
               Or(
                 And(
-                  GT(Ident("x", None), Num(0)), 
-                  LTEQ(Ident("y", None), Num(10))
+                  GT(Ident("x", None, None), Num(0)), 
+                  LTEQ(Ident("y", None, None), Num(10))
                 ), 
-                EQ(Ident("z", None), Num(42))
+                EQ(Ident("z", None, None), Num(42))
               )
             )
           ))
