@@ -487,7 +487,7 @@ object CodeGenerator {
             case PairT(_, _) => {
               (List(), List(StoreInstr(dest, identLoc.register, ImmVal(identLoc.offset))), identLoc)
             }
-            case _ =>  (List(Mov(identLoc.register, dest)), List(), identLoc)
+            case _ => (List(Mov(identLoc.register, dest)), List(), identLoc)
           }
         }
         case ArrayElem(ident, indices) => {
@@ -500,16 +500,16 @@ object CodeGenerator {
           func match {
             case "fst" => {
               val (beforeLines, afterLines, lvalueLoc) = getLvalueLocation(lvalue)
-              (pairLines(lvalue, lvalueLoc) ++
+              (beforeLines ++
+              pairLines(lvalue, lvalueLoc) ++
               List(
                 LdrAddr(dest, lvalueLoc.register, ImmVal(lvalueLoc.offset))
-              ) ++
-              beforeLines, 
-              afterLines ++
+              ), 
               pairLines(lvalue, lvalueLoc) ++
               List(
                 StoreInstr(dest, lvalueLoc.register, ImmVal(lvalueLoc.offset))
-              ), 
+              ) ++ 
+              afterLines, 
               lvalueLoc)
             }
             case "snd" => {
@@ -629,9 +629,8 @@ object CodeGenerator {
       condLines ++
       List(
         Comment("While loop condition logic"),
-        // CmpInstr(dest, ImmVal(1)), 
-        // BInstr(endLabel, NEcond)
-        BInstr(endLabel)  // Temporarily skip to end of while loop to avoid infinite loop
+        CmpInstr(dest, ImmVal(1)), 
+        BInstr(endLabel, NEcond)
       ) ++ 
       rLines ++
       stmtLines ++
