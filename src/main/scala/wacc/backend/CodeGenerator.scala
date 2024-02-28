@@ -390,19 +390,16 @@ object CodeGenerator {
     }
 
     def functionGenerate(funcName: Ident, params: List[Param], body: Statement): List[AssemblyLine] = {
-      val regsToSave = allocator.saveRegisters()
+      val (newDest, rlines) = allocator.allocateRegister()
+      allocator.setLocation(funcName.nickname.get, VariableLocation(newDest, 0, 4, funcName.getType))
       Comment("Start of function") ::
       Label(funcName.nickname.get) ::
-      Push(List(FP, LR)) ::
-      Push(regsToSave) ::
+      List(Push(List(FP, LR))) ++
+      rlines ++
       List(Mov(FP, SP)) ++
       paramsGenerate(params) ++
-      generateAssembly(body, allocator, dest) ++
-      List(
-        Mov(SP, FP),
-        Pop(regsToSave),
-        Pop(List(FP, PC))
-      )
+      generateAssembly(body, allocator, newDest) ++
+      List(LtorgInstr())
     }
 
     def paramsGenerate(params: List[Param]): List[AssemblyLine] = {
@@ -576,7 +573,7 @@ object CodeGenerator {
       val condLines = generateAssembly(cond, allocator, dest)
       val (newDest, rLines) = allocator.allocateRegister()
       val stmtLines = generateAssembly(stmt, allocator, newDest)
-      List(Comment("Start of while loop"))
+      Comment("Start of while loop") ::
       Label(startLabel) ::
       condLines ++
       List(
