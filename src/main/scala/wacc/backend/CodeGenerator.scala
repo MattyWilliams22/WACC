@@ -375,6 +375,25 @@ object CodeGenerator {
     )
   }
 
+  private lazy val arrayStore1Func: List[AssemblyLine] = {
+    refFunctions += errorOutOfBoundsFunc
+    List(
+      NewLine(),
+      Comment("Array store function"),
+      Label("_arrStore1"),
+      Push(List(LR)),
+      CmpInstr(R10, ImmVal(0)),
+      Mov(R1, R10, LTcond),
+      BlInstr("_errOutOfBounds", LTcond),
+      LdrAddr(LR, R3, ImmVal(-4)),
+      CmpInstr(R10, LR),
+      Mov(R1, R10, GEcond),
+      BlInstr("_errOutOfBounds", GEcond),
+      StoreInstr(R8, R3, R10, OneByte),
+      Pop(List(PC))
+    )
+  }
+
   private def getUniqueLabel: String = {
     labelCounter += 1
     "L" + labelCounter
@@ -492,7 +511,7 @@ object CodeGenerator {
         }
         case ArrayElem(ident, indices) => {
           val identLoc: VariableLocation = allocator.lookupLocation(ident.nickname.get).get
-          val (before, after, target) = getArrayElemLocation(identLoc.register, indices)
+          val (before, after, target) = getArrayElemLocation(identLoc._type, identLoc.register, indices)
           (before ++ List(Mov(target, dest)), after, identLoc)
         }
         case PairElem(func, lvalue) => {
@@ -541,9 +560,8 @@ object CodeGenerator {
       }
     }
 
-    def getArrayElemLocation(arrayReg: Register, indices: List[Expr]): (List[AssemblyLine], List[AssemblyLine], Register) = {
+    def getArrayElemLocation(arrayType: Type, arrayReg: Register, indices: List[Expr]): (List[AssemblyLine], List[AssemblyLine], Register) = {
       refFunctions += arrayLoad4Func
-      refFunctions += arrayStore4Func
       if (indices.isEmpty) {
         return (List(), List(), arrayReg)
       }
@@ -561,19 +579,35 @@ object CodeGenerator {
         BlInstr("_arrLoad4"),
         Mov(elemReg, R3)
       )
-      val (before, after, target) = getArrayElemLocation(elemReg, indices.tail)
+      val (before, after, target) = getArrayElemLocation(reduceType(arrayType), elemReg, indices.tail)
       beforeLines ++= before
+      val storeFunc = getTypeSize(reduceType(arrayType)) match {
+        case 1 => 
+          refFunctions += arrayStore1Func
+          "_arrStore1"
+        case _ => 
+          refFunctions += arrayStore4Func
+          "_arrStore4"
+      }
       afterLines ++= after
       afterLines ++= List(
         Mov(R10, indexReg),
         Mov(R3, arrayReg),
         Mov(R8, elemReg),
-        BlInstr("_arrStore4"),
+        BlInstr(storeFunc),
         Mov(arrayReg, R3)
       )
       allocator.deallocateRegister(indexReg)
       allocator.deallocateRegister(elemReg)
       (beforeLines.toList, afterLines.toList, target)
+    }
+
+    def reduceType(t: Type): Type = {
+      t match {
+        case ArrayT(tp, d) if d > 1 => ArrayT(tp, d - 1)
+        case ArrayT(tp, 1) => tp
+        case _ => t
+      }
     }
 
     def readGenerate(lvalue: LValue): List[AssemblyLine] = {
@@ -745,11 +779,15 @@ object CodeGenerator {
         val (next, r2Lines) = allocator.allocateRegister()
         val elemLines = generateAssembly(elem, allocator, next)
         val size = getSize(elem)
+        val sizeToStore = size match {
+          case 1 => OneByte
+          case _ => FourBytes
+        }
         arrayLines ++= r2Lines
         arrayLines ++= elemLines
         arrayLines ++= List(
           Mov(dest, next), 
-          StoreInstr(dest, pointer, ImmVal(totalSize - 4))
+          StoreInstr(dest, pointer, ImmVal(totalSize - size), sizeToStore)
         )
         totalSize += size
         allocator.deallocateRegister(next)
@@ -772,7 +810,11 @@ object CodeGenerator {
     }
 
     def getSize(expr: Expr): Int = {
-      expr.getType match {
+      getTypeSize(expr.getType)
+    }
+
+    def getTypeSize(t: Type): Int = {
+      t match {
         case BaseT("int") => 4
         case BaseT("char") => 1
         case BaseT("bool") => 1
@@ -792,7 +834,7 @@ object CodeGenerator {
       rLines ++
       List(
         Comment("NewPair Logic"),
-        Mov(R0, ImmVal(size1 + size2)),
+        Mov(R0, ImmVal(8)),
         BlInstr("_malloc"),
         Mov(dest, R0),
       ) ++
@@ -802,7 +844,7 @@ object CodeGenerator {
       ) ++
       generateAssembly(exp2, allocator, next) ++
       List(
-        StoreInstr(next, dest, ImmVal(size1)),
+        StoreInstr(next, dest, ImmVal(4)),
         Mov(dest, dest)
       )
       allocator.deallocateRegister(next)
