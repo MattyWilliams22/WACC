@@ -29,7 +29,7 @@ object parser {
   private lazy val func: Parsley[Function] =
     ((atomic(types <~> ident <~ "(") <~> paramList <~ ")" <~ is) <~>
       statement.filter(bodyHasReturnOrExit) <~ end).map {
-      case (((t, i), ps), s) => Function(t, Ident(i, None), ps, s)
+      case (((t, i), ps), s) => Function(t, Ident(i, None, None), ps, s)
     }
 
   /* Checks if the body of a function has a return or exit statement */
@@ -47,7 +47,7 @@ object parser {
     sepBy(param, ",")
 
   /* ⟨type⟩ ⟨ident⟩ */
-  private lazy val param: Parsley[Param] = (types <~> ident).map(x => Param(x._1, Ident(x._2, None)))
+  private lazy val param: Parsley[Param] = (types <~> ident).map(x => Param(x._1, Ident(x._2, None, None)))
 
   /* ‘skip’
   | ⟨lvalue⟩ ‘=’ ⟨rvalue⟩
@@ -85,14 +85,14 @@ object parser {
   /* ⟨type⟩ ⟨ident⟩ ‘=’ ⟨rvalue⟩ */
   private lazy val declare: Parsley[Declare] = {
     ((types <~> ident) <~> ("=" ~> rvalue)).map {
-      case ((t, i), r) => Declare(t, Ident(i, None), r)
+      case ((t, i), r) => Declare(t, Ident(i, None, None), r)
     }
   }
 
   /* ⟨ident⟩ | ⟨array-elem⟩ | ⟨pair-elem⟩ */
   private lazy val lvalue: Parsley[LValue] = {
-    atomic(arrayElem).map(x => ArrayElem(Ident(x._1, None), x._2)) |
-      atomic(pairElem).map(x => PairElem(x._1, x._2)) | atomic(ident).map(x => Ident(x, None))
+    atomic(arrayElem).map(x => ArrayElem(Ident(x._1, None, None), x._2)) |
+      atomic(pairElem).map(x => PairElem(x._1, x._2)) | atomic(ident).map(x => Ident(x, None, None))
   }
 
   /* ⟨expr⟩
@@ -103,8 +103,8 @@ object parser {
   private lazy val rvalue: Parsley[RValue] = {
     atomic("newpair(" ~> expr <~ "," <~> expr <~ ")").map(x => NewPair(x._1, x._2)) |
       atomic((call ~> ident <~ "(") <~> option(sepBy(expr, ",")) <~ ")").map {
-        case (name: String, Some(x: List[Expr])) => Call(Ident(name, None), x)
-        case (name: String, None) => Call(Ident(name, None), List())
+        case (name: String, Some(x: List[Expr])) => Call(Ident(name, None, None), x)
+        case (name: String, None) => Call(Ident(name, None, None), List())
       } |
       atomic(expr) |
       atomic(pairElem).map(x => PairElem(x._1, x._2)) |
@@ -187,8 +187,8 @@ object parser {
   | ⟨array-elem⟩
   | ‘(’ ⟨expr⟩ ‘)’ */
   private lazy val atom: Parsley[Expr] = {
-    "(" ~> expr <~ ")" | atomic(arrayElem).map(x => ArrayElem(Ident(x._1, None), x._2)) |
-      int.map(Num) | ident.map(x => Ident(x, None)) | bool.map(Bool) |
+    "(" ~> expr <~ ")" | atomic(arrayElem).map(x => ArrayElem(Ident(x._1, None, None), x._2)) |
+      int.map(Num) | ident.map(x => Ident(x, None, None)) | bool.map(Bool) |
       char.map(Ch) | str.map(Str) | pairLiter.map(PairLiter)
   }
 }

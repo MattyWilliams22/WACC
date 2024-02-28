@@ -426,8 +426,8 @@ object CodeGenerator {
       refFunctions.foldLeft(List[AssemblyLine]())(_ ++ _)
     }
 
-    def functionGenerate(funcName: Ident, params: List[Param], body: Statement): List[AssemblyLine] = {
-      allocator.setLocation(funcName.nickname.get, VariableLocation(R0, 0, 4, funcName.getType))
+    def functionGenerate(_type: Type, funcName: Ident, params: List[Param], body: Statement): List[AssemblyLine] = {
+      allocator.setLocation(funcName.nickname.get, VariableLocation(R0, 0, 4, _type))
       Comment("Start of function") ::
       Label(funcName.nickname.get) ::
       List(
@@ -502,7 +502,7 @@ object CodeGenerator {
 
     def getLvalueLocation(lvalue: LValue): (List[AssemblyLine], List[AssemblyLine], VariableLocation) = {
       lvalue match {
-        case Ident(string, nickname) => {
+        case Ident(string, nickname, _type) => {
           val identLoc: VariableLocation = allocator.lookupLocation(nickname.get).get
           identLoc._type match {
             case ArrayT(_, _) => {
@@ -732,7 +732,17 @@ object CodeGenerator {
     }
 
     def printGenerate(exp: Expr): List[AssemblyLine] = {
-      val _type = exp.getType match {
+      var _type: Type = exp.getType
+      exp match {
+        case Ident(str, nickname, t) => {
+          t match {
+            case Some(x) => _type = x
+            case None => BaseT("ERROR")
+          }
+        }
+        case _ =>
+      }
+      val t = _type match {
         case BaseT("int") =>
           refFunctions += printCharOrIntFunc(false)
           "i"
@@ -765,7 +775,7 @@ object CodeGenerator {
       List(
         Comment("Print Logic"),
         Mov(R0, dest),
-        BlInstr(s"_print${_type}")
+        BlInstr(s"_print${t}")
       )
     }
 
@@ -1319,8 +1329,8 @@ object CodeGenerator {
       case Program(funcs, stmts) =>
         programGenerate(funcs, stmts)
 
-      case Function(_, funcName, paramList, body) =>
-        functionGenerate(funcName, paramList, body)
+      case Function(_type, funcName, paramList, body) =>
+        functionGenerate(_type, funcName, paramList, body)
 
       case Skip() =>
         List(Comment("Skip"))
@@ -1458,7 +1468,7 @@ object CodeGenerator {
           Mov(dest, ImmVal(0))
         )
 
-      case Ident(s, n) =>
+      case Ident(s, n, t) =>
         n match {
           case Some(v) => identGenerate(v)
           case None => identGenerate(s)

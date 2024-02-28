@@ -560,7 +560,7 @@ object ASTNodes {
           }
           if (childType == PairNull()) {
             childType = lvalue match {
-              case Ident(str, _) =>
+              case Ident(str, _, _) =>
                 currentSymbolTable.lookupAllVariables(str) match {
                   case Some(Declare(t, _, _)) => t
                   case _ => childType
@@ -860,7 +860,7 @@ object ASTNodes {
     }
   }
 
-  case class Ident(str: String, var nickname: Option[String]) extends Atom with LValue {
+  case class Ident(str: String, var nickname: Option[String], var _type: Option[Type]) extends Atom with LValue {
 
     // Semantically check an identifier
     def check(): Boolean = {
@@ -869,7 +869,10 @@ object ASTNodes {
       var valid = funcDef match {
         case Some(x) => {
           x match {
-            case Function(_, i, _, _) => nickname = i.nickname
+            case Function(t, i, _, _) => {
+              nickname = i.nickname
+              _type = Option(t)
+            }
             case _ => return false
           }
           true
@@ -880,8 +883,14 @@ object ASTNodes {
       valid = valid || (varDef match {
         case Some(x) => {
           x match {
-            case Declare(_, i, _) => nickname = i.nickname
-            case Param(_, i) => nickname = i.nickname
+            case Declare(t, i, _) => {
+              nickname = i.nickname
+              _type = Option(t)
+            }
+            case Param(t, i) => {
+              nickname = i.nickname
+              _type = Option(t)
+            }
             case _ => return false
           }
           true
