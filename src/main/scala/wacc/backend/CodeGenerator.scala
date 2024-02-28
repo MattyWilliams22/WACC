@@ -11,7 +11,6 @@ object CodeGenerator {
   private var stringCounter: Int = -1
   private val refFunctions: mutable.Set[List[AssemblyLine]] = mutable.Set()
   private val stringPool: mutable.Set[AscizInstr] = mutable.Set()
-  private var immVarCounter: Int = -1
 
   private def getStringLabel: String = {
     stringCounter += 1
@@ -869,6 +868,7 @@ object CodeGenerator {
       Comment("Start of subtraction") ::
       exp1Lines ++
       rLines ++ 
+      exp2Lines ++
       List(
         SubsInstr(dest, dest, next),
         BlInstr("_errOverflow", VScond)
