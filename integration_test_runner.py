@@ -105,7 +105,12 @@ def compile_run_assembly_file(fname, assembly_file):
 
   # Run the executable file
   print("qemu-arm -L /usr/arm-linux-gnueabi/ execFile")
-  output_str = subprocess.run(["qemu-arm", "-L", "/usr/arm-linux-gnueabi/", "execFile"], input=input_data_str.encode(), capture_output=True)
+  try:
+    output_str = subprocess.run(["qemu-arm", "-L", "/usr/arm-linux-gnueabi/", "execFile"], input=input_data_str.encode(), capture_output=True, timeout=20)
+  except subprocess.TimeoutExpired:
+    print("Test timed out.")
+    errorTests.append(fname)
+    return False
 
   output = output_str.stdout.decode('utf-8', errors='replace')
 

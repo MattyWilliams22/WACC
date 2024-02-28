@@ -408,15 +408,15 @@ object CodeGenerator {
     }
 
     def functionGenerate(funcName: Ident, params: List[Param], body: Statement): List[AssemblyLine] = {
-      val (newDest, rlines) = allocator.allocateRegister()
-      allocator.setLocation(funcName.nickname.get, VariableLocation(newDest, 0, 4, funcName.getType))
+      allocator.setLocation(funcName.nickname.get, VariableLocation(R0, 0, 4, funcName.getType))
       Comment("Start of function") ::
       Label(funcName.nickname.get) ::
-      List(Push(List(FP, LR))) ++
-      rlines ++
-      List(Mov(FP, SP)) ++
+      List(
+        Push(List(FP, LR)),
+        Mov(FP, SP)
+      ) ++
       paramsGenerate(params) ++
-      generateAssembly(body, allocator, newDest) ++
+      generateAssembly(body, allocator, dest) ++
       List(LtorgInstr())
     }
 
@@ -461,6 +461,11 @@ object CodeGenerator {
       allocator.setLocation(id.nickname.get, VariableLocation(newDest, 0, 4, _type))
       val idLines = generateAssembly(id, allocator, newDest)
       val valueLines = generateAssembly(value, allocator, newDest)
+      value match {
+        case Call(funcName, args) => 
+          allocator.setLocation(id.nickname.get, VariableLocation(R0, 0, 4, _type))
+        case _ =>
+      }
       Comment("Start of declare") ::
       rLines ++
       idLines ++
