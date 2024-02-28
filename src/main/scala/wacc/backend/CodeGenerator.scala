@@ -703,12 +703,12 @@ object CodeGenerator {
         Mov(R0, ImmVal(totalSize)),
         BlInstr("_malloc"),
         Mov(pointer, R0),
-        AddInstr(pointer, pointer, ImmVal(totalSize - 4))
+        AddInstr(pointer, pointer, ImmVal(4)),
+        Mov(dest, ImmVal(elems.length)),
+        StoreInstr(dest, pointer, ImmVal(-4)),
       ) ++
       arrayLines.toList ++
       List(
-        Mov(dest, ImmVal(elems.length)),
-        StoreInstr(dest, pointer, ImmVal(-4)),
         Mov(dest, pointer)
       )
     }
