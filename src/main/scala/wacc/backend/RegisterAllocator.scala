@@ -3,12 +3,12 @@ package wacc.backend
 import scala.collection.mutable
 
 import wacc.ASTNodes._
-import wacc.backend.Instructions.{Push, Pop, AssemblyLine}
+import wacc.backend.Instructions._
 
 case class VariableLocation(val register: Register, val offset: Int, val size: Int, val _type: Type)
 
 sealed trait RegisterAllocator {
-  def allocateRegister(): Register
+  def allocateRegister(): (Register, List[AssemblyLine])
 }
 
 /* Basic register allocator that allocates registers by always putting the result in the register
@@ -20,22 +20,28 @@ class BasicRegisterAllocator extends RegisterAllocator {
 
   private var varMap: mutable.Map[String, VariableLocation] = mutable.Map.empty[String, VariableLocation]
 
-  def allocateRegister(): Register = {
+  private var stackPointer = 0
+
+  def allocateRegister(): (Register, List[AssemblyLine]) = {
     var result: Register = R4
-    // var instructions: List[AssemblyLine] = List.empty[AssemblyLine]
+    var instructions: List[AssemblyLine] = List.empty[AssemblyLine]
     
     if (!(availableRegisters.isEmpty)) {
       result = availableRegisters.head
+    } else {
+      val regsInUse = allRegisters diff availableRegisters
+      for (reg <- regsInUse) {
+        val varName: Option[String] = varMap.find { case (key, v) => v.register == reg }.map(_._1)
+        varName match {
+          case Some(name) => 
+            stackPointer -= 4
+            varMap(name) = VariableLocation(FP, stackPointer, varMap(name).size, varMap(name)._type)
+            instructions = List(StoreInstr(reg, FP, ImmVal(stackPointer)))
+            return (reg, instructions)
+          case _ =>
+        }
+      }
     }
-    // } else {
-    //   result = (allRegisters diff availableRegisters).head
-    //   instructions = List(Push(List(result)))
-    //   val varName: Option[String] = varMap.find { case (key, v) => v.register == result }.map(_._1)
-    //   varName match {
-    //     case Some(name) => varMap(name) = VariableLocation(SP, varMap(name).offset, varMap(name).size)
-    //     case _ =>
-    //   }
-    // }
 
     println(s"Allocated register: $result")
 
@@ -45,7 +51,7 @@ class BasicRegisterAllocator extends RegisterAllocator {
     } else {
       availableRegisters = availableRegisters.tail
     }
-    result
+    (result, instructions)
   }
 
   def lookupLocation(varName: String): Option[VariableLocation] = {
@@ -70,7 +76,7 @@ class BasicRegisterAllocator extends RegisterAllocator {
   /* Push all registers that are currently being used onto the stack */
   def saveRegisters(): List[Register] = {
     println("Saving registers")
-    (allRegisters diff availableRegisters)
+    (allRegisters diff (R0 :: availableRegisters))
   }
 
   // /* Pop all registers that were saved onto the stack from the stack */
