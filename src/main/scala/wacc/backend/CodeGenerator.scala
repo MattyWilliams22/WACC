@@ -740,8 +740,21 @@ object CodeGenerator {
             case None => BaseT("ERROR")
           }
         }
+        case ArrayElem(ident, indices) => {
+          ident._type match {
+            case Some(t) => {
+              t match {
+                case ArrayT(t, n) if n > indices.length => _type = ArrayT(t, n - indices.length)
+                case ArrayT(t, n) if n == indices.length => _type = t
+                case _ => _type = BaseT("ERROR")
+              }
+            }
+            case None => _type = BaseT("ERROR")
+          }
+        }
         case _ =>
       }
+
       val t = _type match {
         case BaseT("int") =>
           refFunctions += printCharOrIntFunc(false)
