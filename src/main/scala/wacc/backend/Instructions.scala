@@ -136,8 +136,8 @@ object Instructions {
     override def format: String = s"   .word ${string.length}\n$label:\n   .asciz \"$string\""
   }
 
-  case class StoreInstr(reg: Register, address: Register, offset: ImmVal) extends AssemblyLine {
-    override def format: String = s"    str ${reg.format}, [${address.format}, ${offset.format}]"
+  case class StoreInstr(reg: Register, address: Register, offset: Operand, size: ElemSize = FourBytes) extends AssemblyLine {
+    override def format: String = s"    str${size.format} ${reg.format}, [${address.format}, ${offset.format}]"
   }
 
   case class StoreShift(reg1: Register, reg2: Register, reg3: Register, shift: Shift) extends AssemblyLine {
@@ -190,6 +190,18 @@ object Instructions {
 
   case object VScond extends Condition {
     override def format: String = "vs"
+  }
+
+  sealed trait ElemSize {
+    def format: String
+  }
+
+  case object OneByte extends ElemSize {
+    override def format: String = "b"
+  }
+
+  case object FourBytes extends ElemSize {
+    override def format: String = ""
   }
 
 }
