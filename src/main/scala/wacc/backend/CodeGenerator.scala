@@ -741,6 +741,8 @@ object CodeGenerator {
 
     def printGenerate(exp: Expr): List[AssemblyLine] = {
       var _type: Type = exp.getType
+      print(exp)
+      print(exp.getType)
       exp match {
         case Ident(str, nickname, t) => {
           t match {
@@ -810,14 +812,18 @@ object CodeGenerator {
       refFunctions += mallocFunc
       val (pointer, r1Lines) = allocator.allocateRegister()
       val arrayLines = new ListBuffer[AssemblyLine]()
-      var totalSize = 4
-      for (elem <- elems) {
+      var totalSize = 0
+      for ((elem, index) <- elems.zipWithIndex) {
         val (next, r2Lines) = allocator.allocateRegister()
         val elemLines = generateAssembly(elem, allocator, next)
         val size = getSize(elem)
         val sizeToStore = size match {
           case 1 => OneByte
           case _ => FourBytes
+        }
+        // Initialise the total size of the array with the size of the first element
+        if (index == 0) {
+          totalSize = size
         }
         arrayLines ++= r2Lines
         arrayLines ++= elemLines
