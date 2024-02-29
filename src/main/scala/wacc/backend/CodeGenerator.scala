@@ -480,15 +480,16 @@ object CodeGenerator {
       allocator.setLocation(id.nickname.get, VariableLocation(newDest, 0, 4, _type))
       val idLines = generateAssembly(id, allocator, newDest)
       val valueLines = generateAssembly(value, allocator, newDest)
-      value match {
+      val movLines: List[AssemblyLine] = value match {
         case Call(funcName, args) => 
-          allocator.setLocation(id.nickname.get, VariableLocation(R0, 0, 4, _type))
-        case _ =>
+          List(Mov(newDest, R0))
+        case _ => List()
       }
       Comment("Start of declare") ::
       rLines ++
       idLines ++
-      valueLines
+      valueLines ++ 
+      movLines
     }
 
     def assignGenerate(lvalue: LValue, rvalue: RValue): List[AssemblyLine] = {
