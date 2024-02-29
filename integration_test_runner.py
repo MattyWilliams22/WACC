@@ -101,33 +101,38 @@ def compile_run_assembly_file(fname, assembly_file):
   print(f"arm-linux-gnueabi-gcc -o execFile -z noexecstack -march=armv6 {assembly_file}")
   subprocess.run(["arm-linux-gnueabi-gcc", "-o", "execFile", "-z", "noexecstack", "-march=armv6", assembly_file])
 
-  input_data_str = input_data(fname)
+  if os.path.exists("execFile"):
+    input_data_str = input_data(fname)
 
-  # Run the executable file
-  print("qemu-arm -L /usr/arm-linux-gnueabi/ execFile")
-  try:
-    output_str = subprocess.run(["qemu-arm", "-L", "/usr/arm-linux-gnueabi/", "execFile"], input=input_data_str.encode(), capture_output=True, timeout=20)
-  except subprocess.TimeoutExpired:
-    print("Test timed out.")
-    errorTests.append(fname)
-    return False
-
-  output = output_str.stdout.decode('utf-8', errors='replace')
-
-  expected_output = extract_expected_output(fname)
-
-  if compare_output(expected_output, output.strip()):
-    print("Output matches expected!")
-    if output_str.returncode != get_return_code(fname):
-      print(f"Expected return code {get_return_code(fname)} but got {output_str.returncode}")
+    # Run the executable file
+    print("qemu-arm -L /usr/arm-linux-gnueabi/ execFile")
+    try:
+      output_str = subprocess.run(["qemu-arm", "-L", "/usr/arm-linux-gnueabi/", "execFile"], input=input_data_str.encode(), capture_output=True, timeout=20)
+    except subprocess.TimeoutExpired:
+      print("Test timed out.")
       errorTests.append(fname)
       return False
+
+    output = output_str.stdout.decode('utf-8', errors='replace')
+
+    expected_output = extract_expected_output(fname)
+
+    if compare_output(expected_output, output.strip()):
+      print("Output matches expected!")
+      if output_str.returncode != get_return_code(fname):
+        print(f"Expected return code {get_return_code(fname)} but got {output_str.returncode}")
+        errorTests.append(fname)
+        return False
+      else:
+        return True
     else:
-      return True
+      print("Output does not match expected.")
+      print(f"Expected output: {expected_output}")
+      print(f"Actual output: {output.strip()}")
+      errorTests.append(fname)
+      return False
   else:
-    print("Output does not match expected.")
-    print(f"Expected output: {expected_output}")
-    print(f"Actual output: {output.strip()}")
+    print("Executable file not found.")
     errorTests.append(fname)
     return False
 
@@ -195,6 +200,8 @@ def run_tests(tests_to_run):
 
             # Remove the assembly and executable files
             os.remove(assembly_file)
+            if os.path.exists("execFile"):
+              os.remove("execFile")
           else:
             print(f"Assembly file {assembly_file} not found.")
             errorTests.append(fname)
@@ -250,8 +257,6 @@ totalPasses = validPasses + syntaxPasses + semanticPasses
 numberTests = validTotal + syntaxTotal + semanticTotal
 numberIgnored = numberTests - len(runningTests)
 
-if os.path.exists("execFile"):
-  os.remove("execFile")
 for file in glob.glob(os.path.join(".", '*.s')):
   os.remove(file)
 
