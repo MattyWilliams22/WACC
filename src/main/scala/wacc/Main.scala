@@ -73,6 +73,8 @@ object Main {
           // Semantic Analysis
           val semanticAnalyser = new SemanticAnalyser(x)
           semanticAnalyser.analyse()
+          
+          println(x)
 
           // Code Generation
           val inputFile = new File(arg)

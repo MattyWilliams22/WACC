@@ -133,7 +133,19 @@ object Instructions {
   }
 
   case class AscizInstr(label: String, string: String) extends AssemblyLine {
-    override def format: String = s"   .word ${string.length}\n$label:\n   .asciz \"$string\""
+    override def format: String = {
+      val escapedString = string
+        .replace("\\", "\\\\")
+        .replace("\"", "\\\"")
+        .replace("\'", "\\\'")
+        .replace("\b", "\\b")
+        .replace("\n", "\\n")
+        .replace("\r", "\\r")
+        .replace("\t", "\\t")
+        .replace("\f", "\\f")
+        .replace("\u0000", "\\0")
+      s"   .word ${escapedString.length}\n$label:\n   .asciz \"$escapedString\""
+    }
   }
 
   case class StoreInstr(reg: Register, address: Register, offset: Operand, size: ElemSize = FourBytes) extends AssemblyLine {

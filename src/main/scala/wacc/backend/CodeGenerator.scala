@@ -396,7 +396,7 @@ object CodeGenerator {
 
   private def getUniqueLabel: String = {
     labelCounter += 1
-    "L" + labelCounter
+    ".L" + labelCounter
   }
 
   def generateAssembly(ast: ASTNode, allocator: BasicRegisterAllocator, dest: Register): List[AssemblyLine] = {
