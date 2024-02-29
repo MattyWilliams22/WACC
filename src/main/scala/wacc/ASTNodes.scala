@@ -169,7 +169,7 @@ object ASTNodes {
       currentSymbolTable.generateSymbolTable(this)
       // Check the value on the right of the declaration
       checkValid(value.check(), "Invalid Rvalue", value)
-
+      ident.check()
       // Check that the type of the variable and the type of the value are complementary
       val valueType = value.getType
       val isPair = _type match {

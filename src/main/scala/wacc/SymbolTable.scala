@@ -47,8 +47,8 @@ class SymbolTable(var parent: Option[SymbolTable],
   private def incrementTotalVarCount(): Unit = topLevelSymbolTable.foreach(_.incrementTotalVarCount())
   private def incrementTotalFuncCount(): Unit = topLevelSymbolTable.foreach(_.incrementTotalFuncCount())
   
-  private def generateUniqueVarName(): String = s"var_$varCounter"
-  private def generateUniqueFuncName(): String = s"func_$funcCounter"
+  private def generateUniqueVarName(): String = s"var_${parent.map(_.varCounter).getOrElse(0)}_$varCounter"
+  private def generateUniqueFuncName(): String = s"func_${parent.map(_.funcCounter).getOrElse(0)}_$funcCounter"
 
   def generateSymbolTable(node: ASTNode): Unit = {
     node match {
