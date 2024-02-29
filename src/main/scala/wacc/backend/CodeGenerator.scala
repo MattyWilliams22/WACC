@@ -1253,7 +1253,10 @@ object CodeGenerator {
 
     def identGenerate(n: String): List[AssemblyLine] = {
       val location: Option[VariableLocation] = allocator.lookupLocation(n)
-      Comment("Start of identifier") ::
+
+      println("location of: " + n + " is: " + location)
+
+      Comment("Start of identifier " + n) ::
       (location match {
         case Some(VariableLocation(reg, off, size, _type)) => {
           reg match {
@@ -1269,7 +1272,7 @@ object CodeGenerator {
           }
         }
         case None => List()
-      })
+      }) ++ List(Comment("End of identifier"))
     }
 
     def strGenerate(s: String): List[AssemblyLine] = {

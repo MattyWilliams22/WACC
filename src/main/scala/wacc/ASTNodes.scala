@@ -84,6 +84,8 @@ object ASTNodes {
       val tempSymbolTable: SymbolTable = currentSymbolTable
       currentSymbolTable = bodySymbolTable
 
+      ident.check()
+
       // Check the body of the function
       checkValid(body.check(), "Invalid function body", body)
 
@@ -142,6 +144,7 @@ object ASTNodes {
   case class Param(_type: Type, ident: Ident) extends ASTNode {
     // Semantically check a parameter
     def check(): Boolean = {
+      ident.check()
       checkValid(_type == ident.getType,
         "Type of parameter and identifier do not match", this)
       true
@@ -944,6 +947,7 @@ object ASTNodes {
       checkValid(ident.check(), "Invalid identifier", ident)
       // Check that the indices are semantically valid and have type int
       for (index <- indices) {
+        index.check()
         checkValid(index.getType == BaseT("int"),
           "Index must have type int", index)
       }
