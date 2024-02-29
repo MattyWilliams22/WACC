@@ -539,7 +539,7 @@ object CodeGenerator {
                 StoreInstr(newDest, lvalueLoc, ImmVal(0))
               ) ++ 
               afterLines, 
-              lvalueLoc)
+              newDest)
             }
             case "snd" => {
               val (beforeLines, afterLines, lvalueLoc) = getLvalueLocation(lvalue)
@@ -555,7 +555,7 @@ object CodeGenerator {
               List(
                 StoreInstr(newDest, lvalueLoc, ImmVal(4))
               ), 
-              lvalueLoc)
+              newDest)
             }
           }
         }
