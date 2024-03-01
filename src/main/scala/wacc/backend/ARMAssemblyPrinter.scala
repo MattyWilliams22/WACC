@@ -12,7 +12,6 @@ package object ARMAssemblyPrinter {
     }
 
     def formatCondition(condition: Condition): String = condition match {
-      case noCondition => ""
       case EQcond => "eq"
       case NEcond => "ne"
       case GEcond => "ge"
@@ -20,6 +19,7 @@ package object ARMAssemblyPrinter {
       case GTcond => "gt"
       case LEcond => "le"
       case VScond => "vs"
+      case _ => ""
     }
 
     def formatOperand(operand: Operand): String = operand match {
@@ -29,9 +29,9 @@ package object ARMAssemblyPrinter {
     }
 
     def formatShift(shift: Shift): String = shift match {
-      case noShift => ""
       case ShiftLeft(n) => s", lsl #$n"
       case ShiftRight(n) => s", lsr #$n"
+      case _ => ""
     }
 
     def formatReg(reg: Register): String = reg match {
@@ -61,7 +61,7 @@ package object ARMAssemblyPrinter {
       case Pop(regs) => s"    pop {${regs.map(formatReg).mkString(", ")}}"
       case LdrImm(reg, num) => s"    ldr ${formatReg(reg)}, =${num.toString}"
       case LdrAddr(reg, addr, offset) => s"    ldr ${formatReg(reg)}, [${formatReg(addr)}, ${formatOperand(offset)}]"
-      case LdrLabel(reg, labelAddr) => s"    ldr ${formatReg(reg)}, =${formatOperand(labelAddr)}"
+      case LdrLabel(reg, labelAddr) => s"    ldr ${formatReg(reg)}, ${formatOperand(labelAddr)}"
       case LdrShift(reg1, reg2, reg3, shift) => s"    ldr ${formatReg(reg1)}, [${formatReg(reg2)}, ${formatReg(reg3)}${formatShift(shift)}]"
       case AdrInstr(reg, label) => s"    adr ${formatReg(reg)}, $label"
       case Mov(reg, operand, condition) => s"    mov${formatCondition(condition)} ${formatReg(reg)}, ${formatOperand(operand)}"
