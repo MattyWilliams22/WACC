@@ -57,12 +57,16 @@ object CodeGenerator {
       Comment("Start of function") ::
       Label(funcName.nickname.get) ::
       List(
+        Push(List(R1, R2, R3)),
         Push(List(FP, LR)),
         Mov(FP, SP)
       ) ++
       paramsGenerate(params) ++
       generateAssembly(body, allocator, dest) ++
-      List(Command("ltorg", 4))
+      List(
+        Push(List(R1, R2, R3)),
+        Command("ltorg", 4)
+      )
     }
 
     def paramsGenerate(params: List[Param]): List[AssemblyLine] = {
@@ -340,7 +344,9 @@ object CodeGenerator {
       List(
         Comment("Exit Logic"),
         Mov(R0, dest),
-        BlInstr("_exit")
+        BlInstr("_exit"),
+        Mov(SP, FP),
+        Pop(List(FP, PC))
       )
     }
 
