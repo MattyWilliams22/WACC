@@ -62,7 +62,17 @@ object CodeGenerator {
         Mov(FP, SP)
       ) ++
       paramsGenerate(params) ++
-      generateAssembly(body, allocator, dest) ++
+      (body match {
+        case Statements(stmts) => 
+          stmts.flatMap(
+            Push(List(R0, R1, R2, R3)) :: 
+            generateAssembly(_, allocator, dest) ++ 
+            List(Pop(List(R0, R1, R2, R3))))
+        case _ => {
+          Push(List(R0, R1, R2, R3)) ::
+          generateAssembly(body, allocator, dest) ++
+          List(Pop(List(R0, R1, R2, R3)))
+        }}) ++
       List(
         Command("ltorg", 4)
       )
@@ -92,7 +102,7 @@ object CodeGenerator {
             allocator.setLocation(param.ident.nickname.get, VariableLocation(next, 0, 4, param._type))
           case _ =>
             allocator.deallocateRegister(next)
-            allocator.setLocation(param.ident.nickname.get, VariableLocation(FP, 4 * (params.length - i), 4, param._type))
+            allocator.setLocation(param.ident.nickname.get, VariableLocation(FP, 4 * (params.length - i - 1), 4, param._type))
         }
       }
       paramLines.toList
@@ -939,7 +949,7 @@ object CodeGenerator {
             argsLines += Mov(R2, next)
           case 3 =>
             argsLines += Mov(R3, next)
-          case _ => argsLines += StoreInstr(next, SP, ImmVal(4 * (args.length - i)))
+          case _ => argsLines += StoreInstr(next, SP, ImmVal(4 * (args.length - i - 1)))
         }
       }
       argsLines.toList
