@@ -28,8 +28,8 @@ object CodeGenerator {
   def generateAssembly(ast: ASTNode, allocator: BasicRegisterAllocator, dest: Register): List[AssemblyLine] = {
 
     def programGenerate(funcs: List[Function], stmts: Statement): List[AssemblyLine] = {
-      val funcLines = funcs.flatMap(generateAssembly(_, allocator, dest))
       val stmtLines = generateAssembly(stmts, allocator, dest)
+      val funcLines = funcs.flatMap(generateAssembly(_, allocator, dest))
       List(
         Comment("Start of program"),
         Command("data", 0)
@@ -58,12 +58,12 @@ object CodeGenerator {
       Label(funcName.nickname.get) ::
       List(
         Push(List(FP, LR)),
+        Push(List(R4, R5, R6, R7, R8, R9, R10)),
         Mov(FP, SP)
       ) ++
       paramsGenerate(params) ++
       generateAssembly(body, allocator, dest) ++
       List(
-        Push(List(R1, R2, R3)),
         Command("ltorg", 4)
       )
     }
@@ -325,6 +325,7 @@ object CodeGenerator {
         Comment("Return Logic"),
         Mov(R0, dest),
         Mov(SP, FP),
+        Pop(List(R4, R5, R6, R7, R8, R9, R10)),
         Pop(List(FP, PC))
       )
     }
