@@ -25,7 +25,7 @@ class SymbolTable(var parent: Option[SymbolTable],
   }
 
   private def addFunction(name: String, node: Function): String = {
-    val uniqueName = generateUniqueFuncName()
+    val uniqueName = "wacc_" + node.ident.str
     node.ident.nickname = Some(uniqueName)
     funcMap.put(name, node)
     incrementFuncCounter()
@@ -48,7 +48,6 @@ class SymbolTable(var parent: Option[SymbolTable],
   private def incrementTotalFuncCount(): Unit = topLevelSymbolTable.foreach(_.incrementTotalFuncCount())
   
   private def generateUniqueVarName(): String = s"var_${this}_$varCounter"
-  private def generateUniqueFuncName(): String = s"func_$funcCounter"
 
   def generateSymbolTable(node: ASTNode): Unit = {
     node match {
