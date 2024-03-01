@@ -5,393 +5,19 @@ import scala.collection.mutable.ListBuffer
 
 import wacc.ASTNodes._
 import wacc.backend.Instructions._
+import wacc.backend.ReferenceFunctions._
 
+/* Generates ARM assembly code from an AST */
 object CodeGenerator {
   private var labelCounter: Int = -1
   private var stringCounter: Int = -1
-  private val refFunctions: mutable.Set[List[AssemblyLine]] = mutable.Set()
+  val refFunctions: mutable.Set[List[AssemblyLine]] = mutable.Set()
   private val stringPool: mutable.Set[AscizInstr] = mutable.Set()
 
+  /* Generates a unique label for a String literal */
   private def getStringLabel: String = {
     stringCounter += 1
     ".L._str" + stringCounter
-  }
-
-  private lazy val exitFunc: List[AssemblyLine] = List(
-    NewLine(),
-    Comment("Exit function"),
-    Label("_exit"),
-    Push(List(FP, LR)),
-    Mov(FP, SP),
-    BicInstr(SP, SP, ImmVal(7)),
-    BlInstr("exit"),
-    Mov(SP, FP),
-    Pop(List(FP, PC))
-  )
-
-  private def printCharOrIntFunc(isChar: Boolean): List[AssemblyLine] = {
-    var _type: String = ""
-    var formatSpecifier: String = ""
-
-    if (isChar) {
-      _type = "c"
-      formatSpecifier = "%c"
-    } else {
-      _type = "i"
-      formatSpecifier = "%d"
-    }
-
-    List(
-      NewLine(),
-      AscizInstr(s".L._print${_type}_str0", formatSpecifier),
-      Command("align 4", 0),
-      Comment(s"Print${_type} function"),
-      Label(s"_print${_type}"),
-      Push(List(FP, LR)),
-      Mov(FP, SP),
-      BicInstr(SP, SP, ImmVal(7)),
-      Mov(R1, R0),
-      AdrInstr(R0, s".L._print${_type}_str0"),
-      BlInstr("printf"),
-      Mov(R0, ImmVal(0)),
-      BlInstr("fflush"),
-      Mov(SP, FP),
-      Pop(List(FP, PC))
-    )
-  }
-
-  private lazy val printStrFunc: List[AssemblyLine] = {
-    List(
-      NewLine(),
-      AscizInstr(".L._prints_str0", "%.*s"),
-      Command("align 4", 0),
-      Comment("Print string function"),
-      Label("_prints"),
-      Push(List(FP, LR)),
-      Mov(FP, SP),
-      BicInstr(SP, SP, ImmVal(7)),
-      Mov(R2, R0),
-      LdrAddr(R1, R0, ImmVal(-4)),
-      AdrInstr(R0, ".L._prints_str0"),
-      BlInstr("printf"),
-      Mov(R0, ImmVal(0)),
-      BlInstr("fflush"),
-      Mov(SP, FP),
-      Pop(List(FP, PC))
-    )
-  }
-
-  private lazy val printPairFunc: List[AssemblyLine] = {
-    List(
-      NewLine(),
-      AscizInstr(".L._printp_str0", "%p"),
-      Command("align 4", 0),
-      Comment("Print pair function"),
-      Label("_printp"),
-      Push(List(FP, LR)),
-      Mov(FP, SP),
-      BicInstr(SP, SP, ImmVal(7)),
-      Mov(R1, R0),
-      AdrInstr(R0, ".L._printp_str0"),
-      BlInstr("printf"),
-      Mov(R0, ImmVal(0)),
-      BlInstr("fflush"),
-      Mov(SP, FP),
-      Pop(List(FP, PC))
-    )
-  }
-
-  private lazy val printBoolFunc: List[AssemblyLine] = {
-    List(
-      NewLine(),
-      AscizInstr(".L._printb_str0", "false"),
-      AscizInstr(".L._printb_str1", "true"),
-      AscizInstr(".L._printb_str2", "%.*s"),
-      Command("align 4", 0),
-      Comment("Print bool function"),
-      Label("_printb"),
-      Push(List(FP, LR)),
-      Mov(FP, SP),
-      BicInstr(SP, SP, ImmVal(7)),
-      CmpInstr(R0, ImmVal(0)),
-      BInstr(".L._printb0", NEcond),
-      AdrInstr(R2, ".L._printb_str0"),
-      BInstr(".L._printb1"),
-      Label(".L._printb0"),
-      AdrInstr(R2, ".L._printb_str1"),
-      Label(".L._printb1"),
-      LdrAddr(R1, R2, ImmVal(-4)),
-      AdrInstr(R0, ".L._printb_str2"),
-      BlInstr("printf"),
-      Mov(R0, ImmVal(0)),
-      BlInstr("fflush"),
-      Mov(SP, FP),
-      Pop(List(FP, PC))
-    )
-  }
-
-  private lazy val printLnFunc: List[AssemblyLine] = {
-    List(
-      NewLine(),
-      AscizInstr(".L._println_str0", ""),
-      Command("align 4", 0),
-      Comment("Println function"),
-      Label("_println"),
-      Push(List(FP, LR)),
-      Mov(FP, SP),
-      BicInstr(SP, SP, ImmVal(7)),
-      AdrInstr(R0, ".L._println_str0"),
-      BlInstr("puts"),
-      Mov(R0, ImmVal(0)),
-      BlInstr("fflush"),
-      Mov(SP, FP),
-      Pop(List(FP, PC))
-    )
-  }
-
-  private lazy val mallocFunc: List[AssemblyLine] = {
-    refFunctions += errorOutOfMemoryFunc
-    List(
-      NewLine(),
-      Comment("Malloc function"),
-      Label("_malloc"),
-      Push(List(FP, LR)),
-      Mov(FP, SP),
-      BicInstr(SP, SP, ImmVal(7)),
-      BlInstr("malloc"),
-      CmpInstr(R0, ImmVal(0)),
-      BInstr("_errOutOfMemory", EQcond),
-      Mov(SP, FP),
-      Pop(List(FP, PC))
-    )
-  }
-
-  private lazy val readIntFunc: List[AssemblyLine] = {
-    List(
-      NewLine(),
-      AscizInstr(".L._readi_str0", "%d"),
-      Command("align 4", 0),
-      Comment("Read int function"),
-      Label("_readi"),
-      Push(List(FP, LR)),
-      Mov(FP, SP),
-      BicInstr(SP, SP, ImmVal(7)),
-      SubInstr(SP, SP, ImmVal(8)),
-      StoreInstr(R0, SP, ImmVal(0)),
-      Mov(R1, SP),
-      AdrInstr(R0, ".L._readi_str0"),
-      BlInstr("scanf"),
-      LdrAddr(R0, SP, ImmVal(0)),
-      AddInstr(SP, SP, ImmVal(8)),
-      Mov(SP, FP),
-      Pop(List(FP, PC))
-    )
-  }
-
-  private lazy val readCharFunc: List[AssemblyLine] = {
-    List(
-      NewLine(),
-      AscizInstr(".L._readc_str0", " %c"),
-      Command("align 4", 0),
-      Comment("Read char function"),
-      Label("_readc"),
-      Push(List(FP, LR)),
-      Mov(FP, SP),
-      BicInstr(SP, SP, ImmVal(7)),
-      SubInstr(SP, SP, ImmVal(8)),
-      StoreInstr(R0, SP, ImmVal(0)),
-      Mov(R1, SP),
-      AdrInstr(R0, ".L._readc_str0"),
-      BlInstr("scanf"),
-      LdrAddr(R0, SP, ImmVal(0)),
-      AddInstr(SP, SP, ImmVal(8)),
-      Mov(SP, FP),
-      Pop(List(FP, PC))
-    )
-  }
-
-  private lazy val freeFunc: List[AssemblyLine] = List(
-    NewLine(),
-    Comment("Free function"),
-    Label("_free"),
-    Push(List(FP, LR)),
-    Mov(FP, SP),
-    BicInstr(SP, SP, ImmVal(7)),
-    BlInstr("free"),
-    Mov(SP, FP),
-    Pop(List(FP, PC))
-  )
-
-  private lazy val freePairFunc: List[AssemblyLine] = {
-    refFunctions += freeFunc
-    refFunctions += errorNullFunc
-    List(
-      NewLine(),
-      Comment("Free pair function"),
-      Label("_freepair"),
-      Push(List(FP, LR)),
-      Mov(FP, SP),
-      BicInstr(SP, SP, ImmVal(7)),
-      CmpInstr(R0, ImmVal(0)),
-      BlInstr("_errNull", EQcond),
-      BlInstr("_free", noCondition),
-      Mov(SP, FP),
-      Pop(List(FP, PC))
-    )
-  }
-
-  private lazy val arrayLoad4Func: List[AssemblyLine] = {
-    refFunctions += errorOutOfBoundsFunc
-    List(
-      NewLine(),
-      Comment("Array load function"),
-      Label("_arrLoad4"),
-      Push(List(LR)),
-      CmpInstr(R10, ImmVal(0)),
-      Mov(R1, R10, LTcond),
-      BlInstr("_errOutOfBounds", LTcond),
-      LdrAddr(LR, R3, ImmVal(-4)),
-      CmpInstr(R10, LR),
-      Mov(R1, R10, GEcond),
-      BlInstr("_errOutOfBounds", GEcond),
-      LdrShift(R3, R3, R10, ShiftLeft(2)),
-      Pop(List(PC))
-    )
-  }
-
-  private lazy val arrayStore4Func: List[AssemblyLine] = {
-    refFunctions += errorOutOfBoundsFunc
-    List(
-      NewLine(),
-      Comment("Array store function"),
-      Label("_arrStore4"),
-      Push(List(LR)),
-      CmpInstr(R10, ImmVal(0)),
-      Mov(R1, R10, LTcond),
-      BlInstr("_errOutOfBounds", LTcond),
-      LdrAddr(LR, R3, ImmVal(-4)),
-      CmpInstr(R10, LR),
-      Mov(R1, R10, GEcond),
-      BlInstr("_errOutOfBounds", GEcond),
-      StoreShift(R8, R3, R10, ShiftLeft(2)),
-      Pop(List(PC))
-    )
-  }
-
-  private lazy val errorOutOfMemoryFunc: List[AssemblyLine] = {
-    refFunctions += printStrFunc
-    List(
-      NewLine(),
-      Comment("Error out of memory function"),
-      AscizInstr(".L._errOutOfMemory_str0", "Error: Out of memory"),
-      Command("align 4", 0),
-      Label("_errOutOfMemory"),
-      BicInstr(SP, SP, ImmVal(7)),
-      AdrInstr(R0, ".L._errOutOfMemory_str0"),
-      BlInstr("_prints"),
-      Mov(R0, ImmVal(255)),
-      BlInstr("exit"),
-    )
-  }
-
-  private lazy val errorOutOfBoundsFunc: List[AssemblyLine] = List(
-    NewLine(),
-    Comment("Error out of bounds function"),
-    AscizInstr(".L._errOutOfBounds_str0", "Error: Array index out of bounds"),
-    Command("align 4", 0),
-    Label("_errOutOfBounds"),
-    BicInstr(SP, SP, ImmVal(7)),
-    AdrInstr(R0, ".L._errOutOfBounds_str0"),
-    BlInstr("printf"),
-    Mov(R0, ImmVal(0)),
-    BlInstr("fflush"),
-    Mov(R0, ImmVal(255)),
-    BlInstr("exit")
-  )
-
-  private lazy val errorNullFunc: List[AssemblyLine] = {
-    refFunctions += printStrFunc
-    List(
-      NewLine(),
-      Comment("Error null pointer function"),
-      AscizInstr(".L._errNull_str0", "Error: Null pair dereferenced"),
-      Command("align 4", 0),
-      Label("_errNull"),
-      BicInstr(SP, SP, ImmVal(7)),
-      AdrInstr(R0, ".L._errNull_str0"),
-      BlInstr("_prints"),
-      Mov(R0, ImmVal(255)),
-      BlInstr("exit")
-    )
-  }
-
-  private lazy val errorOverflowFunc: List[AssemblyLine] = {
-    refFunctions += printStrFunc
-    List(
-      NewLine(),
-      Comment("Error overflow function"),
-      AscizInstr(".L._errOverflow_str0", "Error: Integer overflow or underflow occured"),
-      Command("align 4", 0),
-      Label("_errOverflow"),
-      BicInstr(SP, SP, ImmVal(7)),
-      AdrInstr(R0, ".L._errOverflow_str0"),
-      BlInstr("_prints"),
-      Mov(R0, ImmVal(255)),
-      BlInstr("exit")
-    )
-  }
-
-  private lazy val errorDivByZeroFunc: List[AssemblyLine] = {
-    refFunctions += printStrFunc
-    List(
-      NewLine(),
-      Comment("Error division by zero function"),
-      AscizInstr(".L._errDivZero_str0", "Error: Division by zero"),
-      Command("align 4", 0),
-      Label("_errDivZero"),
-      BicInstr(SP, SP, ImmVal(7)),
-      AdrInstr(R0, ".L._errDivZero_str0"),
-      BlInstr("_prints"),
-      Mov(R0, ImmVal(255)),
-      BlInstr("exit")
-    )
-  }
-
-  private lazy val errorBadCharFunc: List[AssemblyLine] = {
-    refFunctions += printStrFunc
-    List(
-      NewLine(),
-      Comment("Error bad character function"),
-      AscizInstr(".L._errBadChar_str0", "fatal error: int %d is not ascii character 0-127 \n"),
-      Command("align 4", 0),
-      Label("_errBadChar"),
-      BicInstr(SP, SP, ImmVal(7)),
-      AdrInstr(R0, ".L._errBadChar_str0"),
-      BlInstr("printf"),
-      Mov(R0, ImmVal(0)),
-      BlInstr("fflush"),
-      Mov(R0, ImmVal(255)),
-      BlInstr("exit")
-    )
-  }
-
-  private lazy val arrayStore1Func: List[AssemblyLine] = {
-    refFunctions += errorOutOfBoundsFunc
-    List(
-      NewLine(),
-      Comment("Array store function"),
-      Label("_arrStore1"),
-      Push(List(LR)),
-      CmpInstr(R10, ImmVal(0)),
-      Mov(R1, R10, LTcond),
-      BlInstr("_errOutOfBounds", LTcond),
-      LdrAddr(LR, R3, ImmVal(-4)),
-      CmpInstr(R10, LR),
-      Mov(R1, R10, GEcond),
-      BlInstr("_errOutOfBounds", GEcond),
-      StoreInstr(R8, R3, R10, OneByte),
-      Pop(List(PC))
-    )
   }
 
   private def getUniqueLabel: String = {
@@ -440,35 +66,30 @@ object CodeGenerator {
     }
 
     def paramsGenerate(params: List[Param]): List[AssemblyLine] = {
-      var paramLines = new ListBuffer[AssemblyLine]()
-      for (i <- 0 to params.length - 1) {
+      val paramLines = new ListBuffer[AssemblyLine]()
+      for (i <- params.indices) {
         val param = params(i)
         val (next, rLines) = allocator.allocateRegister()
         i match {
-          case 0 => {
+          case 0 =>
             paramLines ++= rLines
             paramLines += Mov(next, R0)
             allocator.setLocation(param.ident.nickname.get, VariableLocation(next, 0, 4, param._type))
-          }
-          case 1 => {
+          case 1 =>
             paramLines ++= rLines
             paramLines += Mov(next, R1)
             allocator.setLocation(param.ident.nickname.get, VariableLocation(next, 0, 4, param._type))
-          }
-          case 2 => {
+          case 2 =>
             paramLines ++= rLines
             paramLines += Mov(next, R2)
             allocator.setLocation(param.ident.nickname.get, VariableLocation(next, 0, 4, param._type))
-          }
-          case 3 => {
+          case 3 =>
             paramLines ++= rLines
             paramLines += Mov(next, R3)
             allocator.setLocation(param.ident.nickname.get, VariableLocation(next, 0, 4, param._type))
-          }
-          case _ => {
+          case _ =>
             allocator.deallocateRegister(next)
             allocator.setLocation(param.ident.nickname.get, VariableLocation(FP, 4 * (params.length - i), 4, param._type))
-          }
         }
       }
       paramLines.toList
@@ -480,7 +101,7 @@ object CodeGenerator {
       val idLines = generateAssembly(id, allocator, newDest)
       val valueLines = generateAssembly(value, allocator, newDest)
       val movLines: List[AssemblyLine] = value match {
-        case Call(funcName, args) => 
+        case Call(_, _) =>
           List(Mov(newDest, R0))
         case _ => List()
       }
@@ -503,20 +124,18 @@ object CodeGenerator {
 
     def getLvalueLocation(lvalue: LValue): (List[AssemblyLine], List[AssemblyLine], Register) = {
       lvalue match {
-        case Ident(string, nickname, _type) => {
+        case Ident(_, nickname, _) =>
           val identLoc: VariableLocation = allocator.lookupLocation(nickname.get).get
           (List(), List(), identLoc.register)
-        }
-        case ArrayElem(ident, indices) => {
+        case ArrayElem(ident, indices) =>
           val identLoc: VariableLocation = allocator.lookupLocation(ident.nickname.get).get
           val (before, after, target) = getArrayElemLocation(identLoc._type, identLoc.register, indices)
           (before, after, target)
-        }
-        case PairElem(func, lvalue) => {
+        case PairElem(func, lvalue) =>
           refFunctions += errorNullFunc
           val (newDest, rLines) = allocator.allocateRegister()
           func match {
-            case "fst" => {
+            case "fst" =>
               val (beforeLines, afterLines, lvalueLoc) = getLvalueLocation(lvalue)
               allocator.deallocateRegister(newDest)
               (beforeLines ++
@@ -531,8 +150,7 @@ object CodeGenerator {
               ) ++ 
               afterLines, 
               newDest)
-            }
-            case "snd" => {
+            case "snd" =>
               val (beforeLines, afterLines, lvalueLoc) = getLvalueLocation(lvalue)
               allocator.deallocateRegister(newDest)
               (pairLines(lvalue, lvalueLoc) ++
@@ -547,9 +165,7 @@ object CodeGenerator {
                 StoreInstr(newDest, lvalueLoc, ImmVal(4))
               ), 
               newDest)
-            }
           }
-        }
       }
     }
 
@@ -614,17 +230,15 @@ object CodeGenerator {
     }
 
     def readGenerate(lvalue: LValue): List[AssemblyLine] = {
-      val _type = (lvalue.getType match {
-        case BaseT("int") => {
+      val _type = lvalue.getType match {
+        case BaseT("int") =>
           refFunctions += readIntFunc
           "i"
-        }
-        case BaseT("char") => {
+        case BaseT("char") =>
           refFunctions += readCharFunc
           "c"
-        }
         case _ => ""
-      })
+      }
       val (beforeLines, afterLines, target): (List[AssemblyLine], List[AssemblyLine], Register) = getLvalueLocation(lvalue)
       Comment("Start of read") ::
       beforeLines ++
@@ -735,24 +349,21 @@ object CodeGenerator {
       print(exp)
       print(exp.getType)
       exp match {
-        case Ident(str, nickname, t) => {
+        case Ident(_, _, t) =>
           t match {
             case Some(x) => _type = x
             case None => BaseT("ERROR")
           }
-        }
-        case ArrayElem(ident, indices) => {
+        case ArrayElem(ident, indices) =>
           ident._type match {
-            case Some(t) => {
+            case Some(t) =>
               t match {
                 case ArrayT(t, n) if n > indices.length => _type = ArrayT(t, n - indices.length)
                 case ArrayT(t, n) if n == indices.length => _type = t
                 case _ => _type = BaseT("ERROR")
               }
-            }
             case None => _type = BaseT("ERROR")
           }
-        }
         case _ =>
       }
 
@@ -789,7 +400,7 @@ object CodeGenerator {
       List(
         Comment("Print Logic"),
         Mov(R0, dest),
-        BlInstr(s"_print${t}")
+        BlInstr(s"_print$t")
       )
     }
 
@@ -804,7 +415,7 @@ object CodeGenerator {
       val (pointer, r1Lines) = allocator.allocateRegister()
       val arrayLines = new ListBuffer[AssemblyLine]()
       var totalSize = 0
-      for ((elem, index) <- elems.zipWithIndex) {
+      for (elem <- elems) {
         val (next, r2Lines) = allocator.allocateRegister()
         val elemLines = generateAssembly(elem, allocator, next)
         val size = getSize(elem)
@@ -857,8 +468,6 @@ object CodeGenerator {
 
     def newPairGenerate(exp1: Expr, exp2: Expr): List[AssemblyLine] = {
       refFunctions += mallocFunc
-      val size1 = getSize(exp1)
-      val size2 = getSize(exp2)
       val (next, rLines) = allocator.allocateRegister()
       val newpairLines = Comment("Start of new pair") ::
       rLines ++
@@ -1252,19 +861,17 @@ object CodeGenerator {
 
       Comment("Start of identifier " + n) ::
       (location match {
-        case Some(VariableLocation(reg, off, size, _type)) => {
+        case Some(VariableLocation(reg, off, size, _type)) =>
           reg match {
-            case FP => {
+            case FP =>
               val (next, rLines) = allocator.allocateRegister()
               allocator.setLocation(n, VariableLocation(next, 0, size, _type))
               rLines ++ List(
                 LdrAddr(next, reg, ImmVal(off)),
                 Mov(dest, next)
               )
-            }
             case _ => List(Mov(dest, reg))
           }
-        }
         case None => List()
       }) ++ List(Comment("End of identifier"))
     }
@@ -1312,8 +919,8 @@ object CodeGenerator {
     }
 
     def argsGenerate(args: List[Expr]): List[AssemblyLine] = {
-      var argsLines = new ListBuffer[AssemblyLine]()
-      for (i <- 0 to args.length - 1) {
+      val argsLines = new ListBuffer[AssemblyLine]()
+      for (i <- args.indices) {
         val arg = args(i)
         val (next, rLines) = allocator.allocateRegister()
         val argLines = generateAssembly(arg, allocator, next)
@@ -1321,18 +928,14 @@ object CodeGenerator {
         argsLines ++= argLines
         allocator.deallocateRegister(next)
         i match {
-          case 0 => {
+          case 0 =>
             argsLines += Mov(R0, next)
-          }
-          case 1 => {
+          case 1 =>
             argsLines += Mov(R1, next)
-          }
-          case 2 => {
+          case 2 =>
             argsLines += Mov(R2, next)
-          }
-          case 3 => {
+          case 3 =>
             argsLines += Mov(R3, next)
-          }
           case _ => argsLines += StoreInstr(next, SP, ImmVal(4 * (args.length - i)))
         }
       }
@@ -1482,7 +1085,7 @@ object CodeGenerator {
           Mov(dest, ImmVal(0))
         )
 
-      case Ident(s, n, t) =>
+      case Ident(s, n, _) =>
         n match {
           case Some(v) => identGenerate(v)
           case None => identGenerate(s)
