@@ -57,7 +57,6 @@ object CodeGenerator {
       Comment("Start of function") ::
       Label(funcName.nickname.get) ::
       List(
-        Push(List(R1, R2, R3)),
         Push(List(FP, LR)),
         Mov(FP, SP)
       ) ++
@@ -104,16 +103,10 @@ object CodeGenerator {
       allocator.setLocation(id.nickname.get, VariableLocation(newDest, 0, 4, _type))
       val idLines = generateAssembly(id, allocator, newDest)
       val valueLines = generateAssembly(value, allocator, newDest)
-      val movLines: List[AssemblyLine] = value match {
-        case Call(_, _) =>
-          List(Mov(newDest, R0))
-        case _ => List()
-      }
       Comment("Start of declare") ::
       rLines ++
       idLines ++
-      valueLines ++ 
-      movLines
+      valueLines
     }
 
     def assignGenerate(lvalue: LValue, rvalue: RValue): List[AssemblyLine] = {
@@ -917,10 +910,13 @@ object CodeGenerator {
 
     def callGenerate(funcName: Ident, args: List[Expr]): List[AssemblyLine] = {
       Comment("Start of function call") ::
+      Push(List(R1, R2, R3)) ::
       argsGenerate(args) ++
       List(
         Comment("Call Logic"),
-        BlInstr(funcName.nickname.get)
+        BlInstr(funcName.nickname.get),
+        Pop(List(R1, R2, R3)),
+        Mov(dest, R0)
       )
     }
 
