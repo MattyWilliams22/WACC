@@ -1,11 +1,10 @@
 package wacc.backend
 
 import wacc.backend.CodeGenerator.refFunctions
-import wacc.backend.Instructions._
 
 object ReferenceFunctions {
   /* Generates the assembly code for exiting a program with a given exit code */
-  lazy val exitFunc: List[AssemblyLine] = List(
+  lazy val exitFunc: List[Instruction] = List(
     NewLine(),
     Comment("Exit function"),
     Label("_exit"),
@@ -18,7 +17,7 @@ object ReferenceFunctions {
   )
 
   /* Generates the assembly code for printing a character or an integer */
-  def printCharOrIntFunc(isChar: Boolean): List[AssemblyLine] = {
+  def printCharOrIntFunc(isChar: Boolean): List[Instruction] = {
     var _type: String = ""
     var formatSpecifier: String = ""
 
@@ -52,7 +51,7 @@ object ReferenceFunctions {
   }
 
   /* Generates the assembly code for printing a string */
-  lazy val printStrFunc: List[AssemblyLine] = {
+  lazy val printStrFunc: List[Instruction] = {
     List(
       NewLine(),
       AscizInstr(".L._prints_str0", "%.*s"),
@@ -74,7 +73,7 @@ object ReferenceFunctions {
   }
 
   /* Generates the assembly code for printing a pair */
-  lazy val printPairFunc: List[AssemblyLine] = {
+  lazy val printPairFunc: List[Instruction] = {
     List(
       NewLine(),
       AscizInstr(".L._printp_str0", "%p"),
@@ -95,7 +94,7 @@ object ReferenceFunctions {
   }
 
   /* Generates the assembly code for printing a bool */
-  lazy val printBoolFunc: List[AssemblyLine] = {
+  lazy val printBoolFunc: List[Instruction] = {
     List(
       NewLine(),
       AscizInstr(".L._printb_str0", "false"),
@@ -125,7 +124,7 @@ object ReferenceFunctions {
   }
 
   /* Generates the assembly code for printing with a newline */
-  lazy val printLnFunc: List[AssemblyLine] = {
+  lazy val printLnFunc: List[Instruction] = {
     List(
       NewLine(),
       AscizInstr(".L._println_str0", ""),
@@ -145,7 +144,7 @@ object ReferenceFunctions {
   }
 
   /* Generates the assembly code for malloc */
-  lazy val mallocFunc: List[AssemblyLine] = {
+  lazy val mallocFunc: List[Instruction] = {
     refFunctions += errorOutOfMemoryFunc
     List(
       NewLine(),
@@ -163,7 +162,7 @@ object ReferenceFunctions {
   }
 
   /* Generates the assembly code for reading an integer */
-  lazy val readIntFunc: List[AssemblyLine] = {
+  lazy val readIntFunc: List[Instruction] = {
     List(
       NewLine(),
       AscizInstr(".L._readi_str0", "%d"),
@@ -186,7 +185,7 @@ object ReferenceFunctions {
   }
 
   /* Generates the assembly code for reading a character */
-  lazy val readCharFunc: List[AssemblyLine] = {
+  lazy val readCharFunc: List[Instruction] = {
     List(
       NewLine(),
       AscizInstr(".L._readc_str0", " %c"),
@@ -209,7 +208,7 @@ object ReferenceFunctions {
   }
 
   /* Generates the assembly code for freeing memory */
-  lazy val freeFunc: List[AssemblyLine] = List(
+  lazy val freeFunc: List[Instruction] = List(
     NewLine(),
     Comment("Free function"),
     Label("_free"),
@@ -222,7 +221,7 @@ object ReferenceFunctions {
   )
 
   /* Generates the assembly code for freeing a pair */
-  lazy val freePairFunc: List[AssemblyLine] = {
+  lazy val freePairFunc: List[Instruction] = {
     refFunctions += freeFunc
     refFunctions += errorNullFunc
     List(
@@ -241,7 +240,7 @@ object ReferenceFunctions {
   }
 
   /* Generates the assembly code for loading an array */
-  lazy val arrayLoad4Func: List[AssemblyLine] = {
+  lazy val arrayLoad4Func: List[Instruction] = {
     refFunctions += errorOutOfBoundsFunc
     List(
       NewLine(),
@@ -261,7 +260,7 @@ object ReferenceFunctions {
   }
 
   /* Generates the assembly code for storing an array */
-  lazy val arrayStore4Func: List[AssemblyLine] = {
+  lazy val arrayStore4Func: List[Instruction] = {
     refFunctions += errorOutOfBoundsFunc
     List(
       NewLine(),
@@ -281,7 +280,7 @@ object ReferenceFunctions {
   }
 
   /* Generates the assembly code for handling an Out of Memory error */
-  private lazy val errorOutOfMemoryFunc: List[AssemblyLine] = {
+  private lazy val errorOutOfMemoryFunc: List[Instruction] = {
     refFunctions += printStrFunc
     List(
       NewLine(),
@@ -298,7 +297,7 @@ object ReferenceFunctions {
   }
 
   /* Generates the assembly code for handling an Out of Bounds error */
-  private lazy val errorOutOfBoundsFunc: List[AssemblyLine] = List(
+  private lazy val errorOutOfBoundsFunc: List[Instruction] = List(
     NewLine(),
     Comment("Error out of bounds function"),
     AscizInstr(".L._errOutOfBounds_str0", "Error: Array index out of bounds"),
@@ -314,7 +313,7 @@ object ReferenceFunctions {
   )
 
   /* Generates the assembly code for handling a Null Pointer error */
-  lazy val errorNullFunc: List[AssemblyLine] = {
+  lazy val errorNullFunc: List[Instruction] = {
     refFunctions += printStrFunc
     List(
       NewLine(),
@@ -331,7 +330,7 @@ object ReferenceFunctions {
   }
 
   /* Generates the assembly code for handling an Overflow error */
-  lazy val errorOverflowFunc: List[AssemblyLine] = {
+  lazy val errorOverflowFunc: List[Instruction] = {
     refFunctions += printStrFunc
     List(
       NewLine(),
@@ -348,7 +347,7 @@ object ReferenceFunctions {
   }
 
   /* Generates the assembly code for handling a Division by Zero error */
-  lazy val errorDivByZeroFunc: List[AssemblyLine] = {
+  lazy val errorDivByZeroFunc: List[Instruction] = {
     refFunctions += printStrFunc
     List(
       NewLine(),
@@ -366,7 +365,7 @@ object ReferenceFunctions {
 
   /* Generates the assembly code for handling a Bad Character error, so when a character
      is not within the acceptable ASCII range */
-  lazy val errorBadCharFunc: List[AssemblyLine] = {
+  lazy val errorBadCharFunc: List[Instruction] = {
     refFunctions += printStrFunc
     List(
       NewLine(),
@@ -385,7 +384,7 @@ object ReferenceFunctions {
   }
 
   /* Generates the assembly code for storing an array */
-  lazy val arrayStore1Func: List[AssemblyLine] = {
+  lazy val arrayStore1Func: List[Instruction] = {
     refFunctions += errorOutOfBoundsFunc
     List(
       NewLine(),

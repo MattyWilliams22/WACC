@@ -1,10 +1,8 @@
 package wacc.backend
 
-import wacc.backend.Instructions._
+object ARMAssemblyPrinter {
 
-package object ARMAssemblyPrinter {
-
-  def printAssembly(instructions: List[AssemblyLine]): String = {
+  def printAssembly(instructions: List[Instruction]): String = {
 
     def formatSize(size: ElemSize): String = size match {
       case OneByte => "b"
@@ -53,7 +51,7 @@ package object ARMAssemblyPrinter {
       case IP => "ip"
     }
 
-    def formatInstr(instr: AssemblyLine): String = instr match {
+    def formatInstr(instr: Instruction): String = instr match {
       case Comment(comment) => s"@ $comment"
       case Command(str, indent) => " " * indent + "." + str
       case Label(name) => name + ":"
@@ -94,13 +92,13 @@ package object ARMAssemblyPrinter {
       case NewLine() => ""
     }
 
-    def appendInstr(stringBuilder: StringBuilder, instr: AssemblyLine): Unit = {
+    def appendInstr(stringBuilder: StringBuilder, instr: Instruction): Unit = {
       val formattedInstr = formatInstr(instr)
       stringBuilder.append(formattedInstr).append("\n")
     }
 
     val stringBuilder = new StringBuilder()
-    instructions.foreach { instr => appendInstr(stringBuilder, instr)}
+    instructions.foreach{instr => appendInstr(stringBuilder, instr)}
     stringBuilder.toString()
   }
 }

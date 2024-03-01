@@ -3,12 +3,11 @@ package wacc.backend
 import scala.collection.mutable
 
 import wacc.ASTNodes._
-import wacc.backend.Instructions._
 
 case class VariableLocation(register: Register, offset: Int, size: Int, _type: Type)
 
 sealed trait RegisterAllocator {
-  def allocateRegister(): (Register, List[AssemblyLine])
+  def allocateRegister(): (Register, List[Instruction])
 }
 
 /* Basic register allocator that allocates registers by always putting the result in the register
@@ -23,9 +22,9 @@ class BasicRegisterAllocator extends RegisterAllocator {
 
   private var stackPointer = 0
 
-  def allocateRegister(): (Register, List[AssemblyLine]) = {
+  def allocateRegister(): (Register, List[Instruction]) = {
     var result: Register = R4
-    var instructions: List[AssemblyLine] = List.empty[AssemblyLine]
+    var instructions: List[Instruction] = List.empty[Instruction]
 
     /* If there are available registers, allocate the first one */
     if (availableRegisters.nonEmpty) {
