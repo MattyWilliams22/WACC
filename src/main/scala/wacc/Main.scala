@@ -70,19 +70,19 @@ object Main {
       /* Parsing of expression */
       result match {
         case Success(x) =>
-          // Semantic Analysis
+          /* Semantic Analysis */
           val semanticAnalyser = new SemanticAnalyser(x)
           semanticAnalyser.analyse()
           
           println(x)
 
-          // Code Generation
+          /* Code Generation */
           val inputFile = new File(arg)
           val outputFileName = inputFile.getName.split('.').head + ".s"
           val file = new File(outputFileName)
           file.createNewFile()
 
-          // Write a main function to the file
+          /* Writes assembly code to file */
           val writer = new PrintWriter(file)
           val registerAllocator = new BasicRegisterAllocator
           val (reg, _) = registerAllocator.allocateRegister()

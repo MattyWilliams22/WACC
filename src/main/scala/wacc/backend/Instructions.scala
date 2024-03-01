@@ -16,7 +16,7 @@ object Instructions {
     override def format: String = "#" + value.toString
   }
 
-  case object noShift extends Shift {
+  private case object noShift extends Shift {
     override def format: String = ""
   }
 
@@ -38,10 +38,6 @@ object Instructions {
 
   case class Comment(comment: String) extends AssemblyLine {
     override def format: String = s"@ $comment"
-  }
-
-  case class DataSection() extends AssemblyLine {
-    override def format: String = ".data"
   }
 
   case class Command(str: String, indent: Int) extends AssemblyLine {
@@ -99,17 +95,9 @@ object Instructions {
   case class SubsInstr(reg: Register, operand1: Register, operand2: Operand) extends AssemblyLine {
     override def format: String = s"    subs ${reg.format}, ${operand1.format}, ${operand2.format}"
   }
-  
-  case class MulInstr(reg: Register, operand1: Register, operand2: Operand) extends AssemblyLine {
-    override def format: String = s"    mul ${reg.format}, ${operand1.format}, ${operand2.format}"
-  }
 
   case class SmullInstr(reg1: Register, reg2: Register, operand1: Register, operand2: Operand) extends AssemblyLine {
     override def format: String = s"    smull ${reg1.format}, ${reg2.format}, ${operand1.format}, ${operand2.format}"
-  }
-
-  case class DivInstr(reg: Register, operand1: Register, operand2: Operand) extends AssemblyLine {
-    override def format: String = s"    sdiv ${reg.format}, ${operand1.format}, ${operand2.format}"
   }
 
   case class CmpInstr(operand1: Register, operand2: Operand, shift: Shift = noShift) extends AssemblyLine {

@@ -5,7 +5,7 @@ import scala.collection.mutable
 import wacc.ASTNodes._
 import wacc.backend.Instructions._
 
-case class VariableLocation(val register: Register, val offset: Int, val size: Int, val _type: Type)
+case class VariableLocation(register: Register, offset: Int, size: Int, _type: Type)
 
 sealed trait RegisterAllocator {
   def allocateRegister(): (Register, List[AssemblyLine])
@@ -18,20 +18,24 @@ class BasicRegisterAllocator extends RegisterAllocator {
 
   private var availableRegisters: List[Register] = allRegisters
 
-  private var varMap: mutable.Map[String, VariableLocation] = mutable.Map.empty[String, VariableLocation]
+  /* Map of variable names to their locations where they are stored */
+  private val varMap: mutable.Map[String, VariableLocation] = mutable.Map.empty[String, VariableLocation]
 
   private var stackPointer = 0
 
   def allocateRegister(): (Register, List[AssemblyLine]) = {
     var result: Register = R4
     var instructions: List[AssemblyLine] = List.empty[AssemblyLine]
-    
-    if (!(availableRegisters.isEmpty)) {
+
+    /* If there are available registers, allocate the first one */
+    if (availableRegisters.nonEmpty) {
       result = availableRegisters.head
     } else {
+      /* If there are no available registers, find a variable that is stored in a register and
+         store it in memory */
       val regsInUse = allRegisters diff availableRegisters
       for (reg <- regsInUse) {
-        val varName: Option[String] = varMap.find { case (key, v) => v.register == reg }.map(_._1)
+        val varName: Option[String] = varMap.find { case (_, v) => v.register == reg }.map(_._1)
         varName match {
           case Some(name) => 
             stackPointer -= 4
@@ -72,16 +76,4 @@ class BasicRegisterAllocator extends RegisterAllocator {
     /* Add the deallocated register to the list of available registers */
     availableRegisters = register :: availableRegisters
   }
-
-  /* Push all registers that are currently being used onto the stack */
-  def saveRegisters(): List[Register] = {
-    println("Saving registers")
-    (allRegisters diff (R0 :: availableRegisters))
-  }
-
-  // /* Pop all registers that were saved onto the stack from the stack */
-  // def restoreRegisters(): List[AssemblyLine] = {
-  //   println("Restoring registers")
-  //   (allRegisters diff availableRegisters).reverse.map(reg => Pop(List(reg)))
-  // }
 }
