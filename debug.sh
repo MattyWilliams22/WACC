@@ -22,5 +22,5 @@ arm-linux-gnueabi-gcc -o execFile -z noexecstack -march=armv6 $filename.s
 echo "qemu-arm -L /usr/arm-linux-gnueabi/ execFile"
 qemu-arm -L /usr/arm-linux-gnueabi/ execFile
 
-rm $filename.s
-rm execFile
+# rm $filename.s
+# rm execFile

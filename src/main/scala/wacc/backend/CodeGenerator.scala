@@ -27,8 +27,8 @@ object CodeGenerator {
   def generateAssembly(ast: ASTNode, allocator: BasicRegisterAllocator, dest: Register): List[Instruction] = {
 
     def programGenerate(funcs: List[Function], stmts: Statement): List[Instruction] = {
-      val funcLines = funcs.flatMap(generateAssembly(_, allocator, dest))
       val stmtLines = generateAssembly(stmts, allocator, dest)
+      val funcLines = funcs.flatMap(generateAssembly(_, allocator, dest))
       List(
         Comment("Start of program"),
         Command("data", 0)
@@ -57,11 +57,24 @@ object CodeGenerator {
       Label(funcName.nickname.get) ::
       List(
         Push(List(FP, LR)),
+        Push(List(R4, R5, R6, R7, R8, R9, R10)),
         Mov(FP, SP)
       ) ++
       paramsGenerate(params) ++
-      generateAssembly(body, allocator, dest) ++
-      List(Command("ltorg", 4))
+      (body match {
+        case Statements(stmts) => 
+          stmts.flatMap(
+            Push(List(R0, R1, R2, R3)) :: 
+            generateAssembly(_, allocator, dest) ++ 
+            List(Pop(List(R0, R1, R2, R3))))
+        case _ => {
+          Push(List(R0, R1, R2, R3)) ::
+          generateAssembly(body, allocator, dest) ++
+          List(Pop(List(R0, R1, R2, R3)))
+        }}) ++
+      List(
+        Command("ltorg", 4)
+      )
     }
 
     def paramsGenerate(params: List[Param]): List[Instruction] = {
@@ -88,7 +101,7 @@ object CodeGenerator {
             allocator.setLocation(param.ident.nickname.get, VariableLocation(next, 0, 4, param._type))
           case _ =>
             allocator.deallocateRegister(next)
-            allocator.setLocation(param.ident.nickname.get, VariableLocation(FP, 4 * (params.length - i), 4, param._type))
+            allocator.setLocation(param.ident.nickname.get, VariableLocation(FP, 4 * (params.length - i - 1), 4, param._type))
         }
       }
       paramLines.toList
@@ -99,16 +112,10 @@ object CodeGenerator {
       allocator.setLocation(id.nickname.get, VariableLocation(newDest, 0, 4, _type))
       val idLines = generateAssembly(id, allocator, newDest)
       val valueLines = generateAssembly(value, allocator, newDest)
-      val movLines: List[Instruction] = value match {
-        case Call(_, _) =>
-          List(Mov(newDest, R0))
-        case _ => List()
-      }
       Comment("Start of declare") ::
       rLines ++
       idLines ++
-      valueLines ++ 
-      movLines
+      valueLines
     }
 
     def assignGenerate(lvalue: LValue, rvalue: RValue): List[Instruction] = {
@@ -327,6 +334,7 @@ object CodeGenerator {
         Comment("Return Logic"),
         Mov(R0, dest),
         Mov(SP, FP),
+        Pop(List(R4, R5, R6, R7, R8, R9, R10)),
         Pop(List(FP, PC))
       )
     }
@@ -339,7 +347,9 @@ object CodeGenerator {
       List(
         Comment("Exit Logic"),
         Mov(R0, dest),
-        BlInstr("_exit")
+        BlInstr("_exit"),
+        Mov(SP, FP),
+        Pop(List(FP, PC))
       )
     }
 
@@ -910,10 +920,13 @@ object CodeGenerator {
 
     def callGenerate(funcName: Ident, args: List[Expr]): List[Instruction] = {
       Comment("Start of function call") ::
+      Push(List(R1, R2, R3)) ::
       argsGenerate(args) ++
       List(
         Comment("Call Logic"),
-        BlInstr(funcName.nickname.get)
+        BlInstr(funcName.nickname.get),
+        Pop(List(R1, R2, R3)),
+        Mov(dest, R0)
       )
     }
 
@@ -935,7 +948,7 @@ object CodeGenerator {
             argsLines += Mov(R2, next)
           case 3 =>
             argsLines += Mov(R3, next)
-          case _ => argsLines += StoreInstr(next, SP, ImmVal(4 * (args.length - i)))
+          case _ => argsLines += StoreInstr(next, SP, ImmVal(4 * (args.length - i - 1)))
         }
       }
       argsLines.toList
