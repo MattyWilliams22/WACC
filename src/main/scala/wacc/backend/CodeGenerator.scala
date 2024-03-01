@@ -44,7 +44,7 @@ object CodeGenerator {
     List(
       NewLine(),
       AscizInstr(s".L._print${_type}_str0", formatSpecifier),
-      Command("align 4"),
+      Command("align 4", 0),
       Comment(s"Print${_type} function"),
       Label(s"_print${_type}"),
       Push(List(FP, LR)),
@@ -64,7 +64,7 @@ object CodeGenerator {
     List(
       NewLine(),
       AscizInstr(".L._prints_str0", "%.*s"),
-      Command("align 4"),
+      Command("align 4", 0),
       Comment("Print string function"),
       Label("_prints"),
       Push(List(FP, LR)),
@@ -85,7 +85,7 @@ object CodeGenerator {
     List(
       NewLine(),
       AscizInstr(".L._printp_str0", "%p"),
-      Command("align 4"),
+      Command("align 4", 0),
       Comment("Print pair function"),
       Label("_printp"),
       Push(List(FP, LR)),
@@ -107,7 +107,7 @@ object CodeGenerator {
       AscizInstr(".L._printb_str0", "false"),
       AscizInstr(".L._printb_str1", "true"),
       AscizInstr(".L._printb_str2", "%.*s"),
-      Command("align 4"),
+      Command("align 4", 0),
       Comment("Print bool function"),
       Label("_printb"),
       Push(List(FP, LR)),
@@ -134,7 +134,7 @@ object CodeGenerator {
     List(
       NewLine(),
       AscizInstr(".L._println_str0", ""),
-      Command("align 4"),
+      Command("align 4", 0),
       Comment("Println function"),
       Label("_println"),
       Push(List(FP, LR)),
@@ -170,7 +170,7 @@ object CodeGenerator {
     List(
       NewLine(),
       AscizInstr(".L._readi_str0", "%d"),
-      Command("align 4"),
+      Command("align 4", 0),
       Comment("Read int function"),
       Label("_readi"),
       Push(List(FP, LR)),
@@ -192,7 +192,7 @@ object CodeGenerator {
     List(
       NewLine(),
       AscizInstr(".L._readc_str0", " %c"),
-      Command("align 4"),
+      Command("align 4", 0),
       Comment("Read char function"),
       Label("_readc"),
       Push(List(FP, LR)),
@@ -284,7 +284,7 @@ object CodeGenerator {
       NewLine(),
       Comment("Error out of memory function"),
       AscizInstr(".L._errOutOfMemory_str0", "Error: Out of memory"),
-      Command("align 4"),
+      Command("align 4", 0),
       Label("_errOutOfMemory"),
       BicInstr(SP, SP, ImmVal(7)),
       AdrInstr(R0, ".L._errOutOfMemory_str0"),
@@ -298,7 +298,7 @@ object CodeGenerator {
     NewLine(),
     Comment("Error out of bounds function"),
     AscizInstr(".L._errOutOfBounds_str0", "Error: Array index out of bounds"),
-    Command("align 4"),
+    Command("align 4", 0),
     Label("_errOutOfBounds"),
     BicInstr(SP, SP, ImmVal(7)),
     AdrInstr(R0, ".L._errOutOfBounds_str0"),
@@ -315,7 +315,7 @@ object CodeGenerator {
       NewLine(),
       Comment("Error null pointer function"),
       AscizInstr(".L._errNull_str0", "Error: Null pair dereferenced"),
-      Command("align 4"),
+      Command("align 4", 0),
       Label("_errNull"),
       BicInstr(SP, SP, ImmVal(7)),
       AdrInstr(R0, ".L._errNull_str0"),
@@ -331,7 +331,7 @@ object CodeGenerator {
       NewLine(),
       Comment("Error overflow function"),
       AscizInstr(".L._errOverflow_str0", "Error: Integer overflow or underflow occured"),
-      Command("align 4"),
+      Command("align 4", 0),
       Label("_errOverflow"),
       BicInstr(SP, SP, ImmVal(7)),
       AdrInstr(R0, ".L._errOverflow_str0"),
@@ -347,7 +347,7 @@ object CodeGenerator {
       NewLine(),
       Comment("Error division by zero function"),
       AscizInstr(".L._errDivZero_str0", "Error: Division by zero"),
-      Command("align 4"),
+      Command("align 4", 0),
       Label("_errDivZero"),
       BicInstr(SP, SP, ImmVal(7)),
       AdrInstr(R0, ".L._errDivZero_str0"),
@@ -363,7 +363,7 @@ object CodeGenerator {
       NewLine(),
       Comment("Error bad character function"),
       AscizInstr(".L._errBadChar_str0", "fatal error: int %d is not ascii character 0-127 \n"),
-      Command("align 4"),
+      Command("align 4", 0),
       Label("_errBadChar"),
       BicInstr(SP, SP, ImmVal(7)),
       AdrInstr(R0, ".L._errBadChar_str0"),
@@ -406,13 +406,13 @@ object CodeGenerator {
       val stmtLines = generateAssembly(stmts, allocator, dest)
       List(
         Comment("Start of program"),
-        Command("data")
+        Command("data", 0)
       ) ++
       stringPool.toList ++
       List(
-        Command("align 4"),
-        Command("text"),
-        Command("global main"),
+        Command("align 4", 0),
+        Command("text", 0),
+        Command("global main", 0),
         Label("main"), 
         Push(List(FP, LR)), 
         Mov(FP, SP)
@@ -436,39 +436,38 @@ object CodeGenerator {
       ) ++
       paramsGenerate(params) ++
       generateAssembly(body, allocator, dest) ++
-      List(LtorgInstr())
+      List(Command("ltorg", 4))
     }
 
     def paramsGenerate(params: List[Param]): List[AssemblyLine] = {
       var paramLines = new ListBuffer[AssemblyLine]()
-      var regNum = 0
-      for (param <- params) {
+      for (i <- 0 to params.length - 1) {
+        val param = params(i)
         val (next, rLines) = allocator.allocateRegister()
-        paramLines ++= rLines
-        regNum match {
+        i match {
           case 0 => {
+            paramLines ++= rLines
             paramLines += Mov(next, R0)
             allocator.setLocation(param.ident.nickname.get, VariableLocation(next, 0, 4, param._type))
-            regNum += 1
           }
           case 1 => {
+            paramLines ++= rLines
             paramLines += Mov(next, R1)
             allocator.setLocation(param.ident.nickname.get, VariableLocation(next, 0, 4, param._type))
-            regNum += 1
           }
           case 2 => {
+            paramLines ++= rLines
             paramLines += Mov(next, R2)
             allocator.setLocation(param.ident.nickname.get, VariableLocation(next, 0, 4, param._type))
-            regNum += 1
           }
           case 3 => {
+            paramLines ++= rLines
             paramLines += Mov(next, R3)
             allocator.setLocation(param.ident.nickname.get, VariableLocation(next, 0, 4, param._type))
-            regNum += 1
           }
           case _ => {
-            paramLines += Pop(List(next))
-            allocator.setLocation(param.ident.nickname.get, VariableLocation(next, 0, 4, param._type))
+            allocator.deallocateRegister(next)
+            allocator.setLocation(param.ident.nickname.get, VariableLocation(FP, 4 * (params.length - i), 4, param._type))
           }
         }
       }
@@ -506,15 +505,7 @@ object CodeGenerator {
       lvalue match {
         case Ident(string, nickname, _type) => {
           val identLoc: VariableLocation = allocator.lookupLocation(nickname.get).get
-          identLoc._type match {
-            case ArrayT(_, _) => {
-              (List(), List(), identLoc.register)
-            }
-            case PairT(_, _) => {
-              (List(), List(), identLoc.register)
-            }
-            case _ => (List(), List(), identLoc.register)
-          }
+          (List(), List(), identLoc.register)
         }
         case ArrayElem(ident, indices) => {
           val identLoc: VariableLocation = allocator.lookupLocation(ident.nickname.get).get
@@ -821,19 +812,16 @@ object CodeGenerator {
           case 1 => OneByte
           case _ => FourBytes
         }
-        // Initialise the total size of the array with the size of the first element
-        if (index == 0) {
-          totalSize = size
-        }
+        totalSize += size
         arrayLines ++= r2Lines
         arrayLines ++= elemLines
         arrayLines ++= List(
           Mov(dest, next), 
           StoreInstr(dest, pointer, ImmVal(totalSize - size), sizeToStore)
         )
-        totalSize += size
         allocator.deallocateRegister(next)
       }
+      totalSize += 4
       allocator.deallocateRegister(pointer)
       Comment("Start of array literal") ::
       r1Lines ++
@@ -1325,31 +1313,27 @@ object CodeGenerator {
 
     def argsGenerate(args: List[Expr]): List[AssemblyLine] = {
       var argsLines = new ListBuffer[AssemblyLine]()
-      var regNum = 0
-      for (arg <- args) {
+      for (i <- 0 to args.length - 1) {
+        val arg = args(i)
         val (next, rLines) = allocator.allocateRegister()
         val argLines = generateAssembly(arg, allocator, next)
         argsLines ++= rLines
         argsLines ++= argLines
         allocator.deallocateRegister(next)
-        regNum match {
+        i match {
           case 0 => {
             argsLines += Mov(R0, next)
-            regNum += 1
           }
           case 1 => {
             argsLines += Mov(R1, next)
-            regNum += 1
           }
           case 2 => {
             argsLines += Mov(R2, next)
-            regNum += 1
           }
           case 3 => {
             argsLines += Mov(R3, next)
-            regNum += 1
           }
-          case _ => argsLines += Push(List(next))
+          case _ => argsLines += StoreInstr(next, SP, ImmVal(4 * (args.length - i)))
         }
       }
       argsLines.toList

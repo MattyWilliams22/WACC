@@ -44,8 +44,8 @@ object Instructions {
     override def format: String = ".data"
   }
 
-  case class Command(str: String) extends AssemblyLine {
-    override def format: String = "." + str
+  case class Command(str: String, indent: Int) extends AssemblyLine {
+    override def format: String = " " * indent + "." + str
   }
 
   case class Label(name: String) extends AssemblyLine {
@@ -158,10 +158,6 @@ object Instructions {
 
   case class RsbsInstr(reg: Register, operand: Operand) extends AssemblyLine {
     override def format: String = s"    rsbs ${reg.format}, ${operand.format}, #0"
-  }
-
-  case class LtorgInstr() extends AssemblyLine {
-    override def format: String = s"    .ltorg"
   }
 
   case class NewLine() extends AssemblyLine {
