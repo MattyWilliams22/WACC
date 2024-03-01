@@ -9,6 +9,7 @@ import wacc.backend.BasicRegisterAllocator
 import wacc.frontend.ErrorOutput._
 import wacc.frontend.Error._
 import wacc.frontend.{SemanticAnalyser, parser}
+import wacc.backend.ARMAssemblyPrinter
 
 object Main {
   val FILE_ERR_CODE = 150
@@ -87,8 +88,9 @@ object Main {
           val registerAllocator = new BasicRegisterAllocator
           val (reg, _) = registerAllocator.allocateRegister()
           val assemblyLines = generateAssembly(x, registerAllocator, reg)
-          assemblyLines.foreach(line => writer.write(line.format + "\n"))
-          assemblyLines.foreach(line => println(line.format))
+          val outputLines = ARMAssemblyPrinter.printAssembly(assemblyLines)
+          writer.write(outputLines)
+          println(outputLines)
           writer.close()
 
           System.exit(SUCCESS_CODE)
