@@ -2,6 +2,7 @@ package wacc.backend
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
+import scala.collection.mutable.Stack
 
 import wacc.ASTNodes._
 import wacc.backend.Instructions._
@@ -13,6 +14,7 @@ object CodeGenerator {
   private var stringCounter: Int = -1
   val refFunctions: mutable.Set[List[AssemblyLine]] = mutable.Set()
   private val stringPool: mutable.Set[AscizInstr] = mutable.Set()
+  private var savedRegs: Stack[List[Register]] = Stack[List[Register]]()
 
   /* Generates a unique label for a String literal */
   private def getStringLabel: String = {
@@ -54,15 +56,20 @@ object CodeGenerator {
 
     def functionGenerate(_type: Type, funcName: Ident, params: List[Param], body: Statement): List[AssemblyLine] = {
       allocator.setLocation(funcName.nickname.get, VariableLocation(R0, 0, 4, _type))
-      Comment("Start of function") ::
+      savedRegs.push(allocator.getRegsInUse diff List(R0, R1, R2, R3))
+      allocator.deallocateRegisters(savedRegs.top)
+      val funcLines = Comment("Start of function") ::
       Label(funcName.nickname.get) ::
       List(
         Push(List(FP, LR)),
+        Push(savedRegs.top),
         Mov(FP, SP)
       ) ++
       paramsGenerate(params) ++
       generateAssembly(body, allocator, dest) ++
       List(Command("ltorg", 4))
+      allocator.allocateStrictRegisters(savedRegs.pop())
+      funcLines
     }
 
     def paramsGenerate(params: List[Param]): List[AssemblyLine] = {
@@ -328,6 +335,7 @@ object CodeGenerator {
         Comment("Return Logic"),
         Mov(R0, dest),
         Mov(SP, FP),
+        Pop(savedRegs.top),
         Pop(List(FP, PC))
       )
     }
@@ -340,7 +348,9 @@ object CodeGenerator {
       List(
         Comment("Exit Logic"),
         Mov(R0, dest),
-        BlInstr("_exit")
+        BlInstr("_exit"),
+        Mov(SP, FP),
+        Pop(List(FP, PC))
       )
     }
 

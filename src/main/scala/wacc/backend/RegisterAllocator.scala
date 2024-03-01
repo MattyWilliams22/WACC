@@ -50,7 +50,7 @@ class BasicRegisterAllocator extends RegisterAllocator {
     println(s"Allocated register: $result")
 
     /* Remove the allocated register from the list of available registers */
-    if (availableRegisters.length < 2) {
+    if (availableRegisters.count(_=>true) < 2) {
       availableRegisters = List.empty[Register]
     } else {
       availableRegisters = availableRegisters.tail
@@ -70,10 +70,27 @@ class BasicRegisterAllocator extends RegisterAllocator {
     varMap -= varName
   }
 
+  def getRegsInUse: List[Register] = {
+    allRegisters diff availableRegisters
+  }
+
   def deallocateRegister(register: Register): Unit = {
     println(s"Deallocated register: $register")
 
     /* Add the deallocated register to the list of available registers */
     availableRegisters = register :: availableRegisters
+  }
+
+  def deallocateRegisters(registers: List[Register]): Unit = {
+    /* Add the deallocated registers to the list of available registers */
+    for (register <- registers) {
+      if (!availableRegisters.contains(register)) {
+        availableRegisters = register :: availableRegisters
+      }
+    }
+  }
+
+  def allocateStrictRegisters(registers: List[Register]): Unit = {
+    availableRegisters = availableRegisters diff registers
   }
 }
