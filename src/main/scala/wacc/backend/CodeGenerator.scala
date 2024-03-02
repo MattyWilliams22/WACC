@@ -152,7 +152,7 @@ object CodeGenerator {
               ), 
               pairLines(lvalue, lvalueLoc) ++
               List(
-                StoreInstr(newDest, lvalueLoc, ImmVal(0))
+                StrInstr(newDest, Addr(lvalueLoc, ImmVal(0)))
               ) ++ 
               afterLines, 
               newDest)
@@ -168,7 +168,7 @@ object CodeGenerator {
               afterLines ++
               pairLines(lvalue, lvalueLoc) ++
               List(
-                StoreInstr(newDest, lvalueLoc, ImmVal(4))
+                StrInstr(newDest, Addr(lvalueLoc, ImmVal(4)))
               ), 
               newDest)
           }
@@ -445,7 +445,7 @@ object CodeGenerator {
         arrayLines ++= elemLines
         arrayLines ++= List(
           Mov(dest, next), 
-          StoreInstr(dest, pointer, ImmVal(totalSize - size), sizeToStore)
+          StrInstr(dest, Addr(pointer, ImmVal(totalSize - size)), sizeToStore)
         )
         allocator.deallocateRegister(next)
       }
@@ -459,7 +459,7 @@ object CodeGenerator {
         Mov(pointer, R0),
         AddInstr(pointer, pointer, ImmVal(4)),
         Mov(dest, ImmVal(elems.length)),
-        StoreInstr(dest, pointer, ImmVal(-4)),
+        StrInstr(dest, Addr(pointer, ImmVal(-4))),
       ) ++
       arrayLines.toList ++
       List(
@@ -496,11 +496,11 @@ object CodeGenerator {
       ) ++
       generateAssembly(exp1, allocator, next) ++
       List(
-        StoreInstr(next, dest, ImmVal(0))
+        StrInstr(next, Addr(dest, ImmVal(0)))
       ) ++
       generateAssembly(exp2, allocator, next) ++
       List(
-        StoreInstr(next, dest, ImmVal(4)),
+        StrInstr(next, Addr(dest, ImmVal(4))),
         Mov(dest, dest)
       )
       allocator.deallocateRegister(next)
@@ -959,7 +959,7 @@ object CodeGenerator {
             argsLines += Mov(R2, next)
           case 3 =>
             argsLines += Mov(R3, next)
-          case _ => argsLines += StoreInstr(next, SP, ImmVal(4 * (args.length - i - 1)))
+          case _ => argsLines += StrInstr(next, Addr(SP, ImmVal(4 * (args.length - i - 1))))
         }
       }
       argsLines.toList

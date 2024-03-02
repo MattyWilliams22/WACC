@@ -9,7 +9,7 @@ object ARMAssemblyPrinter {
 
     def formatSize(size: ElemSize): String = size match {
       case OneByte => "b"
-      case FourBytes => ""
+      case _ => ""
     }
 
     def formatCondition(condition: Condition): String = condition match {
@@ -89,8 +89,7 @@ object ARMAssemblyPrinter {
           .replace("\u0000", "\\0")
 
         s"   .word ${escapedString.length}\n$label:\n   .asciz \"$escapedString\""
-      case StoreInstr(reg, address, offset, size) => s"    str${formatSize(size)} ${formatReg(reg)}, [${formatReg(address)}, ${formatOperand(offset)}]"
-      case StoreShift(reg1, reg2, reg3, shift) => s"    str ${formatReg(reg1)}, [${formatReg(reg2)}, ${formatReg(reg3)}${formatShift(shift)}]"
+      case StrInstr(reg1, operand, size) => s"    str${formatSize(size)} ${formatReg(reg1)}, ${formatOperand(operand)}"
       case RsbsInstr(reg, operand) => s"    rsbs ${formatReg(reg)}, ${formatOperand(operand)}, #0"
       case NewLine() => ""
     }

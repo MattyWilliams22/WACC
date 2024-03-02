@@ -41,7 +41,7 @@ class BasicRegisterAllocator extends RegisterAllocator {
           case Some(name) => 
             stackPointer -= 4
             varMap(name) = VariableLocation(FP, stackPointer, varMap(name).size, varMap(name)._type)
-            instructions = List(StoreInstr(reg, FP, ImmVal(stackPointer)))
+            instructions = List(StrInstr(reg, Addr(FP, ImmVal(stackPointer))))
             return (reg, instructions)
           case _ =>
         }
