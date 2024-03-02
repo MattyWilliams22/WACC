@@ -53,12 +53,15 @@ object CodeGenerator {
 
     def functionGenerate(_type: Type, funcName: Ident, params: List[Param], body: Statement): List[Instruction] = {
       allocator.setLocation(funcName.nickname.get, VariableLocation(R0, 0, 4, _type))
-      Comment("Start of function") ::
-      Label(funcName.nickname.get) ::
-      List(
-        Push(List(FP, LR)),
+
+      val functionName = funcName.nickname.get
+
+      val funcLabel = functionName
+
+      val stringLiterals = List()
+
+      val funcBody = List(
         Push(List(R4, R5, R6, R7, R8, R9, R10)),
-        Mov(FP, SP)
       ) ++
       paramsGenerate(params) ++
       (body match {
@@ -71,7 +74,9 @@ object CodeGenerator {
           Push(List(R0, R1, R2, R3)) ::
           generateAssembly(body, allocator, dest) ++
           List(Pop(List(R0, R1, R2, R3)))
-        }}) ++
+        }})
+
+      functionWrapper(functionName, funcLabel, stringLiterals, funcBody) ++
       List(
         Command("ltorg", 4)
       )
