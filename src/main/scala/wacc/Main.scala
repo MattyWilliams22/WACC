@@ -33,7 +33,7 @@ object Main {
     if(arg.endsWith(".wacc")) {
       val inputFile = new File(args(0))
 
-      /* Checks if file exists*/
+      /* Checks if file exists */
       if (!inputFile.exists()) {
         println("File does not exist")
         System.exit(FILE_ERR_CODE)
@@ -45,7 +45,7 @@ object Main {
         System.exit(FILE_ERR_CODE)
       }
 
-      /*Reads file contents */
+      /* Reads file contents */
       val source = Source.fromFile(inputFile)
       val fileContents = try source.mkString finally source.close()
       input = fileContents
@@ -56,16 +56,16 @@ object Main {
     }
 
 
-    /* To be able to run Tests */
+    /* To be able to run tests */
     if (args.length > 1) {
-      // Invoke your parser's parse method
+      /* Invoke your parser's parse method */
       val result: Result[SyntaxError, Expr] = parser.parseTest(input)
       result match {
         case Success(x) => println(s"$arg = $x")
         case Failure(msg) => println(msg)
       }
     } else {
-      // Invoke your parser's parse method
+      /* Invoke your parser's parse method */
       val result: Result[SyntaxError, Program] = parser.parse(input)
 
       /* Parsing of expression */
@@ -77,20 +77,20 @@ object Main {
           
           println(x)
 
-          /* Code Generation */
+          /* Create a new file to store generated assembly */
           val inputFile = new File(arg)
           val outputFileName = inputFile.getName.split('.').head + ".s"
           val file = new File(outputFileName)
           file.createNewFile()
 
-          /* Writes assembly code to file */
+          /* Create print writer to allow to write assembly code to file */
           val writer = new PrintWriter(file)
+
+          /* Code Generation */
           val registerAllocator = new BasicRegisterAllocator
           val (reg, _) = registerAllocator.allocateRegister()
           val assemblyLines = generateAssembly(x, registerAllocator, reg)
-          val outputLines = ARMAssemblyPrinter.printAssembly(assemblyLines)
-          writer.write(outputLines)
-          println(outputLines)
+          ARMAssemblyPrinter.printAssembly(assemblyLines, writer)
           writer.close()
 
           System.exit(SUCCESS_CODE)

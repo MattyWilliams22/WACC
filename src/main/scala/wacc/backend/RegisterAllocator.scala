@@ -4,11 +4,13 @@ import scala.collection.mutable
 
 import wacc.ASTNodes._
 
-case class VariableLocation(register: Register, offset: Int, size: Int, _type: Type)
-
+/* Represents an object that is used to allocate general purpose registers within the ARM architecture */
 sealed trait RegisterAllocator {
   def allocateRegister(): (Register, List[Instruction])
 }
+
+/* Represents the location of a variable in the program state, as well as the variable's type */
+case class VariableLocation(register: Register, offset: Int, size: Int, _type: Type)
 
 /* Basic register allocator that allocates registers by always putting the result in the register
    that is at the front of the list of available registers */
@@ -63,10 +65,6 @@ class BasicRegisterAllocator extends RegisterAllocator {
 
   def setLocation(varName: String, location: VariableLocation): Unit = {
     varMap(varName) = location
-  }
-
-  def removeVariable(varName: String): Unit = {
-    varMap -= varName
   }
 
   def deallocateRegister(register: Register): Unit = {

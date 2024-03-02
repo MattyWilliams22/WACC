@@ -1,6 +1,6 @@
 package wacc.backend
 
-/* Represents a register in the Intel x86-64 architecture */
+/* Represents a register in the ARM32 architecture */
 sealed trait Register extends Operand {
   val number: Int
 }

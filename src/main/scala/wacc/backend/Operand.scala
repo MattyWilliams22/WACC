@@ -2,8 +2,11 @@ package wacc.backend
 
 trait Operand
 
+case class IntLiteral(value: Int) extends Operand
 case class ImmVal(value: Int) extends Operand
 case class LabelAddr(label: String) extends Operand
+case class Addr(address: Register, offset: ImmVal) extends Operand
+case class RegShift(reg1: Register, reg2: Register, shift: Shift) extends Operand
 
 sealed trait Shift
 

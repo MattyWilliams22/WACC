@@ -148,7 +148,7 @@ object CodeGenerator {
               pairLines(lvalue, lvalueLoc) ++
               rLines ++
               List(
-                LdrAddr(newDest, lvalueLoc, ImmVal(0))
+                Ldr(newDest, Addr(lvalueLoc, ImmVal(0)))
               ), 
               pairLines(lvalue, lvalueLoc) ++
               List(
@@ -162,7 +162,7 @@ object CodeGenerator {
               (pairLines(lvalue, lvalueLoc) ++
               rLines ++
               List(
-                LdrAddr(newDest, lvalueLoc, ImmVal(4))
+                Ldr(newDest, Addr(lvalueLoc, ImmVal(4)))
               ) ++
               beforeLines, 
               afterLines ++
@@ -515,11 +515,11 @@ object CodeGenerator {
       val funcLines = func match {
         case "fst" =>
           List(
-            LdrAddr(dest, next, ImmVal(0))
+            Ldr(dest, Addr(next, ImmVal(0)))
           )
         case "snd" =>
           List(
-            LdrAddr(dest, next, ImmVal(4))
+            Ldr(dest, Addr(next, ImmVal(4)))
           )
       }
       Comment("Start of pair element") ::
@@ -553,7 +553,7 @@ object CodeGenerator {
       r2Lines ++
       r3Lines ++
       List(
-        Pop(List(val1, val2)),
+        Pop(List(val1, val2).sortBy(_.number)),
         SmullInstr(dest, hi, val1, val2),
         CmpInstr(hi, dest, ShiftRight(31)),
         BlInstr("_errOverflow", NEcond)
@@ -810,7 +810,7 @@ object CodeGenerator {
       expLines ++
       List(
         Comment("len Logic"),
-        LdrAddr(dest, next, ImmVal(-4))
+        Ldr(dest, Addr(next, ImmVal(-4)))
       )
     }
 
@@ -839,7 +839,7 @@ object CodeGenerator {
 
     def numGenerate(n: Int): List[Instruction] = {
       val instr = if (n < 0 || n > 255) {
-        LdrImm(dest, n)
+        Ldr(dest, IntLiteral(n))
       } else {
         Mov(dest, ImmVal(n))
       }
@@ -884,7 +884,7 @@ object CodeGenerator {
               val (next, rLines) = allocator.allocateRegister()
               allocator.setLocation(n, VariableLocation(next, 0, size, _type))
               rLines ++ List(
-                LdrAddr(next, reg, ImmVal(off)),
+                Ldr(next, Addr(reg, ImmVal(off))),
                 Mov(dest, next)
               )
             case _ => List(Mov(dest, reg))
@@ -899,7 +899,7 @@ object CodeGenerator {
       stringPool += asciz
       Comment("Start of string") ::
       List(
-        LdrLabel(dest, LabelAddr(label))
+        Ldr(dest, LabelAddr(label))
       )
     }
 

@@ -1,8 +1,11 @@
 package wacc.backend
 
+import java.io.PrintWriter
+
 object ARMAssemblyPrinter {
 
-  def printAssembly(instructions: List[Instruction]): String = {
+  /* Function to convert a given list of ARM32 assembly instructions to its string representation */
+  def printAssembly(instructions: List[Instruction], writer: PrintWriter): Unit = {
 
     def formatSize(size: ElemSize): String = size match {
       case OneByte => "b"
@@ -21,9 +24,12 @@ object ARMAssemblyPrinter {
     }
 
     def formatOperand(operand: Operand): String = operand match {
-      case immVal: ImmVal => "#" + immVal.value.toString
-      case labelAddr: LabelAddr => "=" + labelAddr.label
+      case ImmVal(value) => "#" + value.toString
+      case LabelAddr(label) => "=" + label
       case reg: Register => formatReg(reg)
+      case Addr(address, offset) => s"[${formatReg(address)}, ${formatOperand(offset)}]"
+      case RegShift(reg1, reg2, shift) => s"[${formatReg(reg1)}, ${formatReg(reg2)}${formatShift(shift)}]"
+      case IntLiteral(num) => s"=${num.toString}"
     }
 
     def formatShift(shift: Shift): String = shift match {
@@ -57,10 +63,7 @@ object ARMAssemblyPrinter {
       case Label(name) => name + ":"
       case Push(regs) => s"    push {${regs.map(formatReg).mkString(", ")}}"
       case Pop(regs) => s"    pop {${regs.map(formatReg).mkString(", ")}}"
-      case LdrImm(reg, num) => s"    ldr ${formatReg(reg)}, =${num.toString}"
-      case LdrAddr(reg, addr, offset) => s"    ldr ${formatReg(reg)}, [${formatReg(addr)}, ${formatOperand(offset)}]"
-      case LdrLabel(reg, labelAddr) => s"    ldr ${formatReg(reg)}, ${formatOperand(labelAddr)}"
-      case LdrShift(reg1, reg2, reg3, shift) => s"    ldr ${formatReg(reg1)}, [${formatReg(reg2)}, ${formatReg(reg3)}${formatShift(shift)}]"
+      case Ldr(reg, operand) => s"    ldr ${formatReg(reg)}, ${formatOperand(operand)}"
       case AdrInstr(reg, label) => s"    adr ${formatReg(reg)}, $label"
       case Mov(reg, operand, condition) => s"    mov${formatCondition(condition)} ${formatReg(reg)}, ${formatOperand(operand)}"
       case AddInstr(reg, operand1, operand2) => s"    add ${formatReg(reg)}, ${formatOperand(operand1)}, ${formatOperand(operand2)}"
@@ -92,13 +95,11 @@ object ARMAssemblyPrinter {
       case NewLine() => ""
     }
 
-    def appendInstr(stringBuilder: StringBuilder, instr: Instruction): Unit = {
-      val formattedInstr = formatInstr(instr)
-      stringBuilder.append(formattedInstr).append("\n")
+    def writeInstr(instr: Instruction): Unit = {
+      val formattedInstr = formatInstr(instr) + "\n"
+      writer.write(formattedInstr)
     }
 
-    val stringBuilder = new StringBuilder()
-    instructions.foreach{instr => appendInstr(stringBuilder, instr)}
-    stringBuilder.toString()
+    instructions.foreach{writeInstr}
   }
 }

@@ -5,7 +5,7 @@ import wacc.backend.CodeGenerator.refFunctions
 object ReferenceFunctions {
 
   /* Generates the assembly code for a generic function, given the specified parameters */
-  def functionWrapper(funcName: String, funcLabel: String, stringLiterals: List[Instruction],
+  private def functionWrapper(funcName: String, funcLabel: String, stringLiterals: List[Instruction],
                       funcBody: List[Instruction]): List[Instruction] = {
     NewLine() ::
     stringLiterals ++
@@ -86,7 +86,7 @@ object ReferenceFunctions {
     val funcBody = List(
       BicInstr(SP, SP, ImmVal(7)),
       Mov(R2, R0),
-      LdrAddr(R1, R0, ImmVal(-4)),
+      Ldr(R1, Addr(R0, ImmVal(-4))),
       AdrInstr(R0, ".L._prints_str0"),
       BlInstr("printf"),
       Mov(R0, ImmVal(0)),
@@ -139,7 +139,7 @@ object ReferenceFunctions {
       Label(".L._printb0"),
       AdrInstr(R2, ".L._printb_str1"),
       Label(".L._printb1"),
-      LdrAddr(R1, R2, ImmVal(-4)),
+      Ldr(R1, Addr(R2, ImmVal(-4))),
       AdrInstr(R0, ".L._printb_str2"),
       BlInstr("printf"),
       Mov(R0, ImmVal(0)),
@@ -207,7 +207,7 @@ object ReferenceFunctions {
       Mov(R1, SP),
       AdrInstr(R0, ".L._readi_str0"),
       BlInstr("scanf"),
-      LdrAddr(R0, SP, ImmVal(0)),
+      Ldr(R0, Addr(SP, ImmVal(0))),
       AddInstr(SP, SP, ImmVal(8)),
     )
 
@@ -231,7 +231,7 @@ object ReferenceFunctions {
       Mov(R1, SP),
       AdrInstr(R0, ".L._readc_str0"),
       BlInstr("scanf"),
-      LdrAddr(R0, SP, ImmVal(0)),
+      Ldr(R0, Addr(SP, ImmVal(0))),
       AddInstr(SP, SP, ImmVal(8)),
     )
 
@@ -286,7 +286,7 @@ object ReferenceFunctions {
       CmpInstr(R0, ImmVal(0)),
       Mov(R1, R0, LTcond),
       BlInstr("_errOutOfBounds", LTcond),
-      LdrAddr(LR, R3, ImmVal(-4)),
+      Ldr(LR, Addr(R3, ImmVal(-4))),
       CmpInstr(R0, LR),
       Mov(R1, R0, GEcond),
       BlInstr("_errOutOfBounds", GEcond),
@@ -306,11 +306,11 @@ object ReferenceFunctions {
       CmpInstr(R0, ImmVal(0)),
       Mov(R1, R0, LTcond),
       BlInstr("_errOutOfBounds", LTcond),
-      LdrAddr(LR, R3, ImmVal(-4)),
+      Ldr(LR, Addr(R3, ImmVal(-4))),
       CmpInstr(R0, LR),
       Mov(R1, R0, GEcond),
       BlInstr("_errOutOfBounds", GEcond),
-      LdrShift(R3, R3, R0, ShiftLeft(2)),
+      Ldr(R3, RegShift(R3, R0, ShiftLeft(2))),
       Pop(List(PC))
     )
   }
@@ -327,7 +327,7 @@ object ReferenceFunctions {
       CmpInstr(R0, ImmVal(0)),
       Mov(R1, R0, LTcond),
       BlInstr("_errOutOfBounds", LTcond),
-      LdrAddr(LR, R3, ImmVal(-4)),
+      Ldr(LR, Addr(R3, ImmVal(-4))),
       CmpInstr(R0, LR),
       Mov(R1, R0, GEcond),
       BlInstr("_errOutOfBounds", GEcond),
