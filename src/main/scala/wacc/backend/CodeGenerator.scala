@@ -53,15 +53,12 @@ object CodeGenerator {
 
     def functionGenerate(_type: Type, funcName: Ident, params: List[Param], body: Statement): List[Instruction] = {
       allocator.setLocation(funcName.nickname.get, VariableLocation(R0, 0, 4, _type))
-
-      val functionName = funcName.nickname.get
-
-      val funcLabel = functionName
-
-      val stringLiterals = List()
-
-      val funcBody = List(
+      Comment("Start of function") ::
+      Label(funcName.nickname.get) ::
+      List(
+        Push(List(FP, LR)),
         Push(List(R4, R5, R6, R7, R8, R9, R10)),
+        Mov(FP, SP)
       ) ++
       paramsGenerate(params) ++
       (body match {
@@ -74,9 +71,7 @@ object CodeGenerator {
           Push(List(R0, R1, R2, R3)) ::
           generateAssembly(body, allocator, dest) ++
           List(Pop(List(R0, R1, R2, R3)))
-        }})
-
-      functionWrapper(functionName, funcLabel, stringLiterals, funcBody) ++
+        }}) ++
       List(
         Command("ltorg", 4)
       )
@@ -212,7 +207,7 @@ object CodeGenerator {
       beforeLines ++= r2Lines
       beforeLines ++= indexLines
       beforeLines ++= List(
-        Mov(IP, indexReg),
+        Mov(R10, indexReg),
         Mov(R3, arrayReg),
         BlInstr("_arrLoad4"),
         Mov(elemReg, R3)
@@ -229,7 +224,7 @@ object CodeGenerator {
       }
       afterLines ++= after
       afterLines ++= List(
-        Mov(IP, indexReg),
+        Mov(R10, indexReg),
         Mov(R3, arrayReg),
         Mov(R8, elemReg),
         BlInstr(storeFunc),
@@ -922,7 +917,7 @@ object CodeGenerator {
         indicesLines ++= rLines
         indicesLines ++= indexLines
         indicesLines ++= List(
-          Mov(IP, next),
+          Mov(R10, next),
           Mov(R3, dest),
           BlInstr("_arrLoad4"),
           Mov(dest, R3)

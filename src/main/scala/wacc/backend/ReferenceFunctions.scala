@@ -84,8 +84,6 @@ object ReferenceFunctions {
     )
 
     val funcBody = List(
-      Push(List(FP, LR)),
-      Mov(FP, SP),
       BicInstr(SP, SP, ImmVal(7)),
       Mov(R2, R0),
       LdrAddr(R1, R0, ImmVal(-4)),
@@ -277,56 +275,65 @@ object ReferenceFunctions {
     functionWrapper(funcName, funcLabel, stringLiterals, funcBody)
   }
 
+  /* Generates the assembly code for storing an array */
+  lazy val arrayStore1Func: List[Instruction] = {
+    refFunctions += errorOutOfBoundsFunc
+    List(
+      NewLine(),
+      Comment("Array store function"),
+      Label("_arrStore1"),
+      Push(List(LR)),
+      CmpInstr(R10, ImmVal(0)),
+      Mov(R1, R10, LTcond),
+      BlInstr("_errOutOfBounds", LTcond),
+      LdrAddr(LR, R3, ImmVal(-4)),
+      CmpInstr(R10, LR),
+      Mov(R1, R10, GEcond),
+      BlInstr("_errOutOfBounds", GEcond),
+      StoreInstr(R8, R3, R10, OneByte),
+      Pop(List(PC))
+    )
+  }
+
   /* Generates the assembly code for loading an array */
   lazy val arrayLoad4Func: List[Instruction] = {
     refFunctions += errorOutOfBoundsFunc
-
-    val funcName = "Array load"
-
-    val funcLabel = "_arrLoad4"
-
-    val stringLiterals = List()
-
-    val funcBody = List(
+    List(
+      NewLine(),
+      Comment("Array load function"),
+      Label("_arrLoad4"),
       Push(List(LR)),
-      CmpInstr(IP, ImmVal(0)),
-      Mov(R1, IP, LTcond),
+      CmpInstr(R10, ImmVal(0)),
+      Mov(R1, R10, LTcond),
       BlInstr("_errOutOfBounds", LTcond),
       LdrAddr(LR, R3, ImmVal(-4)),
-      CmpInstr(IP, LR),
-      Mov(R1, IP, GEcond),
+      CmpInstr(R10, LR),
+      Mov(R1, R10, GEcond),
       BlInstr("_errOutOfBounds", GEcond),
-      LdrShift(R3, R3, IP, ShiftLeft(2)),
+      LdrShift(R3, R3, R10, ShiftLeft(2)),
       Pop(List(PC))
     )
-
-    functionWrapper(funcName, funcLabel, stringLiterals, funcBody)
   }
 
   /* Generates the assembly code for storing an array */
   lazy val arrayStore4Func: List[Instruction] = {
     refFunctions += errorOutOfBoundsFunc
 
-    val funcName = "Array store"
-
-    val funcLabel = "_arrStore4"
-
-    val stringLiterals = List()
-
-    val funcBody = List(
+    List(
+      NewLine(),
+      Comment("Array store function"),
+      Label("_arrStore4"),
       Push(List(LR)),
-      CmpInstr(IP, ImmVal(0)),
-      Mov(R1, IP, LTcond),
+      CmpInstr(R10, ImmVal(0)),
+      Mov(R1, R10, LTcond),
       BlInstr("_errOutOfBounds", LTcond),
       LdrAddr(LR, R3, ImmVal(-4)),
-      CmpInstr(IP, LR),
-      Mov(R1, IP, GEcond),
+      CmpInstr(R10, LR),
+      Mov(R1, R10, GEcond),
       BlInstr("_errOutOfBounds", GEcond),
-      StoreShift(R8, R3, IP, ShiftLeft(2)),
+      StoreShift(R8, R3, R10, ShiftLeft(2)),
       Pop(List(PC))
     )
-
-    functionWrapper(funcName, funcLabel, stringLiterals, funcBody)
   }
 
   /* Generates the assembly code for handling an Out of Memory error */
@@ -465,32 +472,6 @@ object ReferenceFunctions {
       BlInstr("fflush"),
       Mov(R0, ImmVal(255)),
       BlInstr("exit")
-    )
-
-    functionWrapper(funcName, funcLabel, stringLiterals, funcBody)
-  }
-
-  /* Generates the assembly code for storing an array */
-  lazy val arrayStore1Func: List[Instruction] = {
-    refFunctions += errorOutOfBoundsFunc
-
-    val funcName = "Array store"
-
-    val funcLabel = "_arrStore1"
-
-    val stringLiterals = List()
-
-    val funcBody = List(
-      Push(List(LR)),
-      CmpInstr(IP, ImmVal(0)),
-      Mov(R1, IP, LTcond),
-      BlInstr("_errOutOfBounds", LTcond),
-      LdrAddr(LR, R3, ImmVal(-4)),
-      CmpInstr(IP, LR),
-      Mov(R1, IP, GEcond),
-      BlInstr("_errOutOfBounds", GEcond),
-      StoreInstr(R8, R3, IP, OneByte),
-      Pop(List(PC))
     )
 
     functionWrapper(funcName, funcLabel, stringLiterals, funcBody)
