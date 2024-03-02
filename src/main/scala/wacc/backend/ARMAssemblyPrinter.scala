@@ -2,6 +2,7 @@ package wacc.backend
 
 object ARMAssemblyPrinter {
 
+  /* Function to convert a given list of ARM32 assembly instructions to its string representation */
   def printAssembly(instructions: List[Instruction]): String = {
 
     def formatSize(size: ElemSize): String = size match {
@@ -21,9 +22,12 @@ object ARMAssemblyPrinter {
     }
 
     def formatOperand(operand: Operand): String = operand match {
-      case immVal: ImmVal => "#" + immVal.value.toString
-      case labelAddr: LabelAddr => "=" + labelAddr.label
+      case ImmVal(value) => "#" + value.toString
+      case LabelAddr(label) => "=" + label
       case reg: Register => formatReg(reg)
+      case Addr(address, offset) => s"[${formatReg(address)}, ${formatOperand(offset)}]"
+      case RegShift(reg1, reg2, shift) => s"[${formatReg(reg1)}, ${formatReg(reg2)}${formatShift(shift)}]"
+      case IntLiteral(num) => s"=${num.toString}"
     }
 
     def formatShift(shift: Shift): String = shift match {
@@ -57,10 +61,7 @@ object ARMAssemblyPrinter {
       case Label(name) => name + ":"
       case Push(regs) => s"    push {${regs.map(formatReg).mkString(", ")}}"
       case Pop(regs) => s"    pop {${regs.map(formatReg).mkString(", ")}}"
-      case LdrImm(reg, num) => s"    ldr ${formatReg(reg)}, =${num.toString}"
-      case LdrAddr(reg, addr, offset) => s"    ldr ${formatReg(reg)}, [${formatReg(addr)}, ${formatOperand(offset)}]"
-      case LdrLabel(reg, labelAddr) => s"    ldr ${formatReg(reg)}, ${formatOperand(labelAddr)}"
-      case LdrShift(reg1, reg2, reg3, shift) => s"    ldr ${formatReg(reg1)}, [${formatReg(reg2)}, ${formatReg(reg3)}${formatShift(shift)}]"
+      case Ldr(reg, operand) => s"    ldr ${formatReg(reg)}, ${formatOperand(operand)}"
       case AdrInstr(reg, label) => s"    adr ${formatReg(reg)}, $label"
       case Mov(reg, operand, condition) => s"    mov${formatCondition(condition)} ${formatReg(reg)}, ${formatOperand(operand)}"
       case AddInstr(reg, operand1, operand2) => s"    add ${formatReg(reg)}, ${formatOperand(operand1)}, ${formatOperand(operand2)}"

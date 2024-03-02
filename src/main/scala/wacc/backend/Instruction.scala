@@ -1,7 +1,5 @@
 package wacc.backend
 
-import wacc.backend.Condition
-
 sealed trait Instruction
 
 case class Comment(comment: String) extends Instruction
@@ -9,10 +7,7 @@ case class Command(str: String, indent: Int) extends Instruction
 case class Label(name: String) extends Instruction
 case class Push(regs: List[Register]) extends Instruction
 case class Pop(regs: List[Register]) extends Instruction
-case class LdrImm(reg: Register, immVal: Int) extends Instruction
-case class LdrAddr(reg: Register, address: Register, offset: ImmVal) extends Instruction
-case class LdrLabel(reg: Register, label: LabelAddr) extends Instruction
-case class LdrShift(reg1: Register, reg2: Register, reg3: Register, shift: Shift) extends Instruction
+case class Ldr(reg: Register, operand: Operand) extends Instruction
 case class AdrInstr(reg: Register, label: String) extends Instruction
 case class Mov(reg: Register, operand: Operand, condition: Condition = noCondition) extends Instruction
 case class AddInstr(reg: Register, operand1: Register, operand2: Operand) extends Instruction
