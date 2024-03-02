@@ -1,4 +1,4 @@
-image: kryptos12/wacc-04:0.0.6
+image: kryptos12/wacc-04:0.0.7
 
 build:
   stage: build
@@ -13,5 +13,6 @@ test:
 test-integration:
   stage: test
   script:
+    - apt-get install make -y
     - git submodule update --init --recursive
     - make test

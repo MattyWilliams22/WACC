@@ -21,7 +21,6 @@ case class BInstr(label: String, condition: Condition = noCondition) extends Ins
 case class BlInstr(label: String, condition: Condition = noCondition) extends Instruction
 case class BicInstr(reg: Register, operand1: Register, operand2: Operand) extends Instruction
 case class AscizInstr(label: String, string: String) extends Instruction
-case class StoreInstr(reg: Register, address: Register, offset: Operand, size: ElemSize = FourBytes) extends Instruction
-case class StoreShift(reg1: Register, reg2: Register, reg3: Register, shift: Shift) extends Instruction
+case class StrInstr(reg: Register, operand: Operand, size: ElemSize = FourBytes) extends Instruction
 case class RsbsInstr(reg: Register, operand: Operand) extends Instruction
 case class NewLine() extends Instruction

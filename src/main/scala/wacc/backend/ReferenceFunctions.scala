@@ -203,7 +203,7 @@ object ReferenceFunctions {
     val funcBody = List(
       BicInstr(SP, SP, ImmVal(7)),
       SubInstr(SP, SP, ImmVal(8)),
-      StoreInstr(R0, SP, ImmVal(0)),
+      StrInstr(R0, Addr(SP, ImmVal(0))),
       Mov(R1, SP),
       AdrInstr(R0, ".L._readi_str0"),
       BlInstr("scanf"),
@@ -227,7 +227,7 @@ object ReferenceFunctions {
     val funcBody = List(
       BicInstr(SP, SP, ImmVal(7)),
       SubInstr(SP, SP, ImmVal(8)),
-      StoreInstr(R0, SP, ImmVal(0)),
+      StrInstr(R0, Addr(SP, ImmVal(0))),
       Mov(R1, SP),
       AdrInstr(R0, ".L._readc_str0"),
       BlInstr("scanf"),
@@ -290,7 +290,7 @@ object ReferenceFunctions {
       CmpInstr(R0, LR),
       Mov(R1, R0, GEcond),
       BlInstr("_errOutOfBounds", GEcond),
-      StoreInstr(R8, R3, R0, OneByte),
+      StrInstr(R8, Addr(R3, R0), OneByte),
       Pop(List(PC))
     )
   }
@@ -331,7 +331,7 @@ object ReferenceFunctions {
       CmpInstr(R0, LR),
       Mov(R1, R0, GEcond),
       BlInstr("_errOutOfBounds", GEcond),
-      StoreShift(R8, R3, R0, ShiftLeft(2)),
+      StrInstr(R8, RegShift(R3, R0, ShiftLeft(2))),
       Pop(List(PC))
     )
   }
