@@ -7,6 +7,8 @@ fname=$1
 filename=$(basename -- "$fname")
 filename="${filename%.*}"
 
+echo "make clean"
+make clean
 echo "make"
 make
 

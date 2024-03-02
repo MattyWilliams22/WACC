@@ -553,7 +553,7 @@ object CodeGenerator {
       r2Lines ++
       r3Lines ++
       List(
-        Pop(List(val1, val2)),
+        Pop(List(val1, val2).sortBy(_.number)),
         SmullInstr(dest, hi, val1, val2),
         CmpInstr(hi, dest, ShiftRight(31)),
         BlInstr("_errOverflow", NEcond)
