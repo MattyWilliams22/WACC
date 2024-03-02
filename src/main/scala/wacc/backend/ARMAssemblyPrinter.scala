@@ -1,9 +1,11 @@
 package wacc.backend
 
+import java.io.PrintWriter
+
 object ARMAssemblyPrinter {
 
   /* Function to convert a given list of ARM32 assembly instructions to its string representation */
-  def printAssembly(instructions: List[Instruction]): String = {
+  def printAssembly(instructions: List[Instruction], writer: PrintWriter): Unit = {
 
     def formatSize(size: ElemSize): String = size match {
       case OneByte => "b"
@@ -93,13 +95,11 @@ object ARMAssemblyPrinter {
       case NewLine() => ""
     }
 
-    def appendInstr(stringBuilder: StringBuilder, instr: Instruction): Unit = {
-      val formattedInstr = formatInstr(instr)
-      stringBuilder.append(formattedInstr).append("\n")
+    def writeInstr(instr: Instruction): Unit = {
+      val formattedInstr = formatInstr(instr) + "\n"
+      writer.write(formattedInstr)
     }
 
-    val stringBuilder = new StringBuilder()
-    instructions.foreach{instr => appendInstr(stringBuilder, instr)}
-    stringBuilder.toString()
+    instructions.foreach{writeInstr}
   }
 }

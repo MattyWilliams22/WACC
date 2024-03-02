@@ -90,9 +90,7 @@ object Main {
           val registerAllocator = new BasicRegisterAllocator
           val (reg, _) = registerAllocator.allocateRegister()
           val assemblyLines = generateAssembly(x, registerAllocator, reg)
-          val outputLines = ARMAssemblyPrinter.printAssembly(assemblyLines)
-          writer.write(outputLines)
-          println(outputLines)
+          ARMAssemblyPrinter.printAssembly(assemblyLines, writer)
           writer.close()
 
           System.exit(SUCCESS_CODE)
