@@ -199,6 +199,14 @@ object CodeGenerator {
       val afterLines = new ListBuffer[Instruction]()
       val (indexReg, r1Lines) = allocator.allocateRegister()
       val (elemReg, r2Lines) = allocator.allocateRegister()
+
+      if (indexReg == R10 || indexReg == R3 || indexReg == R8) {
+        val (indexReg, r1Lines) = allocator.allocateRegister()
+      }
+      if (elemReg == R10 || elemReg == R3 || elemReg == R8) {
+        val (elemReg, r2Lines) = allocator.allocateRegister()
+      }
+
       val indexLines = generateAssembly(indices.head, allocator, indexReg)
       beforeLines ++= r1Lines
       beforeLines ++= r2Lines
@@ -907,6 +915,9 @@ object CodeGenerator {
       // Must check size of array elements and call different _arrLoad function
       for (index <- indices) {
         val (next, rLines) = allocator.allocateRegister()
+        if (next == R10 || next == R3 || next == R8) {
+          val (next, rLines) = allocator.allocateRegister()
+        }
         val indexLines = generateAssembly(index, allocator, next)
         indicesLines ++= rLines
         indicesLines ++= indexLines
