@@ -207,7 +207,7 @@ object CodeGenerator {
       beforeLines ++= r2Lines
       beforeLines ++= indexLines
       beforeLines ++= List(
-        Mov(R10, indexReg),
+        Mov(R0, indexReg),
         Mov(R3, arrayReg),
         BlInstr("_arrLoad4"),
         Mov(elemReg, R3)
@@ -224,7 +224,7 @@ object CodeGenerator {
       }
       afterLines ++= after
       afterLines ++= List(
-        Mov(R10, indexReg),
+        Mov(R0, indexReg),
         Mov(R3, arrayReg),
         Mov(R8, elemReg),
         BlInstr(storeFunc),
@@ -917,7 +917,7 @@ object CodeGenerator {
         indicesLines ++= rLines
         indicesLines ++= indexLines
         indicesLines ++= List(
-          Mov(R10, next),
+          Mov(R0, next),
           Mov(R3, dest),
           BlInstr("_arrLoad4"),
           Mov(dest, R3)

@@ -283,14 +283,14 @@ object ReferenceFunctions {
       Comment("Array store function"),
       Label("_arrStore1"),
       Push(List(LR)),
-      CmpInstr(R10, ImmVal(0)),
-      Mov(R1, R10, LTcond),
+      CmpInstr(R0, ImmVal(0)),
+      Mov(R1, R0, LTcond),
       BlInstr("_errOutOfBounds", LTcond),
       LdrAddr(LR, R3, ImmVal(-4)),
-      CmpInstr(R10, LR),
-      Mov(R1, R10, GEcond),
+      CmpInstr(R0, LR),
+      Mov(R1, R0, GEcond),
       BlInstr("_errOutOfBounds", GEcond),
-      StoreInstr(R8, R3, R10, OneByte),
+      StoreInstr(R8, R3, R0, OneByte),
       Pop(List(PC))
     )
   }
@@ -303,14 +303,14 @@ object ReferenceFunctions {
       Comment("Array load function"),
       Label("_arrLoad4"),
       Push(List(LR)),
-      CmpInstr(R10, ImmVal(0)),
-      Mov(R1, R10, LTcond),
+      CmpInstr(R0, ImmVal(0)),
+      Mov(R1, R0, LTcond),
       BlInstr("_errOutOfBounds", LTcond),
       LdrAddr(LR, R3, ImmVal(-4)),
-      CmpInstr(R10, LR),
-      Mov(R1, R10, GEcond),
+      CmpInstr(R0, LR),
+      Mov(R1, R0, GEcond),
       BlInstr("_errOutOfBounds", GEcond),
-      LdrShift(R3, R3, R10, ShiftLeft(2)),
+      LdrShift(R3, R3, R0, ShiftLeft(2)),
       Pop(List(PC))
     )
   }
@@ -324,14 +324,14 @@ object ReferenceFunctions {
       Comment("Array store function"),
       Label("_arrStore4"),
       Push(List(LR)),
-      CmpInstr(R10, ImmVal(0)),
-      Mov(R1, R10, LTcond),
+      CmpInstr(R0, ImmVal(0)),
+      Mov(R1, R0, LTcond),
       BlInstr("_errOutOfBounds", LTcond),
       LdrAddr(LR, R3, ImmVal(-4)),
-      CmpInstr(R10, LR),
-      Mov(R1, R10, GEcond),
+      CmpInstr(R0, LR),
+      Mov(R1, R0, GEcond),
       BlInstr("_errOutOfBounds", GEcond),
-      StoreShift(R8, R3, R10, ShiftLeft(2)),
+      StoreShift(R8, R3, R0, ShiftLeft(2)),
       Pop(List(PC))
     )
   }
