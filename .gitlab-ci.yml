@@ -13,6 +13,5 @@ test:
 test-integration:
   stage: test
   script:
-    - apt-get install make -y
     - git submodule update --init --recursive
     - make test
