@@ -196,10 +196,10 @@ object CodeGenerator {
       val (indexReg, r1Lines) = allocator.allocateRegister()
       val (elemReg, r2Lines) = allocator.allocateRegister()
 
-      if (indexReg == R10 || indexReg == R3 || indexReg == R8) {
+      if (indexReg == R0 || indexReg == R3 || indexReg == R8) {
         val (indexReg, r1Lines) = allocator.allocateRegister()
       }
-      if (elemReg == R10 || elemReg == R3 || elemReg == R8) {
+      if (elemReg == R0 || elemReg == R3 || elemReg == R8) {
         val (elemReg, r2Lines) = allocator.allocateRegister()
       }
 
@@ -647,12 +647,6 @@ object CodeGenerator {
       List(Comment("End of conditional"))
     }
 
-    def neqGenerate(exp1: Expr, exp2: Expr): List[Instruction] = {
-      Comment("Start of not equal") ::
-      condGenerate(exp1, exp2, EQcond) ++
-      notLogic(dest)
-    }
-
     def andGenerate(exp1: Expr, exp2: Expr): List[Instruction] = {
       val exp1Lines = generateAssembly(exp1, allocator, dest)
       val (next, rLines) = allocator.allocateRegister()
@@ -685,20 +679,16 @@ object CodeGenerator {
       )
     }
 
-    def notLogic(dest: Register): List[Instruction] = {
+    def notGenerate(exp: Expr): List[Instruction] = {
+      val expLines = generateAssembly(exp, allocator, dest)
+      Comment("Start of not") ::
+      expLines ++
       List(
         Comment("not Logic"),
         CmpInstr(dest, ImmVal(0)),
         Mov(dest, ImmVal(0), NEcond),
         Mov(dest, ImmVal(1), EQcond)
       )
-    }
-
-    def notGenerate(exp: Expr): List[Instruction] = {
-      val expLines = generateAssembly(exp, allocator, dest)
-      Comment("Start of not") ::
-      expLines ++
-      notLogic(dest)
     }
 
     def negGenerate(exp: Expr): List[Instruction] = {
@@ -822,10 +812,9 @@ object CodeGenerator {
       refFunctions += arrayLoad4Func
       val idLines = generateAssembly(id, allocator, dest)
       val indicesLines = new ListBuffer[Instruction]()
-      // Must check size of array elements and call different _arrLoad function
       for (index <- indices) {
         val (next, rLines) = allocator.allocateRegister()
-        if (next == R10 || next == R3 || next == R8) {
+        if (next == R0 || next == R3 || next == R8) {
           val (next, rLines) = allocator.allocateRegister()
         }
         val indexLines = generateAssembly(index, allocator, next)
@@ -978,7 +967,7 @@ object CodeGenerator {
             condGenerate(exp1, exp2, EQcond)
 
           case NEQ(exp1, exp2) =>
-            neqGenerate(exp1, exp2)
+            condGenerate(exp1, exp2, NEcond)
         }
 
       case x: BinOpLogic =>
