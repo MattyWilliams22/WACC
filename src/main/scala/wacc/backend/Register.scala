@@ -1,7 +1,7 @@
 package wacc.backend
 
 /* Represents a register in the ARM32 architecture */
-sealed trait Register extends Operand {
+sealed trait Register extends GeneralOperand {
   val number: Int
 }
 

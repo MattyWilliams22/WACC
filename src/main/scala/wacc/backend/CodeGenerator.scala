@@ -614,7 +614,7 @@ object CodeGenerator {
       List(
         Pop(List(val1, val2).sortBy(_.number)),
         SmullInstr(dest, hi, val1, val2),
-        CmpInstr(hi, dest, ShiftRight(31)),
+        CmpInstr(hi, RegShift(dest, ShiftRight(31))),
         BInstr("_errOverflow", NEcond, storeReturnAddr = true)
       )
     }
@@ -753,7 +753,7 @@ object CodeGenerator {
       expLines ++
       List(
         Comment("neg Logic"),
-        RsbsInstr(dest, tempReg),
+        RsbsInstr(dest, tempReg, ImmVal(0)),
         BInstr("_errOverflow", VScond, storeReturnAddr = true)
       )
     }

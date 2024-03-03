@@ -317,7 +317,7 @@ object PredefinedFunctions {
       CmpInstr(R0, LR),
       Mov(R1, R0, GEcond),
       BInstr("_errOutOfBounds", GEcond, storeReturnAddr = true),
-      Ldr(R3, RegShift(R3, R0, ShiftLeft(2))),
+      Ldr(R3, Addr(R3, RegShift(R0, ShiftLeft(2)))),
       Pop(List(PC))
     )
   }
@@ -338,7 +338,7 @@ object PredefinedFunctions {
       CmpInstr(R0, LR),
       Mov(R1, R0, GEcond),
       BInstr("_errOutOfBounds", GEcond, storeReturnAddr = true),
-      StrInstr(R8, RegShift(R3, R0, ShiftLeft(2))),
+      StrInstr(R8, Addr(R3, RegShift(R0, ShiftLeft(2)))),
       Pop(List(PC))
     )
   }
