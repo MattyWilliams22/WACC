@@ -140,7 +140,8 @@ object CodeGenerator {
       rvalueLines ++
       beforeLines ++
       List(Mov(target, dest)) ++
-      afterLines
+      afterLines ++
+      List(Comment("End of assign"))
     }
 
     // Returning the location of the lvalue
@@ -205,7 +206,7 @@ object CodeGenerator {
     // Checks if the register is R10, R3 or R8 and allocates a new register if it is
     def checkRegister(regInstr: (Register, List[Instruction])): (Register, List[Instruction]) = {
       val (register, instr) = regInstr
-      if (register == R10 || register == R3 || register == R8) {
+      if (register == R0 || register == R3 || register == R8) {
         allocator.allocateRegister()
       }
       (register, instr)
