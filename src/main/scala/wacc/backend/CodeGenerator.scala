@@ -228,9 +228,11 @@ object CodeGenerator {
       beforeLines ++= r2Lines
       beforeLines ++= indexLines
       beforeLines ++= List(
+        Push(List(R0, R1)),
         Mov(R0, indexReg),
         Mov(R3, arrayReg),
         BInstr("_arrLoad4", noCondition, storeReturnAddr = true),
+        Pop(List(R0, R1)),
         Mov(elemReg, R3)
       )
       val (before, after, target) = getArrayElemLocation(reduceType(arrayType), elemReg, indices.tail)
@@ -245,10 +247,12 @@ object CodeGenerator {
       }
       afterLines ++= after
       afterLines ++= List(
+        Push(List(R0, R1, R8)),
         Mov(R0, indexReg),
         Mov(R3, arrayReg),
         Mov(R8, elemReg),
         BInstr(storeFunc, noCondition, storeReturnAddr = true),
+        Pop(List(R0, R1, R8)),
         Mov(arrayReg, R3)
       )
       allocator.deallocateRegister(indexReg)
