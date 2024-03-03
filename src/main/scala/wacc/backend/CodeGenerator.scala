@@ -4,7 +4,7 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 import wacc.ASTNodes._
-import wacc.backend.ReferenceFunctions._
+import wacc.backend.PredefinedFunctions._
 
 /* Generates ARM assembly code from an AST */
 object CodeGenerator {

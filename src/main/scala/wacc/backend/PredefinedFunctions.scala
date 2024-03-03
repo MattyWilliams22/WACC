@@ -2,7 +2,14 @@ package wacc.backend
 
 import wacc.backend.CodeGenerator.refFunctions
 
-object ReferenceFunctions {
+/*
+ * This file contains functions taken from the reference compiler provided for the WACC language. We have
+ * converted these functions into our own Internal Representation and extracted a generic function wrapper
+ * for all of them.
+ * Source: https://teaching.doc.ic.ac.uk/wacc_compiler/
+ * Author: Jamie Willis
+ */
+object PredefinedFunctions {
 
   /* Generates the assembly code for a generic function, given the specified parameters */
   private def functionWrapper(funcName: String, funcLabel: String, stringLiterals: List[Instruction],
