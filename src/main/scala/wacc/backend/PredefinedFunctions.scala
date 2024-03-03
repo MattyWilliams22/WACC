@@ -287,26 +287,6 @@ object PredefinedFunctions {
     functionWrapper(funcName, funcLabel, stringLiterals, funcBody)
   }
 
-  /* Generates the instructions for storing an array */
-  lazy val arrayStore1Func: ListBuffer[Instruction] = {
-    predefinedFunctions += errorOutOfBoundsFunc
-    ListBuffer[Instruction](
-      NewLine(),
-      Comment("Array store function", 0),
-      Label("_arrStore1"),
-      Push(List(LR)),
-      CmpInstr(R0, ImmVal(0)),
-      Mov(R1, R0, LTcond),
-      BInstr("_errOutOfBounds", LTcond, storeReturnAddr = true),
-      Ldr(LR, Addr(R3, ImmVal(-4))),
-      CmpInstr(R0, LR),
-      Mov(R1, R0, GEcond),
-      BInstr("_errOutOfBounds", GEcond, storeReturnAddr = true),
-      StrInstr(R8, Addr(R3, R0), OneByte),
-      Pop(List(PC))
-    )
-  }
-
   /* Generates the instructions for loading an array */
   lazy val arrayLoad4Func: ListBuffer[Instruction] = {
     predefinedFunctions += errorOutOfBoundsFunc

@@ -277,10 +277,10 @@ object CodeGenerator {
       beforeLines ++= before
       val storeFunc = getTypeSize(reduceType(arrayType)) match {
         case 1 =>
-          predefinedFunctions += arrayStore1Func
+          predefinedFunctions += arrayStoreFunc(OneByte)
           "_arrStore1"
         case _ =>
-          predefinedFunctions += arrayStore4Func
+          predefinedFunctions += arrayStoreFunc(FourBytes)
           "_arrStore4"
       }
       afterLines ++= after
