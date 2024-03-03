@@ -662,7 +662,7 @@ object CodeGenerator {
       )
     }
 
-    def eqGenerateHelper(exp1: Expr, exp2: Expr): (List[Instruction], List[Instruction], List[Instruction], Register) = {
+    def exprsGenerateHelper(exp1: Expr, exp2: Expr): (List[Instruction], List[Instruction], List[Instruction], Register) = {
       val exp1Lines = generateAssembly(exp1, allocator, dest)
       val (next, rLines) = allocator.allocateRegister()
       val exp2Lines = generateAssembly(exp2, allocator, next)
@@ -673,7 +673,7 @@ object CodeGenerator {
     // Translating Sub into ARM assembly
     def subGenerate(exp1: Expr, exp2: Expr): List[Instruction] = {
       refFunctions += errorOverflowFunc
-      val (exp1Lines, rLines, exp2Lines, next) = eqGenerateHelper(exp1, exp2)
+      val (exp1Lines, rLines, exp2Lines, next) = exprsGenerateHelper(exp1, exp2)
       Comment("Start of subtraction") ::
       exp1Lines ++
       rLines ++ 
@@ -685,10 +685,7 @@ object CodeGenerator {
     }
 
     def condGenerate(exp1: Expr, exp2: Expr, cond: Condition): List[Instruction] = {
-      val exp1Lines = generateAssembly(exp1, allocator, dest)
-      val (next, rLines) = allocator.allocateRegister()
-      val exp2Lines = generateAssembly(exp2, allocator, next)
-      allocator.deallocateRegister(next)
+      val (exp1Lines, rLines, exp2Lines, next) = exprsGenerateHelper(exp1, exp2)
       Comment("Start of conditional") ::
       exp1Lines ++
       rLines ++
@@ -704,10 +701,7 @@ object CodeGenerator {
 
     // Translating AND into ARM assembly
     def andGenerate(exp1: Expr, exp2: Expr): List[Instruction] = {
-      val exp1Lines = generateAssembly(exp1, allocator, dest)
-      val (next, rLines) = allocator.allocateRegister()
-      val exp2Lines = generateAssembly(exp2, allocator, next)
-      allocator.deallocateRegister(next)
+      val (exp1Lines, rLines, exp2Lines, next) = exprsGenerateHelper(exp1, exp2)
       Comment("Start of and") ::
       exp1Lines ++
       rLines ++
@@ -720,10 +714,7 @@ object CodeGenerator {
     }
 
     def orGenerate(exp1: Expr, exp2: Expr): List[Instruction] = {
-      val exp1Lines = generateAssembly(exp1, allocator, dest)
-      val (next, rLines) = allocator.allocateRegister()
-      val exp2Lines = generateAssembly(exp2, allocator, next)
-      allocator.deallocateRegister(next)
+      val (exp1Lines, rLines, exp2Lines, next) = exprsGenerateHelper(exp1, exp2)
       Comment("Start of or") ::
       exp1Lines ++
       rLines ++
