@@ -5,7 +5,7 @@ import scala.collection.mutable.ListBuffer
 
 import wacc.ASTNodes._
 import wacc.backend.ReferenceFunctions._
-import scala.annotation.meta.param
+import wacc.backend.ARMAssemblyPrinter._
 
 /* Generates ARM assembly code from an AST */
 object CodeGenerator {
@@ -203,10 +203,10 @@ object CodeGenerator {
       val (indexReg, r1Lines) = allocator.allocateRegister()
       val (elemReg, r2Lines) = allocator.allocateRegister()
 
-      if (indexReg == R10 || indexReg == R3 || indexReg == R8) {
+      if (indexReg == R0 || indexReg == R3 || indexReg == R8) {
         val (indexReg, r1Lines) = allocator.allocateRegister()
       }
-      if (elemReg == R10 || elemReg == R3 || elemReg == R8) {
+      if (elemReg == R0 || elemReg == R3 || elemReg == R8) {
         val (elemReg, r2Lines) = allocator.allocateRegister()
       }
 
@@ -636,114 +636,22 @@ object CodeGenerator {
       )
     }
 
-    def gtGenerate(exp1: Expr, exp2: Expr): List[Instruction] = {
+    def condGenerate(exp1: Expr, exp2: Expr, cond: Condition): List[Instruction] = {
       val exp1Lines = generateAssembly(exp1, allocator, dest)
       val (next, rLines) = allocator.allocateRegister()
       val exp2Lines = generateAssembly(exp2, allocator, next)
       allocator.deallocateRegister(next)
-      Comment("Start of greater than") ::
+      Comment("Start of conditional") ::
       exp1Lines ++
       rLines ++ 
       exp2Lines ++
       List(
-        Comment("GT Logic"),
+        Comment("Conditional Logic"),
         CmpInstr(dest, next),
         Mov(dest, ImmVal(0)),
-        Mov(dest, ImmVal(1), GTcond)
-      )
-    }
-
-    def gteqGenerate(exp1: Expr, exp2: Expr): List[Instruction] = {
-      val exp1Lines = generateAssembly(exp1, allocator, dest)
-      val (next, rLines) = allocator.allocateRegister()
-      val exp2Lines = generateAssembly(exp2, allocator, next)
-      allocator.deallocateRegister(next)
-      Comment("Start of greater than or equal to") ::
-      exp1Lines ++
-      rLines ++ 
-      exp2Lines ++
-      List(
-        Comment("GTEQ Logic"),
-        CmpInstr(dest, next),
-        Mov(dest, ImmVal(0)),
-        Mov(dest, ImmVal(1), GEcond)
-      )
-    }
-
-    def ltGenerate(exp1: Expr, exp2: Expr): List[Instruction] = {
-      val exp1Lines = generateAssembly(exp1, allocator, dest)
-      val (next, rLines) = allocator.allocateRegister()
-      val exp2Lines = generateAssembly(exp2, allocator, next)
-      allocator.deallocateRegister(next)
-      Comment("Start of less than") ::
-      exp1Lines ++
-      rLines ++ 
-      exp2Lines ++
-      List(
-        Comment("LT Logic"),
-        CmpInstr(dest, next),
-        Mov(dest, ImmVal(0)),
-        Mov(dest, ImmVal(1), LTcond)
-      )
-    }
-
-    def lteqGenerate(exp1: Expr, exp2: Expr): List[Instruction] = {
-      val exp1Lines = generateAssembly(exp1, allocator, dest)
-      val (next, rLines) = allocator.allocateRegister()
-      val exp2Lines = generateAssembly(exp2, allocator, next)
-      allocator.deallocateRegister(next)
-      Comment("Start of less than or equal to") ::
-      exp1Lines ++
-      rLines ++ 
-      exp2Lines ++
-      List(
-        Comment("LTEQ Logic"),
-        CmpInstr(dest, next),
-        Mov(dest, ImmVal(0)),
-        Mov(dest, ImmVal(1), LEcond)
-      )
-    }
-
-    def eqLogic(dest: Register, next: Register): List[Instruction] = {
-      List(
-        Comment("EQ Logic"),
-        CmpInstr(dest, next),
-        Mov(dest, ImmVal(0)),
-        Mov(dest, ImmVal(1), EQcond)
-      )
-    }
-
-    def eqGenerate(exp1: Expr, exp2: Expr): List[Instruction] = {
-      val exp1Lines = generateAssembly(exp1, allocator, dest)
-      val (next, rLines) = allocator.allocateRegister()
-      val exp2Lines = generateAssembly(exp2, allocator, next)
-      allocator.deallocateRegister(next)
-      Comment("Start of equality") ::
-      exp1Lines ++
-      rLines ++ 
-      exp2Lines ++
-      eqLogic(dest, next)
-    }
-
-    def neqGenerate(exp1: Expr, exp2: Expr): List[Instruction] = {
-      val exp1Lines = generateAssembly(exp1, allocator, dest)
-      val (next, rLines) = allocator.allocateRegister()
-      val exp2Lines = generateAssembly(exp2, allocator, next)
-      allocator.deallocateRegister(next)
-      Comment("Start of not equal to") ::
-      exp1Lines ++
-      rLines ++ 
-      exp2Lines ++
-      eqLogic(dest, next) ++
-      notLogic(dest)
-    }
-
-    def andLogic(dest: Register, next: Register): List[Instruction] = {
-      List(
-        Comment("and Logic"),
-        CmpInstr(next, ImmVal(0)),
-        Mov(dest, ImmVal(0), EQcond),
-      )
+        Mov(dest, ImmVal(1), cond)
+      ) ++
+      List(Comment("End of conditional"))
     }
 
     def andGenerate(exp1: Expr, exp2: Expr): List[Instruction] = {
@@ -755,14 +663,10 @@ object CodeGenerator {
       exp1Lines ++
       rLines ++ 
       exp2Lines ++
-      andLogic(dest, next)
-    }
-
-    def orLogic(dest: Register, next: Register): List[Instruction] = {
       List(
-        Comment("or Logic"),
-        CmpInstr(next, ImmVal(1)),
-        Mov(dest, ImmVal(1), EQcond),
+        Comment("and Logic"),
+        CmpInstr(next, ImmVal(0)),
+        Mov(dest, ImmVal(0), EQcond),
       )
     }
 
@@ -775,15 +679,10 @@ object CodeGenerator {
       exp1Lines ++
       rLines ++ 
       exp2Lines ++
-      orLogic(dest, next)
-    }
-
-    def notLogic(dest: Register): List[Instruction] = {
       List(
-        Comment("not Logic"),
-        CmpInstr(dest, ImmVal(0)),
-        Mov(dest, ImmVal(0), NEcond),
-        Mov(dest, ImmVal(1), EQcond)
+        Comment("or Logic"),
+        CmpInstr(next, ImmVal(1)),
+        Mov(dest, ImmVal(1), EQcond),
       )
     }
 
@@ -791,7 +690,12 @@ object CodeGenerator {
       val expLines = generateAssembly(exp, allocator, dest)
       Comment("Start of not") ::
       expLines ++
-      notLogic(dest)
+      List(
+        Comment("not Logic"),
+        CmpInstr(dest, ImmVal(0)),
+        Mov(dest, ImmVal(0), NEcond),
+        Mov(dest, ImmVal(1), EQcond)
+      )
     }
 
     def negGenerate(exp: Expr): List[Instruction] = {
@@ -915,10 +819,9 @@ object CodeGenerator {
       refFunctions += arrayLoad4Func
       val idLines = generateAssembly(id, allocator, dest)
       val indicesLines = new ListBuffer[Instruction]()
-      // Must check size of array elements and call different _arrLoad function
       for (index <- indices) {
         val (next, rLines) = allocator.allocateRegister()
-        if (next == R10 || next == R3 || next == R8) {
+        if (next == R0 || next == R3 || next == R8) {
           val (next, rLines) = allocator.allocateRegister()
         }
         val indexLines = generateAssembly(index, allocator, next)
@@ -1053,25 +956,25 @@ object CodeGenerator {
       case x: BinOpCompare =>
         x match {
           case GT(exp1, exp2) =>
-            gtGenerate(exp1, exp2)
+            condGenerate(exp1, exp2, GTcond)
 
           case GTEQ(exp1, exp2) =>
-            gteqGenerate(exp1, exp2)
+            condGenerate(exp1, exp2, GEcond)
 
           case LT(exp1, exp2) =>
-            ltGenerate(exp1, exp2)
+            condGenerate(exp1, exp2, LTcond)
 
           case LTEQ(exp1, exp2) =>
-            lteqGenerate(exp1, exp2)
+            condGenerate(exp1, exp2, LEcond)
         }
 
       case x: Equality =>
         x match {
           case EQ(exp1, exp2) =>
-            eqGenerate(exp1, exp2)
+            condGenerate(exp1, exp2, EQcond)
 
           case NEQ(exp1, exp2) =>
-            neqGenerate(exp1, exp2)
+            condGenerate(exp1, exp2, NEcond)
         }
 
       case x: BinOpLogic =>
