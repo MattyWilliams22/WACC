@@ -223,7 +223,7 @@ object CodeGenerator {
 
               sndLines2 ++= afterLines
               sndLines2 ++= pairLines(lvalue, lvalueLoc)
-              sndLines2 += StrInstr(newDest, Addr(lvalueLoc, ImmVal(0)))
+              sndLines2 += StrInstr(newDest, Addr(lvalueLoc, ImmVal(4)))
 
               (sndLines1, sndLines2, newDest)
           }
