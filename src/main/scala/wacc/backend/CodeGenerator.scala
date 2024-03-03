@@ -260,10 +260,10 @@ object CodeGenerator {
       beforeLines ++= before
       val storeFunc = getTypeSize(reduceType(arrayType)) match {
         case 1 => 
-          predefinedFunctions += arrayStore1Func
+          predefinedFunctions += arrayStoreFunc(OneByte)
           "_arrStore1"
         case _ => 
-          predefinedFunctions += arrayStore4Func
+          predefinedFunctions += arrayStoreFunc(FourBytes)
           "_arrStore4"
       }
       afterLines ++= after
@@ -903,8 +903,10 @@ object CodeGenerator {
     /* Generates instructions for loading an array element into dest */
     def arrayElemGenerate(id: Ident, indices: List[Expr]) = {
       predefinedFunctions += arrayLoad4Func
+      /* Load the array pointer into the dest register */
       val idLines = generateInstructions(id, allocator, dest)
       val indicesLines = new ListBuffer[Instruction]()
+      /* For each index in the list of indices, load the array element into the dest register */
       for (index <- indices) {
         /* Check if allocated register is R10, R3 or R8 and allocate a new register if it is */
         val (next, rLines) = checkRegister(allocator.allocateRegister())
@@ -941,6 +943,7 @@ object CodeGenerator {
     /* Generates instructions for function call arguments */
     def argsGenerate(args: List[Expr]): List[Instruction] = {
       val argsLines = new ListBuffer[Instruction]()
+      /* For each argument in the list of arguments, store the argument in the correct place */
       for (i <- args.indices) {
         val arg = args(i)
         val (next, rLines) = allocator.allocateRegister()
@@ -948,6 +951,7 @@ object CodeGenerator {
         argsLines ++= rLines
         argsLines ++= argLines
         allocator.deallocateRegister(next)
+        /* The first 4 arguments ar stored in R0-3 */
         i match {
           case 0 =>
             argsLines += Mov(R0, next)
@@ -957,6 +961,7 @@ object CodeGenerator {
             argsLines += Mov(R2, next)
           case 3 =>
             argsLines += Mov(R3, next)
+          /* The rest of the arguments are stored on the stack */
           case _ => argsLines += StrInstr(next, Addr(SP, ImmVal(4 * (args.length - i - 1))))
         }
       }
@@ -993,6 +998,7 @@ object CodeGenerator {
         scopeGenerate(body)
 
       case Statements(stmts) =>
+        /* Generates instructions for each statement in the list of statements and concatenates them */
         val stmtLines = stmts.flatMap(generateInstructions(_, allocator, dest))
         stmtLines
 
