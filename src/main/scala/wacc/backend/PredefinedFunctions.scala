@@ -308,7 +308,7 @@ object PredefinedFunctions {
   }
 
   /* Generates the instructions for storing an array */
-  def arrayStoreFunc(elemSize: ElemSize): List[Instruction] = {
+  def arrayStoreFunc(elemSize: ElemSize): ListBuffer[Instruction] = {
     predefinedFunctions += errorOutOfBoundsFunc
     val (label, storeInstr) = elemSize match {
       case OneByte => 
@@ -316,7 +316,7 @@ object PredefinedFunctions {
       case FourBytes => 
         ("_arrStore4", StrInstr(R8, Addr(R3, RegShift(R0, ShiftLeft(2)))))
     }
-    List(
+    ListBuffer[Instruction](
       NewLine(),
       Comment("Array store function", 0),
       Label(label),
