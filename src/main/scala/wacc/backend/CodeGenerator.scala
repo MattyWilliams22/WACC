@@ -37,7 +37,7 @@ object CodeGenerator {
         funcsLines ++= funcLines
       }
       List(
-        Comment("Start of program"),
+        Comment("Start of program", 0),
         Command("data", 0)
       ) ++
       stringPool.toList ++
@@ -61,7 +61,7 @@ object CodeGenerator {
     // Translating Function into ARM assembly
     def functionGenerate(_type: Type, funcName: Ident, params: List[Param], body: Statement): List[Instruction] = {
       allocator.setLocation(funcName.nickname.get, VariableLocation(R0, 0, 4, _type))
-      Comment("Start of function") ::
+      Comment("Start of function", 0) ::
       Label(funcName.nickname.get) ::
       List(
         Push(List(FP, LR)),
@@ -125,10 +125,11 @@ object CodeGenerator {
       allocator.setLocation(id.nickname.get, VariableLocation(newDest, 0, 4, _type))
       val idLines = generateAssembly(id, allocator, newDest)
       val valueLines = generateAssembly(value, allocator, newDest)
-      Comment("Start of declare") ::
+      Comment("Start of declare statement", 4) ::
       rLines ++
       idLines ++
-      valueLines
+      valueLines ++
+      List(Comment("End of declare statement", 4))
     }
 
     // Translating Assign into ARM assembly
@@ -136,12 +137,12 @@ object CodeGenerator {
       // Generate assembly for rvalue
       val rvalueLines = generateAssembly(rvalue, allocator, dest)
       val (beforeLines, afterLines, target) = getLvalueLocation(lvalue)
-      Comment("Start of assign") ::
+      Comment("Start of assign statement", 4) ::
       rvalueLines ++
       beforeLines ++
       List(Mov(target, dest)) ++
       afterLines ++
-      List(Comment("End of assign"))
+      List(Comment("End of assign statement", 4))
     }
 
     // Returning the location of the lvalue
@@ -281,7 +282,7 @@ object CodeGenerator {
         case _ => ""
       }
       val (beforeLines, afterLines, target): (List[Instruction], List[Instruction], Register) = getLvalueLocation(lvalue)
-      Comment("Start of read") ::
+      Comment("Start of read statement", 4) ::
       beforeLines ++
       List(
         Mov(dest, target),
@@ -289,7 +290,8 @@ object CodeGenerator {
         BInstr(s"_read${_type}", noCondition, storeReturnAddr = true),
         Mov(target, R0)
       ) ++
-      afterLines
+      afterLines ++
+      List(Comment("End of read statement", 4))
     }
 
     // Translating If into ARM assembly
@@ -299,17 +301,19 @@ object CodeGenerator {
       val condLines = generateAssembly(cond, allocator, dest)
       val thenLines = generateAssembly(thenS, allocator, dest)
       val elseLines = generateAssembly(elseS, allocator, dest)
-      Comment("Start of if statement") ::
+      Comment("Start of if statement", 4) ::
       condLines ++
       List(
-        Comment("If statement condition logic"),
         CmpInstr(dest, ImmVal(1)),
         BInstr(elseLabel, NEcond)
       ) ++
       thenLines ++
-      List(BInstr(endLabel), Label(elseLabel)) ++
+      List(
+        BInstr(endLabel),
+        Label(elseLabel)
+      ) ++
       elseLines ++
-      List(Label(endLabel), Comment("End of if statement"))
+      List(Label(endLabel), Comment("End of if statement", 4))
     }
 
     // Translating While into ARM assembly
@@ -319,11 +323,10 @@ object CodeGenerator {
       val condLines = generateAssembly(cond, allocator, dest)
       val (newDest, rLines) = allocator.allocateRegister()
       val stmtLines = generateAssembly(stmt, allocator, newDest)
-      Comment("Start of while loop") ::
+      Comment("Start of while loop", 4) ::
       Label(startLabel) ::
       condLines ++
       List(
-        Comment("While loop condition logic"),
         CmpInstr(dest, ImmVal(1)), 
         BInstr(endLabel, NEcond)
       ) ++ 
@@ -332,16 +335,16 @@ object CodeGenerator {
       List(
         BInstr(startLabel),
         Label(endLabel),
-        Comment("End of while loop")
+        Comment("End of while loop", 4)
       )
     }
 
     // Translating Scope into ARM assembly
     def scopeGenerate(body: Statement): List[Instruction] = {
       val bodyLines = generateAssembly(body, allocator, dest)
-      Comment("Start of new scope") ::
+      Comment("Start of new scope", 4) ::
       bodyLines ++
-      List(Comment("End of new scope"))
+      List(Comment("End of new scope", 4))
     }
 
     // Translating Free into ARM assembly
@@ -356,26 +359,27 @@ object CodeGenerator {
           ("", List(SubInstr(dest, dest, ImmVal(4))))
         case _ => ("", List())
       }
-      Comment("Start of free") ::
+      Comment("Start of free statement", 4) ::
       expLines ++
       tLines ++
       List(
         Mov(R0, dest),
-        BInstr("_free" + _type, noCondition, storeReturnAddr = true)
+        BInstr("_free" + _type, noCondition, storeReturnAddr = true),
+        Comment("End of free statement", 4)
       )
     }
 
     // Translating Return into ARM assembly
     def returnGenerate(exp: Expr): List[Instruction] = {
       val expLines = generateAssembly(exp, allocator, dest)
-      Comment("Start of return") ::
+      Comment("Start of return statement", 4) ::
       expLines ++
       List(
-        Comment("Return Logic"),
         Mov(R0, dest),
         Mov(SP, FP),
         Pop(List(R4, R5, R6, R7, R8, R9, R10)),
-        Pop(List(FP, PC))
+        Pop(List(FP, PC)),
+        Comment("End of return statement", 4)
       )
     }
 
@@ -383,14 +387,14 @@ object CodeGenerator {
     def exitGenerate(exp: Expr): List[Instruction] = {
       refFunctions += exitFunc
       val expLines = generateAssembly(exp, allocator, dest)
-      Comment("Start of exit") ::
+      Comment("Start of exit statement", 4) ::
       expLines ++
       List(
-        Comment("Exit Logic"),
         Mov(R0, dest),
         BInstr("_exit", noCondition, storeReturnAddr = true),
         Mov(SP, FP),
-        Pop(List(FP, PC))
+        Pop(List(FP, PC)),
+        Comment("End of exit statement", 4)
       )
     }
 
@@ -447,20 +451,24 @@ object CodeGenerator {
         case _ => "error"
       }
       val expLines = generateAssembly(exp, allocator, dest)
-      Comment("Start of print") ::
+      Comment("Start of print statement", 4) ::
       expLines ++
       List(
-        Comment("Print Logic"),
         Mov(R0, dest),
-        BInstr(s"_print$t", noCondition, storeReturnAddr = true)
+        BInstr(s"_print$t", noCondition, storeReturnAddr = true),
+        Comment("End of print statement", 4)
       )
     }
 
     // Translating Println into ARM assembly
     def printlnGenerate(exp: Expr): List[Instruction] = {
       refFunctions += printLnFunc
+      Comment("Start of println statement", 4) ::
       printGenerate(exp) ++
-      List(BInstr("_println", noCondition, storeReturnAddr = true))
+      List(
+        BInstr("_println", noCondition, storeReturnAddr = true),
+        Comment("End of println statement", 4)
+      )
     }
 
     // Translating ArrayLiter into ARM assembly
@@ -488,7 +496,7 @@ object CodeGenerator {
       }
       totalSize += 4
       allocator.deallocateRegister(pointer)
-      Comment("Start of array literal") ::
+      Comment("Start of array literal creation", 4) ::
       r1Lines ++
       List(
         Mov(R0, ImmVal(totalSize)),
@@ -500,7 +508,8 @@ object CodeGenerator {
       ) ++
       arrayLines.toList ++
       List(
-        Mov(dest, pointer)
+        Mov(dest, pointer),
+        Comment("End of array literal creation", 4)
       )
     }
 
@@ -526,10 +535,9 @@ object CodeGenerator {
     def newPairGenerate(exp1: Expr, exp2: Expr): List[Instruction] = {
       refFunctions += mallocFunc
       val (next, rLines) = allocator.allocateRegister()
-      val newPairLines = Comment("Start of new pair") ::
+      val newPairLines = Comment("Start of new pair creation", 4) ::
       rLines ++
       List(
-        Comment("NewPair Logic"),
         Mov(R0, ImmVal(8)),
         BInstr("_malloc", noCondition, storeReturnAddr = true),
         Mov(dest, R0),
@@ -541,7 +549,7 @@ object CodeGenerator {
       generateAssembly(exp2, allocator, next) ++
       List(
         StrInstr(next, Addr(dest, ImmVal(4))),
-        Mov(dest, dest)
+        Comment("End of new pair creation", 4)
       )
       allocator.deallocateRegister(next)
       newPairLines
@@ -575,15 +583,15 @@ object CodeGenerator {
             Ldr(dest, Addr(next, ImmVal(4)))
           )
       }
-      Comment("Start of pair element") ::
+      Comment("Start of pair element extraction", 4) ::
       rLines ++
       lvalueLines ++
       List(
-        Comment("PairElem Logic"),
         CmpInstr(next, ImmVal(0)),
         BInstr("_errNull", EQcond)
       ) ++
-      funcLines
+      funcLines ++
+      List(Comment("End of pair element extraction", 4))
     }
 
     def addMulGenerate(exp1: Expr, exp2: Expr): (List[Instruction], List[Instruction]) = {
@@ -603,7 +611,7 @@ object CodeGenerator {
       allocator.deallocateRegister(val1)
       allocator.deallocateRegister(val2)
 
-      Comment("Start of multiplication") ::
+      Comment("Start of multiplication expression", 4) ::
       exp1Lines ++
       List(Push(List(dest))) ++
       exp2Lines ++
@@ -615,7 +623,8 @@ object CodeGenerator {
         Pop(List(val1, val2).sortBy(_.number)),
         SmullInstr(dest, hi, val1, val2),
         CmpInstr(hi, RegShift(dest, ShiftRight(31))),
-        BInstr("_errOverflow", NEcond, storeReturnAddr = true)
+        BInstr("_errOverflow", NEcond, storeReturnAddr = true),
+        Comment("End of multiplication expression", 4)
       )
     }
 
@@ -638,16 +647,22 @@ object CodeGenerator {
 
     // Translating Div into ARM assembly
     def divGenerate(exp1: Expr, exp2: Expr): List[Instruction] = {
-      Comment("Start of division") ::
+      Comment("Start of division expression", 4) ::
       divModGenerate(exp1, exp2) ++
-      List(Mov(dest, R0))
+      List(
+        Mov(dest, R0),
+        Comment("End of division expression", 4)
+      )
     }
 
     // Translating Mod into ARM assembly
     def modGenerate(exp1: Expr, exp2: Expr): List[Instruction] = {
-      Comment("Start of modulo") ::
+      Comment("Start of modulo expression", 4) ::
       divModGenerate(exp1, exp2) ++
-      List(Mov(dest, R1))
+      List(
+        Mov(dest, R1),
+        Comment("End of modulo expression", 4)
+      )
     }
 
     // Translating Add into ARM assembly
@@ -655,7 +670,7 @@ object CodeGenerator {
       val (exp1Lines, exp2Lines) = addMulGenerate(exp1, exp2)
       val (next, rLines) = allocator.allocateRegister()
       allocator.deallocateRegister(next)
-      Comment("Start of addition") ::
+      Comment("Start of addition expression", 4) ::
       exp2Lines ++
       List(Push(List(dest))) ++
       exp1Lines ++
@@ -663,7 +678,8 @@ object CodeGenerator {
       List(
         Pop(List(next)),
         AddInstr(dest, dest, next, updateFlags = true),
-        BInstr("_errOverflow", VScond, storeReturnAddr = true)
+        BInstr("_errOverflow", VScond, storeReturnAddr = true),
+        Comment("End of addition expression", 4)
       )
     }
 
@@ -679,68 +695,66 @@ object CodeGenerator {
     def subGenerate(exp1: Expr, exp2: Expr): List[Instruction] = {
       refFunctions += errorOverflowFunc
       val (exp1Lines, rLines, exp2Lines, next) = exprsGenerateHelper(exp1, exp2)
-      Comment("Start of subtraction") ::
+      Comment("Start of subtraction expression", 4) ::
       exp1Lines ++
       rLines ++ 
       exp2Lines ++
       List(
         SubInstr(dest, dest, next, updateFlags = true),
-        BInstr("_errOverflow", VScond, storeReturnAddr = true)
+        BInstr("_errOverflow", VScond, storeReturnAddr = true),
+        Comment("End of subtraction expression", 4)
       )
     }
 
     def condGenerate(exp1: Expr, exp2: Expr, cond: Condition): List[Instruction] = {
       val (exp1Lines, rLines, exp2Lines, next) = exprsGenerateHelper(exp1, exp2)
-      Comment("Start of conditional") ::
       exp1Lines ++
       rLines ++
       exp2Lines ++
       List(
-        Comment("Conditional Logic"),
         CmpInstr(dest, next),
         Mov(dest, ImmVal(0)),
         Mov(dest, ImmVal(1), cond)
-      ) ++
-      List(Comment("End of conditional"))
+      )
     }
 
     // Translating AND into ARM assembly
     def andGenerate(exp1: Expr, exp2: Expr): List[Instruction] = {
       val (exp1Lines, rLines, exp2Lines, next) = exprsGenerateHelper(exp1, exp2)
-      Comment("Start of and") ::
+      Comment("Start of and expression", 4) ::
       exp1Lines ++
       rLines ++
       exp2Lines ++
       List(
-        Comment("and Logic"),
         CmpInstr(next, ImmVal(0)),
         Mov(dest, ImmVal(0), EQcond),
+        Comment("End of and expression", 4)
       )
     }
 
     def orGenerate(exp1: Expr, exp2: Expr): List[Instruction] = {
       val (exp1Lines, rLines, exp2Lines, next) = exprsGenerateHelper(exp1, exp2)
-      Comment("Start of or") ::
+      Comment("Start of or expression", 4) ::
       exp1Lines ++
       rLines ++
       exp2Lines ++
       List(
-        Comment("or Logic"),
         CmpInstr(next, ImmVal(1)),
         Mov(dest, ImmVal(1), EQcond),
+        Comment("End of or expression", 4)
       )
     }
 
     // Translating NOT into ARM assembly
     def notGenerate(exp: Expr): List[Instruction] = {
       val expLines = generateAssembly(exp, allocator, dest)
-      Comment("Start of not") ::
+      Comment("Start of not expression", 4) ::
       expLines ++
       List(
-        Comment("not Logic"),
         CmpInstr(dest, ImmVal(0)),
         Mov(dest, ImmVal(0), NEcond),
-        Mov(dest, ImmVal(1), EQcond)
+        Mov(dest, ImmVal(1), EQcond),
+        Comment("End of not expression", 4)
       )
     }
 
@@ -748,13 +762,13 @@ object CodeGenerator {
     def negGenerate(exp: Expr): List[Instruction] = {
       refFunctions += errorOverflowFunc
       val (expLines, rLines, tempReg) = getExpLines(Right(exp))
-      Comment("Start of negation") ::
+      Comment("Start of negation expression", 4) ::
       rLines ++ 
       expLines ++
       List(
-        Comment("neg Logic"),
         RsbsInstr(dest, tempReg, ImmVal(0)),
-        BInstr("_errOverflow", VScond, storeReturnAddr = true)
+        BInstr("_errOverflow", VScond, storeReturnAddr = true),
+        Comment("End of negation expression", 4)
       )
     }
 
@@ -763,21 +777,21 @@ object CodeGenerator {
       val (next, rLines) = allocator.allocateRegister()
       val expLines = generateAssembly(exp, allocator, next)
       allocator.deallocateRegister(next)
-      Comment("Start of length") ::
+      Comment("Start of length expression", 4) ::
       rLines ++ 
       expLines ++
       List(
-        Comment("len Logic"),
-        Ldr(dest, Addr(next, ImmVal(-4)))
+        Ldr(dest, Addr(next, ImmVal(-4))),
+        Comment("End of length expression", 4)
       )
     }
 
     // Translating Ord into ARM assembly
     def ordGenerate(exp: Expr): List[Instruction] = {
       val expLines = generateAssembly(exp, allocator, dest)
-      Comment("Start of ord") ::
+      Comment("Start of ord expression", 4) ::
       expLines ++
-      List(Comment("ord Logic"))
+      List(Comment("End of ord expression", 4))
     }
 
     // Translating Chr into ARM assembly
@@ -785,15 +799,15 @@ object CodeGenerator {
       refFunctions += errorBadCharFunc
       val (next, rLines) = allocator.allocateRegister()
       val expLines = generateAssembly(exp, allocator, dest)
-      Comment("Start of chr") ::
+      Comment("Start of chr expression", 4) ::
       expLines ++
       rLines ++
       List(
-        Comment("chr Logic"),
         Mov(next, ImmVal(-128)),
         Tst(dest, next), 
         Mov(R1, dest, NEcond),
-        BInstr("_errBadChar", NEcond, storeReturnAddr = true)
+        BInstr("_errBadChar", NEcond, storeReturnAddr = true),
+        Comment("End of chr expression", 4)
       )
     }
 
@@ -806,14 +820,14 @@ object CodeGenerator {
       }
 
       List(
-        Comment("Start of number"),
+        Comment("Load number", 4),
         instr
       )
     }
 
     // Translating Bool into ARM assembly
     def boolGenerate(b: String): List[Instruction] = {
-      Comment("Start of boolean") ::
+      Comment("Load boolean", 4) ::
       (b match {
         case "true" =>
           List(
@@ -829,7 +843,7 @@ object CodeGenerator {
     // Translating Ch into ARM assembly
     def chGenerate(c: Char): List[Instruction] = {
       List(
-        Comment("Start of character"),
+        Comment("Load character", 4),
         Mov(dest, ImmVal(c.toInt))
       )
     }
@@ -838,7 +852,7 @@ object CodeGenerator {
     def identGenerate(n: String): List[Instruction] = {
       val location: Option[VariableLocation] = allocator.lookupLocation(n)
 
-      Comment("Start of identifier " + n) ::
+      Comment("Load identifier", 4) ::
       (location match {
         case Some(VariableLocation(reg, off, size, _type)) =>
           reg match {
@@ -852,8 +866,7 @@ object CodeGenerator {
             case _ => List(Mov(dest, reg))
           }
         case None => List()
-      }) ++
-      List(Comment("End of identifier"))
+      })
     }
 
     // Translating Str into ARM assembly
@@ -861,7 +874,7 @@ object CodeGenerator {
       val label = getStringLabel
       val asciz = AscizInstr(label, StringLiteral(s))
       stringPool += asciz
-      Comment("Start of string") ::
+      Comment("Load string", 4) ::
       List(
         Ldr(dest, LabelAddr(label))
       )
@@ -886,21 +899,22 @@ object CodeGenerator {
         )
         allocator.deallocateRegister(next)
       }
-      Comment("Start of array element") ::
+      Comment("Start of array element extraction", 4) ::
       idLines ++
-      indicesLines.toList
+      indicesLines.toList ++
+      List(Comment("End of array element extraction", 4))
     }
 
     // Translating Call into ARM assembly
     def callGenerate(funcName: Ident, args: List[Expr]): List[Instruction] = {
-      Comment("Start of function call") ::
+      Comment("Start of function call", 4) ::
       Push(List(R1, R2, R3)) ::
       argsGenerate(args) ++
       List(
-        Comment("Call Logic"),
         BInstr(funcName.nickname.get, noCondition, storeReturnAddr = true),
         Pop(List(R1, R2, R3)),
-        Mov(dest, R0)
+        Mov(dest, R0),
+        Comment("End of function call", 4)
       )
     }
 
@@ -937,7 +951,7 @@ object CodeGenerator {
         functionGenerate(_type, funcName, paramList, body)
 
       case Skip() =>
-        List(Comment("Skip"))
+        List(Comment("Skip", 4))
 
       case Declare(_type, id, value) =>
         declareGenerate(_type, id, value)
@@ -1050,7 +1064,7 @@ object CodeGenerator {
 
       case PairLiter(_) =>
         List(
-          Comment("Start of pair literal"),
+          Comment("Load pair literal", 4),
           Mov(dest, ImmVal(0))
         )
 

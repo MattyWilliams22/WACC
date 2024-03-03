@@ -67,8 +67,8 @@ object ARMAssemblyPrinter {
     }
 
     def formatInstr(instr: Instruction): String = instr match {
-      case Comment(comment) =>
-        s"@ $comment"
+      case Comment(comment, indent) =>
+        " " * indent + s"@ $comment"
       case Command(str, indent) =>
         " " * indent + "." + str
       case Label(name) =>

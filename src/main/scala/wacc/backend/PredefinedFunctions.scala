@@ -18,7 +18,7 @@ object PredefinedFunctions {
     stringLiterals ++
     List(
       Command("align 4", 0),
-      Comment(s"$funcName function"),
+      Comment(s"$funcName function", 0),
       Label(funcLabel),
       Push(List(FP, LR)),
       Mov(FP, SP)) ++
@@ -287,7 +287,7 @@ object PredefinedFunctions {
     refFunctions += errorOutOfBoundsFunc
     List(
       NewLine(),
-      Comment("Array store function"),
+      Comment("Array store function", 0),
       Label("_arrStore1"),
       Push(List(LR)),
       CmpInstr(R0, ImmVal(0)),
@@ -307,7 +307,7 @@ object PredefinedFunctions {
     refFunctions += errorOutOfBoundsFunc
     List(
       NewLine(),
-      Comment("Array load function"),
+      Comment("Array load function", 0),
       Label("_arrLoad4"),
       Push(List(LR)),
       CmpInstr(R0, ImmVal(0)),
@@ -328,7 +328,7 @@ object PredefinedFunctions {
 
     List(
       NewLine(),
-      Comment("Array store function"),
+      Comment("Array store function", 0),
       Label("_arrStore4"),
       Push(List(LR)),
       CmpInstr(R0, ImmVal(0)),

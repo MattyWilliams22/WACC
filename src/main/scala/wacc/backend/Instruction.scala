@@ -2,7 +2,7 @@ package wacc.backend
 
 sealed trait Instruction
 
-case class Comment(comment: String) extends Instruction
+case class Comment(comment: String, indent: Int) extends Instruction
 case class Command(str: String, indent: Int) extends Instruction
 case class Label(name: String) extends Instruction
 case class Push(regs: List[Register]) extends Instruction
