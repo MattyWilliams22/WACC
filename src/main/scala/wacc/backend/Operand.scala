@@ -2,11 +2,15 @@ package wacc.backend
 
 trait Operand
 
-case class IntLiteral(value: Int) extends Operand
-case class ImmVal(value: Int) extends Operand
-case class LabelAddr(label: String) extends Operand
-case class Addr(address: Register, offset: Operand) extends Operand
-case class RegShift(reg1: Register, reg2: Register, shift: Shift) extends Operand
+trait GeneralOperand extends Operand
+case class ImmVal(value: Int) extends GeneralOperand
+case class RegShift(reg: Register, shift: Shift) extends GeneralOperand
+
+sealed trait LdrOperand extends Operand
+
+case class Addr(address: Register, offset: GeneralOperand) extends LdrOperand
+case class LabelAddr(label: String) extends LdrOperand
+case class IntLiteral(value: Int) extends LdrOperand
 
 sealed trait AscizOperand extends Operand
 case class StringLiteral(string: String) extends AscizOperand

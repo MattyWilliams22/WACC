@@ -28,7 +28,7 @@ object ARMAssemblyPrinter {
       case LabelAddr(label) => "=" + label
       case reg: Register => formatReg(reg)
       case Addr(address, offset) => s"[${formatReg(address)}, ${formatOperand(offset)}]"
-      case RegShift(reg1, reg2, shift) => s"[${formatReg(reg1)}, ${formatReg(reg2)}${formatShift(shift)}]"
+      case RegShift(reg, shift) => s"${formatReg(reg)}${formatShift(shift)}"
       case IntLiteral(num) => s"=${num.toString}"
       case StringLiteral(str) => str
       case ErrorMessage(error) => "Error: " + (error match {
@@ -93,10 +93,10 @@ object ARMAssemblyPrinter {
         s"    sub$updateFlagsString ${formatReg(reg)}, ${formatOperand(operand1)}, ${formatOperand(operand2)}"
       case SmullInstr(reg1, reg2, operand1, operand2) =>
         s"    smull ${formatReg(reg1)}, ${formatReg(reg2)}, ${formatOperand(operand1)}, ${formatOperand(operand2)}"
-      case CmpInstr(operand1, operand2, shift) =>
-        s"    cmp ${formatOperand(operand1)}, ${formatOperand(operand2)}${formatShift(shift)}"
-      case Tst(operand1, operand2, shift) =>
-        s"    tst ${formatOperand(operand1)}, ${formatOperand(operand2)}${formatShift(shift)}"
+      case CmpInstr(operand1, operand2) =>
+        s"    cmp ${formatOperand(operand1)}, ${formatOperand(operand2)}"
+      case Tst(operand1, operand2) =>
+        s"    tst ${formatOperand(operand1)}, ${formatOperand(operand2)}"
       case BInstr(label, condition, storeReturnAddr) =>
         val storeReturnAddrString = if (storeReturnAddr) "l" else ""
 
@@ -118,8 +118,8 @@ object ARMAssemblyPrinter {
         s"   .word ${escapedString.length}\n$label:\n   .asciz \"$escapedString\""
       case StrInstr(reg1, operand, size) =>
         s"    str${formatSize(size)} ${formatReg(reg1)}, ${formatOperand(operand)}"
-      case RsbsInstr(reg, operand) =>
-        s"    rsbs ${formatReg(reg)}, ${formatOperand(operand)}, #0"
+      case RsbsInstr(reg, operand1, operand2) =>
+        s"    rsbs ${formatReg(reg)}, ${formatOperand(operand1)}, ${formatOperand(operand2)}"
       case NewLine() => ""
     }
 
