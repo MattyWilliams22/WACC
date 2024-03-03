@@ -28,7 +28,13 @@ object CodeGenerator {
 
     def programGenerate(funcs: List[Function], stmts: Statement): List[Instruction] = {
       val stmtLines = generateAssembly(stmts, allocator, dest)
-      val funcLines = funcs.flatMap(generateAssembly(_, allocator, dest))
+      var funcsLines = ListBuffer[Instruction]()
+      for (func <- funcs) {
+        val funcAllocator = new BasicRegisterAllocator
+        val (funcReg, _) = funcAllocator.allocateRegister()
+        val funcLines = generateAssembly(func, funcAllocator, funcReg)
+        funcsLines ++= funcLines
+      }
       List(
         Comment("Start of program"),
         Command("data", 0)
@@ -47,7 +53,7 @@ object CodeGenerator {
         Mov(R0, ImmVal(0)),
         Pop(List(FP, PC))
       ) ++
-      funcLines ++
+      funcsLines ++
       refFunctions.foldLeft(List[Instruction]())(_ ++ _)
     }
 
@@ -100,8 +106,9 @@ object CodeGenerator {
             paramLines += Mov(next, R3)
             allocator.setLocation(param.ident.nickname.get, VariableLocation(next, 0, 4, param._type))
           case _ =>
-            allocator.deallocateRegister(next)
-            allocator.setLocation(param.ident.nickname.get, VariableLocation(FP, 4 * (params.length - i - 1), 4, param._type))
+            paramLines ++= rLines
+            paramLines += StrInstr(next, Addr(FP, ImmVal(4 * (params.length - i - 1))))
+            allocator.setLocation(param.ident.nickname.get, VariableLocation(next, 0, 4, param._type))
         }
       }
       paramLines.toList
