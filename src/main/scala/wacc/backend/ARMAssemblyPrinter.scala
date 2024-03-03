@@ -4,7 +4,7 @@ import java.io.PrintWriter
 
 object ARMAssemblyPrinter {
 
-  /* Function to convert a given list of ARM32 assembly instructions to its string representation */
+  /* Function to convert a given list of assembly instructions to their ARM32 string representation */
   def printAssembly(instructions: List[Instruction], writer: PrintWriter): Unit = {
 
     def formatSize(size: ElemSize): String = size match {
@@ -67,8 +67,8 @@ object ARMAssemblyPrinter {
     }
 
     def formatInstr(instr: Instruction): String = instr match {
-      case Comment(comment) =>
-        s"@ $comment"
+      case Comment(comment, indent) =>
+        " " * indent + s"@ $comment"
       case Command(str, indent) =>
         " " * indent + "." + str
       case Label(name) =>

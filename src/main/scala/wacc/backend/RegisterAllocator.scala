@@ -15,15 +15,19 @@ case class VariableLocation(register: Register, offset: Int, size: Int, _type: T
 /* Basic register allocator that allocates registers by always putting the result in the register
    that is at the front of the list of available registers */
 class BasicRegisterAllocator extends RegisterAllocator {
+  /* List of all registers that can be allocated by register allocator */
   private val allRegisters: List[Register] = List(R4, R5, R6, R7, R8, R9, R10, R1, R2, R3, IP)
 
+  /* List of current available registers */
   private var availableRegisters: List[Register] = allRegisters
 
   /* Map of variable names to their locations where they are stored */
   private val varMap: mutable.Map[String, VariableLocation] = mutable.Map.empty[String, VariableLocation]
 
+  /* Stores the current stack pointer */
   private var stackPointer = 0
 
+  /* Allocate a register */
   def allocateRegister(): (Register, List[Instruction]) = {
     var result: Register = R4
     var instructions: List[Instruction] = List.empty[Instruction]
@@ -57,14 +61,17 @@ class BasicRegisterAllocator extends RegisterAllocator {
     (result, instructions)
   }
 
+  /* Lookup the location of a variable in the varMap */
   def lookupLocation(varName: String): Option[VariableLocation] = {
     varMap.get(varName)
   }
 
+  /* Set the location of a variable in the varMap */
   def setLocation(varName: String, location: VariableLocation): Unit = {
     varMap(varName) = location
   }
 
+  /* Deallocate a register */
   def deallocateRegister(register: Register): Unit = {
     /* Add the deallocated register to the list of available registers */
     availableRegisters = register :: availableRegisters
