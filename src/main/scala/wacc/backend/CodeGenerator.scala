@@ -29,7 +29,7 @@ object CodeGenerator {
     // Translating Program into ARM assembly
     def programGenerate(funcs: List[Function], stmts: Statement): List[Instruction] = {
       val stmtLines = generateAssembly(stmts, allocator, dest)
-      var funcsLines = ListBuffer[Instruction]()
+      val funcsLines = ListBuffer[Instruction]()
       for (func <- funcs) {
         val funcAllocator = new BasicRegisterAllocator
         val (funcReg, _) = funcAllocator.allocateRegister()
@@ -230,7 +230,7 @@ object CodeGenerator {
       beforeLines ++= List(
         Mov(R0, indexReg),
         Mov(R3, arrayReg),
-        BlInstr("_arrLoad4"),
+        BInstr("_arrLoad4", noCondition, storeReturnAddr = true),
         Mov(elemReg, R3)
       )
       val (before, after, target) = getArrayElemLocation(reduceType(arrayType), elemReg, indices.tail)
@@ -248,7 +248,7 @@ object CodeGenerator {
         Mov(R0, indexReg),
         Mov(R3, arrayReg),
         Mov(R8, elemReg),
-        BlInstr(storeFunc),
+        BInstr(storeFunc, noCondition, storeReturnAddr = true),
         Mov(arrayReg, R3)
       )
       allocator.deallocateRegister(indexReg)
@@ -282,7 +282,7 @@ object CodeGenerator {
       List(
         Mov(dest, target),
         Mov(R0, dest),
-        BlInstr(s"_read${_type}"),
+        BInstr(s"_read${_type}", noCondition, storeReturnAddr = true),
         Mov(target, R0)
       ) ++
       afterLines
@@ -357,7 +357,7 @@ object CodeGenerator {
       tLines ++
       List(
         Mov(R0, dest),
-        BlInstr("_free" + _type)
+        BInstr("_free" + _type, noCondition, storeReturnAddr = true)
       )
     }
 
@@ -384,7 +384,7 @@ object CodeGenerator {
       List(
         Comment("Exit Logic"),
         Mov(R0, dest),
-        BlInstr("_exit"),
+        BInstr("_exit", noCondition, storeReturnAddr = true),
         Mov(SP, FP),
         Pop(List(FP, PC))
       )
@@ -448,7 +448,7 @@ object CodeGenerator {
       List(
         Comment("Print Logic"),
         Mov(R0, dest),
-        BlInstr(s"_print$t")
+        BInstr(s"_print$t", noCondition, storeReturnAddr = true)
       )
     }
 
@@ -456,7 +456,7 @@ object CodeGenerator {
     def printlnGenerate(exp: Expr): List[Instruction] = {
       refFunctions += printLnFunc
       printGenerate(exp) ++
-      List(BlInstr("_println"))
+      List(BInstr("_println", noCondition, storeReturnAddr = true))
     }
 
     // Translating ArrayLiter into ARM assembly
@@ -488,7 +488,7 @@ object CodeGenerator {
       r1Lines ++
       List(
         Mov(R0, ImmVal(totalSize)),
-        BlInstr("_malloc"),
+        BInstr("_malloc", noCondition, storeReturnAddr = true),
         Mov(pointer, R0),
         AddInstr(pointer, pointer, ImmVal(4)),
         Mov(dest, ImmVal(elems.length)),
@@ -527,7 +527,7 @@ object CodeGenerator {
       List(
         Comment("NewPair Logic"),
         Mov(R0, ImmVal(8)),
-        BlInstr("_malloc"),
+        BInstr("_malloc", noCondition, storeReturnAddr = true),
         Mov(dest, R0),
       ) ++
       generateAssembly(exp1, allocator, next) ++
@@ -611,7 +611,7 @@ object CodeGenerator {
         Pop(List(val1, val2).sortBy(_.number)),
         SmullInstr(dest, hi, val1, val2),
         CmpInstr(hi, dest, ShiftRight(31)),
-        BlInstr("_errOverflow", NEcond)
+        BInstr("_errOverflow", NEcond, storeReturnAddr = true)
       )
     }
 
@@ -627,8 +627,8 @@ object CodeGenerator {
       List(
         Mov(R1, dest),
         CmpInstr(R1, ImmVal(0)),
-        BlInstr("_errDivZero", EQcond),
-        BlInstr("__aeabi_idivmod")
+        BInstr("_errDivZero", EQcond, storeReturnAddr = true),
+        BInstr("__aeabi_idivmod", noCondition, storeReturnAddr = true)
       )
     }
 
@@ -658,8 +658,8 @@ object CodeGenerator {
       rLines ++ 
       List(
         Pop(List(next)),
-        AddsInstr(dest, dest, next),
-        BlInstr("_errOverflow", VScond)
+        AddInstr(dest, dest, next, updateFlags = true),
+        BInstr("_errOverflow", VScond, storeReturnAddr = true)
       )
     }
 
@@ -680,8 +680,8 @@ object CodeGenerator {
       rLines ++ 
       exp2Lines ++
       List(
-        SubsInstr(dest, dest, next),
-        BlInstr("_errOverflow", VScond)
+        SubInstr(dest, dest, next, updateFlags = true),
+        BInstr("_errOverflow", VScond, storeReturnAddr = true)
       )
     }
 
@@ -750,7 +750,7 @@ object CodeGenerator {
       List(
         Comment("neg Logic"),
         RsbsInstr(dest, tempReg),
-        BlInstr("_errOverflow", VScond)
+        BInstr("_errOverflow", VScond, storeReturnAddr = true)
       )
     }
 
@@ -789,7 +789,7 @@ object CodeGenerator {
         Mov(next, ImmVal(-128)),
         Tst(dest, next), 
         Mov(R1, dest, NEcond),
-        BlInstr("_errBadChar", NEcond)
+        BInstr("_errBadChar", NEcond, storeReturnAddr = true)
       )
     }
 
@@ -877,7 +877,7 @@ object CodeGenerator {
         indicesLines ++= List(
           Mov(R0, next),
           Mov(R3, dest),
-          BlInstr("_arrLoad4"),
+          BInstr("_arrLoad4", noCondition, storeReturnAddr = true),
           Mov(dest, R3)
         )
         allocator.deallocateRegister(next)
@@ -894,7 +894,7 @@ object CodeGenerator {
       argsGenerate(args) ++
       List(
         Comment("Call Logic"),
-        BlInstr(funcName.nickname.get),
+        BInstr(funcName.nickname.get, noCondition, storeReturnAddr = true),
         Pop(List(R1, R2, R3)),
         Mov(dest, R0)
       )

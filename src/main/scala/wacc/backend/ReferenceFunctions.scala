@@ -32,7 +32,7 @@ object ReferenceFunctions {
 
     val funcBody = List(
       BicInstr(SP, SP, ImmVal(7)),
-      BlInstr("exit")
+      BInstr("exit", noCondition, storeReturnAddr = true)
     )
 
     functionWrapper(funcName, funcLabel, stringLiterals, funcBody)
@@ -65,9 +65,9 @@ object ReferenceFunctions {
       BicInstr(SP, SP, ImmVal(7)),
       Mov(R1, R0),
       AdrInstr(R0, s".L._print${_type}_str0"),
-      BlInstr("printf"),
+      BInstr("printf", noCondition, storeReturnAddr = true),
       Mov(R0, ImmVal(0)),
-      BlInstr("fflush"),
+      BInstr("fflush", noCondition, storeReturnAddr = true),
     )
 
     functionWrapper(funcName, labelName, stringLiterals, funcBody)
@@ -88,9 +88,9 @@ object ReferenceFunctions {
       Mov(R2, R0),
       Ldr(R1, Addr(R0, ImmVal(-4))),
       AdrInstr(R0, ".L._prints_str0"),
-      BlInstr("printf"),
+      BInstr("printf", noCondition, storeReturnAddr = true),
       Mov(R0, ImmVal(0)),
-      BlInstr("fflush"),
+      BInstr("fflush", noCondition, storeReturnAddr = true),
     )
 
     functionWrapper(funcName, labelName, stringLiterals, funcBody)
@@ -110,9 +110,9 @@ object ReferenceFunctions {
       BicInstr(SP, SP, ImmVal(7)),
       Mov(R1, R0),
       AdrInstr(R0, ".L._printp_str0"),
-      BlInstr("printf"),
+      BInstr("printf", noCondition, storeReturnAddr = true),
       Mov(R0, ImmVal(0)),
-      BlInstr("fflush"),
+      BInstr("fflush", noCondition, storeReturnAddr = true),
     )
 
     functionWrapper(funcName, labelName, stringLiterals, funcBody)
@@ -141,9 +141,9 @@ object ReferenceFunctions {
       Label(".L._printb1"),
       Ldr(R1, Addr(R2, ImmVal(-4))),
       AdrInstr(R0, ".L._printb_str2"),
-      BlInstr("printf"),
+      BInstr("printf", noCondition, storeReturnAddr = true),
       Mov(R0, ImmVal(0)),
-      BlInstr("fflush"),
+      BInstr("fflush", noCondition, storeReturnAddr = true),
     )
 
     functionWrapper(funcName, labelName, stringLiterals, funcBody)
@@ -162,9 +162,9 @@ object ReferenceFunctions {
     val funcBody = List(
       BicInstr(SP, SP, ImmVal(7)),
       AdrInstr(R0, ".L._println_str0"),
-      BlInstr("puts"),
+      BInstr("puts", noCondition, storeReturnAddr = true),
       Mov(R0, ImmVal(0)),
-      BlInstr("fflush"),
+      BInstr("fflush", noCondition, storeReturnAddr = true),
     )
 
     functionWrapper(funcName, funcLabel, stringLiterals, funcBody)
@@ -182,7 +182,7 @@ object ReferenceFunctions {
 
     val funcBody = List(
       BicInstr(SP, SP, ImmVal(7)),
-      BlInstr("malloc"),
+      BInstr("malloc", noCondition, storeReturnAddr = true),
       CmpInstr(R0, ImmVal(0)),
       BInstr("_errOutOfMemory", EQcond),
     )
@@ -206,7 +206,7 @@ object ReferenceFunctions {
       StrInstr(R0, Addr(SP, ImmVal(0))),
       Mov(R1, SP),
       AdrInstr(R0, ".L._readi_str0"),
-      BlInstr("scanf"),
+      BInstr("scanf", noCondition, storeReturnAddr = true),
       Ldr(R0, Addr(SP, ImmVal(0))),
       AddInstr(SP, SP, ImmVal(8)),
     )
@@ -230,7 +230,7 @@ object ReferenceFunctions {
       StrInstr(R0, Addr(SP, ImmVal(0))),
       Mov(R1, SP),
       AdrInstr(R0, ".L._readc_str0"),
-      BlInstr("scanf"),
+      BInstr("scanf", noCondition, storeReturnAddr = true),
       Ldr(R0, Addr(SP, ImmVal(0))),
       AddInstr(SP, SP, ImmVal(8)),
     )
@@ -248,7 +248,7 @@ object ReferenceFunctions {
 
     val funcBody = List(
       BicInstr(SP, SP, ImmVal(7)),
-      BlInstr("free"),
+      BInstr("free", noCondition, storeReturnAddr = true),
     )
 
     functionWrapper(funcName, funcLabel, stringLiterals, funcBody)
@@ -268,8 +268,8 @@ object ReferenceFunctions {
     val funcBody = List(
       BicInstr(SP, SP, ImmVal(7)),
       CmpInstr(R0, ImmVal(0)),
-      BlInstr("_errNull", EQcond),
-      BlInstr("_free", noCondition),
+      BInstr("_errNull", EQcond, storeReturnAddr = true),
+      BInstr("_free", noCondition, storeReturnAddr = true),
     )
 
     functionWrapper(funcName, funcLabel, stringLiterals, funcBody)
@@ -285,11 +285,11 @@ object ReferenceFunctions {
       Push(List(LR)),
       CmpInstr(R0, ImmVal(0)),
       Mov(R1, R0, LTcond),
-      BlInstr("_errOutOfBounds", LTcond),
+      BInstr("_errOutOfBounds", LTcond, storeReturnAddr = true),
       Ldr(LR, Addr(R3, ImmVal(-4))),
       CmpInstr(R0, LR),
       Mov(R1, R0, GEcond),
-      BlInstr("_errOutOfBounds", GEcond),
+      BInstr("_errOutOfBounds", GEcond, storeReturnAddr = true),
       StrInstr(R8, Addr(R3, R0), OneByte),
       Pop(List(PC))
     )
@@ -305,11 +305,11 @@ object ReferenceFunctions {
       Push(List(LR)),
       CmpInstr(R0, ImmVal(0)),
       Mov(R1, R0, LTcond),
-      BlInstr("_errOutOfBounds", LTcond),
+      BInstr("_errOutOfBounds", LTcond, storeReturnAddr = true),
       Ldr(LR, Addr(R3, ImmVal(-4))),
       CmpInstr(R0, LR),
       Mov(R1, R0, GEcond),
-      BlInstr("_errOutOfBounds", GEcond),
+      BInstr("_errOutOfBounds", GEcond, storeReturnAddr = true),
       Ldr(R3, RegShift(R3, R0, ShiftLeft(2))),
       Pop(List(PC))
     )
@@ -326,11 +326,11 @@ object ReferenceFunctions {
       Push(List(LR)),
       CmpInstr(R0, ImmVal(0)),
       Mov(R1, R0, LTcond),
-      BlInstr("_errOutOfBounds", LTcond),
+      BInstr("_errOutOfBounds", LTcond, storeReturnAddr = true),
       Ldr(LR, Addr(R3, ImmVal(-4))),
       CmpInstr(R0, LR),
       Mov(R1, R0, GEcond),
-      BlInstr("_errOutOfBounds", GEcond),
+      BInstr("_errOutOfBounds", GEcond, storeReturnAddr = true),
       StrInstr(R8, RegShift(R3, R0, ShiftLeft(2))),
       Pop(List(PC))
     )
@@ -351,9 +351,9 @@ object ReferenceFunctions {
     val funcBody = List(
       BicInstr(SP, SP, ImmVal(7)),
       AdrInstr(R0, ".L._errOutOfMemory_str0"),
-      BlInstr("_prints"),
+      BInstr("_prints", noCondition, storeReturnAddr = true),
       Mov(R0, ImmVal(255)),
-      BlInstr("exit"),
+      BInstr("exit", noCondition, storeReturnAddr = true),
     )
 
     functionWrapper(funcName, funcLabel, stringLiterals, funcBody)
@@ -372,11 +372,11 @@ object ReferenceFunctions {
     val funcBody = List(
       BicInstr(SP, SP, ImmVal(7)),
       AdrInstr(R0, ".L._errOutOfBounds_str0"),
-      BlInstr("printf"),
+      BInstr("printf", noCondition, storeReturnAddr = true),
       Mov(R0, ImmVal(0)),
-      BlInstr("fflush"),
+      BInstr("fflush", noCondition, storeReturnAddr = true),
       Mov(R0, ImmVal(255)),
-      BlInstr("exit")
+      BInstr("exit", noCondition, storeReturnAddr = true),
     )
 
     functionWrapper(funcName, funcLabel, stringLiterals, funcBody)
@@ -397,9 +397,9 @@ object ReferenceFunctions {
     val funcBody = List(
       BicInstr(SP, SP, ImmVal(7)),
       AdrInstr(R0, ".L._errNull_str0"),
-      BlInstr("_prints"),
+      BInstr("_prints", noCondition, storeReturnAddr = true),
       Mov(R0, ImmVal(255)),
-      BlInstr("exit")
+      BInstr("exit", noCondition, storeReturnAddr = true),
     )
 
     functionWrapper(funcName, funcLabel, stringLiterals, funcBody)
@@ -420,9 +420,9 @@ object ReferenceFunctions {
     val funcBody = List(
       BicInstr(SP, SP, ImmVal(7)),
       AdrInstr(R0, ".L._errOverflow_str0"),
-      BlInstr("_prints"),
+      BInstr("_prints", noCondition, storeReturnAddr = true),
       Mov(R0, ImmVal(255)),
-      BlInstr("exit")
+      BInstr("exit", noCondition, storeReturnAddr = true),
     )
 
     functionWrapper(funcName, funcLabel, stringLiterals, funcBody)
@@ -443,9 +443,9 @@ object ReferenceFunctions {
     val funcBody = List(
       BicInstr(SP, SP, ImmVal(7)),
       AdrInstr(R0, ".L._errDivZero_str0"),
-      BlInstr("_prints"),
+      BInstr("_prints", noCondition, storeReturnAddr = true),
       Mov(R0, ImmVal(255)),
-      BlInstr("exit")
+      BInstr("exit", noCondition, storeReturnAddr = true),
     )
 
     functionWrapper(funcName, funcLabel, stringLiterals, funcBody)
@@ -467,11 +467,11 @@ object ReferenceFunctions {
     val funcBody = List(
       BicInstr(SP, SP, ImmVal(7)),
       AdrInstr(R0, ".L._errBadChar_str0"),
-      BlInstr("printf"),
+      BInstr("printf", noCondition, storeReturnAddr = true),
       Mov(R0, ImmVal(0)),
-      BlInstr("fflush"),
+      BInstr("fflush", noCondition, storeReturnAddr = true),
       Mov(R0, ImmVal(255)),
-      BlInstr("exit")
+      BInstr("exit", noCondition, storeReturnAddr = true),
     )
 
     functionWrapper(funcName, funcLabel, stringLiterals, funcBody)
