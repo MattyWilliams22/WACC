@@ -704,7 +704,6 @@ object CodeGenerator {
         CmpInstr(R1, ImmVal(0)),
         BInstr("_errDivZero", EQcond, storeReturnAddr = true),
         BInstr("__aeabi_idivmod", noCondition, storeReturnAddr = true),
-        Mov(dest, dest)
       )
 
       divModLines
@@ -727,7 +726,7 @@ object CodeGenerator {
 
       modLines += Comment("Start of modulo", 4)
       modLines ++= divModGenerate(exp1, exp2)
-      modLines += Mov(dest, R0)
+      modLines += Mov(dest, R1)
 
       modLines
     }
