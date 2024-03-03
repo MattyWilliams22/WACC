@@ -855,7 +855,7 @@ object CodeGenerator {
     // Translating Str into ARM assembly
     def strGenerate(s: String): List[Instruction] = {
       val label = getStringLabel
-      val asciz = AscizInstr(label, s)
+      val asciz = AscizInstr(label, StringLiteral(s))
       stringPool += asciz
       Comment("Start of string") ::
       List(

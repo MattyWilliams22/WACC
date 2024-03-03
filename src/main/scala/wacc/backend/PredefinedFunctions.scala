@@ -65,7 +65,7 @@ object PredefinedFunctions {
     val labelName = s"_print${_type}"
 
     val stringLiterals = List(
-      AscizInstr(s".L._print${_type}_str0", formatSpecifier)
+      AscizInstr(s".L._print${_type}_str0", StringLiteral(formatSpecifier))
     )
 
     val funcBody = List(
@@ -87,7 +87,7 @@ object PredefinedFunctions {
     val labelName = "_prints"
 
     val stringLiterals = List(
-      AscizInstr(".L._prints_str0", "%.*s")
+      AscizInstr(".L._prints_str0", StringLiteral("%.*s"))
     )
 
     val funcBody = List(
@@ -110,7 +110,7 @@ object PredefinedFunctions {
     val labelName = "_printp"
 
     val stringLiterals = List(
-      AscizInstr(".L._printp_str0", "%p"),
+      AscizInstr(".L._printp_str0", StringLiteral("%p")),
     )
 
     val funcBody = List(
@@ -132,9 +132,9 @@ object PredefinedFunctions {
     val labelName = "_printb"
 
     val stringLiterals = List(
-      AscizInstr(".L._printb_str0", "false"),
-      AscizInstr(".L._printb_str1", "true"),
-      AscizInstr(".L._printb_str2", "%.*s"),
+      AscizInstr(".L._printb_str0", StringLiteral("false")),
+      AscizInstr(".L._printb_str1", StringLiteral("true")),
+      AscizInstr(".L._printb_str2", StringLiteral("%.*s")),
     )
 
     val funcBody = List(
@@ -163,7 +163,7 @@ object PredefinedFunctions {
     val funcLabel = "_println"
 
     val stringLiterals = List(
-      AscizInstr(".L._println_str0", ""),
+      AscizInstr(".L._println_str0", StringLiteral("")),
     )
 
     val funcBody = List(
@@ -204,7 +204,7 @@ object PredefinedFunctions {
     val funcLabel = "_readi"
 
     val stringLiterals = List(
-      AscizInstr(".L._readi_str0", "%d"),
+      AscizInstr(".L._readi_str0", StringLiteral("%d")),
     )
 
     val funcBody = List(
@@ -228,7 +228,7 @@ object PredefinedFunctions {
     val funcLabel = "_readc"
 
     val stringLiterals = List(
-      AscizInstr(".L._readc_str0", " %c"),
+      AscizInstr(".L._readc_str0", StringLiteral(" %c")),
     )
 
     val funcBody = List(
@@ -352,7 +352,7 @@ object PredefinedFunctions {
     val funcLabel = "_errOutOfMemory"
 
     val stringLiterals = List(
-      AscizInstr(".L._errOutOfMemory_str0", "Error: Out of memory")
+      AscizInstr(".L._errOutOfMemory_str0", ErrorMessage(OutOfMemoryErr))
     )
 
     val funcBody = List(
@@ -373,7 +373,7 @@ object PredefinedFunctions {
     val funcLabel = "_errOutOfBounds"
 
     val stringLiterals = List(
-      AscizInstr(".L._errOutOfBounds_str0", "Error: Array index out of bounds")
+      AscizInstr(".L._errOutOfBounds_str0", ErrorMessage(IndexOutOfBoundsErr))
     )
 
     val funcBody = List(
@@ -398,7 +398,7 @@ object PredefinedFunctions {
     val funcLabel = "_errNull"
 
     val stringLiterals = List(
-      AscizInstr(".L._errNull_str0", "Error: Null pair de-referenced")
+      AscizInstr(".L._errNull_str0", ErrorMessage(NullReferenceErr))
     )
 
     val funcBody = List(
@@ -421,7 +421,7 @@ object PredefinedFunctions {
     val funcLabel = "_errOverflow"
 
     val stringLiterals = List(
-      AscizInstr(".L._errOverflow_str0", "Error: Integer overflow or underflow occurred")
+      AscizInstr(".L._errOverflow_str0", ErrorMessage(IntegerOverflowUnderflowErr))
     )
 
     val funcBody = List(
@@ -444,7 +444,7 @@ object PredefinedFunctions {
     val funcLabel = "_errDivZero"
 
     val stringLiterals = List(
-      AscizInstr(".L._errDivZero_str0", "Error: Division by zero")
+      AscizInstr(".L._errDivZero_str0", ErrorMessage(DivByZeroErr))
     )
 
     val funcBody = List(
@@ -468,7 +468,7 @@ object PredefinedFunctions {
     val funcLabel = "_errBadChar"
 
     val stringLiterals = List(
-      AscizInstr(".L._errBadChar_str0", "fatal error: int %d is not ascii character 0-127 \n")
+      AscizInstr(".L._errBadChar_str0", ErrorMessage(CharNotInRangeErr))
     )
 
     val funcBody = List(

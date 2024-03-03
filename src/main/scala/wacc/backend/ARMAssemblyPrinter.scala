@@ -30,6 +30,15 @@ object ARMAssemblyPrinter {
       case Addr(address, offset) => s"[${formatReg(address)}, ${formatOperand(offset)}]"
       case RegShift(reg1, reg2, shift) => s"[${formatReg(reg1)}, ${formatReg(reg2)}${formatShift(shift)}]"
       case IntLiteral(num) => s"=${num.toString}"
+      case StringLiteral(str) => str
+      case ErrorMessage(error) => "Error: " + (error match {
+        case OutOfMemoryErr => "Out of memory"
+        case IndexOutOfBoundsErr => "Array index out of bounds"
+        case NullReferenceErr => "Null pair de-referenced"
+        case IntegerOverflowUnderflowErr => "Integer overflow or underflow occurred"
+        case CharNotInRangeErr => "int %d is not ascii character 0-127"
+        case DivByZeroErr => "Division by zero"
+      })
     }
 
     def formatShift(shift: Shift): String = shift match {
@@ -94,8 +103,8 @@ object ARMAssemblyPrinter {
         s"    b$storeReturnAddrString${formatCondition(condition)} $label"
       case BicInstr(reg, operand1, operand2) =>
         s"    bic ${formatReg(reg)}, ${formatOperand(operand1)}, ${formatOperand(operand2)}"
-      case AscizInstr(label, string) =>
-        val escapedString = string
+      case AscizInstr(label, operand) =>
+        val escapedString = formatOperand(operand)
           .replace("\\", "\\\\")
           .replace("\"", "\\\"")
           .replace("\'", "\\\'")

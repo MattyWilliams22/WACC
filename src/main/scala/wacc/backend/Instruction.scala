@@ -17,7 +17,7 @@ case class CmpInstr(operand1: Register, operand2: Operand, shift: Shift = noShif
 case class Tst(operand1: Register, operand2: Operand, shift: Shift = noShift) extends Instruction
 case class BInstr(label: String, condition: Condition = noCondition, storeReturnAddr: Boolean = false) extends Instruction
 case class BicInstr(reg: Register, operand1: Register, operand2: Operand) extends Instruction
-case class AscizInstr(label: String, string: String) extends Instruction
+case class AscizInstr(label: String, operand: AscizOperand) extends Instruction
 case class StrInstr(reg: Register, operand: Operand, size: ElemSize = FourBytes) extends Instruction
 case class RsbsInstr(reg: Register, operand: Operand) extends Instruction
 case class NewLine() extends Instruction

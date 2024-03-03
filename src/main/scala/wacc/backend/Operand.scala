@@ -8,6 +8,10 @@ case class LabelAddr(label: String) extends Operand
 case class Addr(address: Register, offset: Operand) extends Operand
 case class RegShift(reg1: Register, reg2: Register, shift: Shift) extends Operand
 
+sealed trait AscizOperand extends Operand
+case class StringLiteral(string: String) extends AscizOperand
+case class ErrorMessage(error: Error) extends AscizOperand
+
 sealed trait Shift
 
 private case object noShift extends Shift
