@@ -328,13 +328,18 @@ object PredefinedFunctions {
   }
 
   /* Generates the instructions for storing an array */
-  lazy val arrayStore4Func: ListBuffer[Instruction] = {
+  def arrayStoreFunc(elemSize: ElemSize): List[Instruction] = {
     predefinedFunctions += errorOutOfBoundsFunc
-
-    ListBuffer[Instruction](
+    val (label, storeInstr) = elemSize match {
+      case OneByte => 
+        ("_arrStore1", StrInstr(R8, Addr(R3, R0), OneByte))
+      case FourBytes => 
+        ("_arrStore4", StrInstr(R8, Addr(R3, RegShift(R0, ShiftLeft(2)))))
+    }
+    List(
       NewLine(),
       Comment("Array store function", 0),
-      Label("_arrStore4"),
+      Label(label),
       Push(List(LR)),
       CmpInstr(R0, ImmVal(0)),
       Mov(R1, R0, LTcond),
@@ -343,7 +348,7 @@ object PredefinedFunctions {
       CmpInstr(R0, LR),
       Mov(R1, R0, GEcond),
       BInstr("_errOutOfBounds", GEcond, storeReturnAddr = true),
-      StrInstr(R8, Addr(R3, RegShift(R0, ShiftLeft(2)))),
+      storeInstr,
       Pop(List(PC))
     )
   }
