@@ -1,5 +1,6 @@
 package wacc
 
+import wacc.backend._
 import wacc.frontend.SemanticError
 
 import scala.collection.mutable.ListBuffer
@@ -666,17 +667,30 @@ object ASTNodes {
     def getType: Type = {
       BaseT("bool")
     }
+
+    def getCond(): Condition
   }
 
-  case class GT(exp1: Expr, exp2: Expr) extends BinOpCompare
+  case class GT(exp1: Expr, exp2: Expr) extends BinOpCompare {
+    def getCond(): Condition = GTcond
+  }
 
-  case class GTEQ(exp1: Expr, exp2: Expr) extends BinOpCompare
+  case class GTEQ(exp1: Expr, exp2: Expr) extends BinOpCompare {
+    def getCond(): Condition = GEcond
+  }
 
-  case class LT(exp1: Expr, exp2: Expr) extends BinOpCompare
+  case class LT(exp1: Expr, exp2: Expr) extends BinOpCompare {
+    def getCond(): Condition = LTcond
+  }
 
-  case class LTEQ(exp1: Expr, exp2: Expr) extends BinOpCompare
+  case class LTEQ(exp1: Expr, exp2: Expr) extends BinOpCompare {
+    def getCond(): Condition = LEcond
+  }
 
-  class Equality(exp1: Expr, exp2: Expr) extends Expr {
+  sealed trait Equality extends Expr {    
+    def exp1: Expr
+    def exp2: Expr
+
     def check(): Boolean = {
       // Check that the expressions are semantically valid
       checkValid(exp1.check(), "Invalid expression", exp1)
@@ -688,11 +702,17 @@ object ASTNodes {
     def getType: Type = {
       BaseT("bool")
     }
+
+    def getCond(): Condition
   }
 
-  case class EQ(exp1: Expr, exp2: Expr) extends Equality(exp1, exp2)
+  case class EQ(exp1: Expr, exp2: Expr) extends Equality {
+    def getCond(): Condition = EQcond
+  }
 
-  case class NEQ(exp1: Expr, exp2: Expr) extends Equality(exp1, exp2)
+  case class NEQ(exp1: Expr, exp2: Expr) extends Equality {
+    def getCond(): Condition = NEcond
+  }
 
   sealed trait BinOpLogic extends Expr {
     def exp1: Expr

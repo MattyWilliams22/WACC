@@ -5,7 +5,6 @@ import scala.collection.mutable.ListBuffer
 
 import wacc.ASTNodes._
 import wacc.backend.ReferenceFunctions._
-import wacc.backend.ARMAssemblyPrinter._
 
 /* Generates ARM assembly code from an AST */
 object CodeGenerator {
@@ -947,28 +946,10 @@ object CodeGenerator {
         }
 
       case x: BinOpCompare =>
-        x match {
-          case GT(exp1, exp2) =>
-            condGenerate(exp1, exp2, GTcond)
-
-          case GTEQ(exp1, exp2) =>
-            condGenerate(exp1, exp2, GEcond)
-
-          case LT(exp1, exp2) =>
-            condGenerate(exp1, exp2, LTcond)
-
-          case LTEQ(exp1, exp2) =>
-            condGenerate(exp1, exp2, LEcond)
-        }
-
+        condGenerate(x.exp1, x.exp2, x.getCond())
+      
       case x: Equality =>
-        x match {
-          case EQ(exp1, exp2) =>
-            condGenerate(exp1, exp2, EQcond)
-
-          case NEQ(exp1, exp2) =>
-            condGenerate(exp1, exp2, NEcond)
-        }
+        condGenerate(x.exp1, x.exp2, x.getCond())
 
       case x: BinOpLogic =>
         x match {
