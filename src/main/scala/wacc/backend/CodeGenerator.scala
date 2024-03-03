@@ -276,19 +276,11 @@ object CodeGenerator {
       val (before, after, target) = getArrayElemLocation(reduceType(arrayType), elemReg, indices.tail)
       beforeLines ++= before
       val storeFunc = getTypeSize(reduceType(arrayType)) match {
-<<<<<<< HEAD
         case 1 =>
           predefinedFunctions += arrayStore1Func
           "_arrStore1"
         case _ =>
           predefinedFunctions += arrayStore4Func
-=======
-        case 1 => 
-          predefinedFunctions += arrayStoreFunc(OneByte)
-          "_arrStore1"
-        case _ => 
-          predefinedFunctions += arrayStoreFunc(FourBytes)
->>>>>>> 502da88dcaa635ae33c538e37bd6cbcfbe568a7e
           "_arrStore4"
       }
       afterLines ++= after
@@ -1011,11 +1003,8 @@ object CodeGenerator {
     /* Generates instructions for loading an array element into dest */
     def arrayElemGenerate(id: Ident, indices: List[Expr]): ListBuffer[Instruction] = {
       predefinedFunctions += arrayLoad4Func
-<<<<<<< HEAD
       val arrayElemLines = ListBuffer[Instruction]()
-=======
       /* Load the array pointer into the dest register */
->>>>>>> 502da88dcaa635ae33c538e37bd6cbcfbe568a7e
       val idLines = generateInstructions(id, allocator, dest)
       val indicesLines = new ListBuffer[Instruction]()
       /* For each index in the list of indices, load the array element into the dest register */
@@ -1116,12 +1105,8 @@ object CodeGenerator {
         scopeGenerate(body)
 
       case Statements(stmts) =>
-<<<<<<< HEAD
-        val stmtLines = ListBuffer() ++= stmts.flatMap(generateInstructions(_, allocator, dest))
-=======
         /* Generates instructions for each statement in the list of statements and concatenates them */
-        val stmtLines = stmts.flatMap(generateInstructions(_, allocator, dest))
->>>>>>> 502da88dcaa635ae33c538e37bd6cbcfbe568a7e
+        val stmtLines = ListBuffer() ++= stmts.flatMap(generateInstructions(_, allocator, dest))
         stmtLines
 
       case Free(exp) =>
