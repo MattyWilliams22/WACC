@@ -125,7 +125,7 @@ object CodeGenerator {
             allocator.setLocation(param.ident.nickname.get, VariableLocation(next, 0, 4, param._type))
           case _ =>
             paramLines ++= rLines
-            paramLines += Ldr(next, Addr(FP, ImmVal(4 * (params.length - i - 1))))
+            paramLines += StrInstr(next, Addr(FP, ImmVal(4 * (params.length - i - 1))))
             allocator.setLocation(param.ident.nickname.get, VariableLocation(next, 0, 4, param._type))
         }
       }
