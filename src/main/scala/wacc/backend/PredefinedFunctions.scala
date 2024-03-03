@@ -1,6 +1,6 @@
 package wacc.backend
 
-import wacc.backend.CodeGenerator.refFunctions
+import wacc.backend.CodeGenerator.predefinedFunctions
 
 /*
  * This file contains functions taken from the reference compiler provided for the WACC language. We have
@@ -11,7 +11,7 @@ import wacc.backend.CodeGenerator.refFunctions
  */
 object PredefinedFunctions {
 
-  /* Generates the assembly code for a generic function, given the specified parameters */
+  /* Generates the instructions for a generic function, given the specified parameters */
   private def functionWrapper(funcName: String, funcLabel: String, stringLiterals: List[Instruction],
                       funcBody: List[Instruction]): List[Instruction] = {
     NewLine() ::
@@ -29,7 +29,7 @@ object PredefinedFunctions {
   }
 
 
-  /* Generates the assembly code for exiting a program with a given exit code */
+  /* Generates the instructions for exiting a program with a given exit code */
   lazy val exitFunc: List[Instruction] = {
     val funcName = "Exit"
 
@@ -45,7 +45,7 @@ object PredefinedFunctions {
     functionWrapper(funcName, funcLabel, stringLiterals, funcBody)
   }
 
-  /* Generates the assembly code for printing a character or an integer */
+  /* Generates the instructions for printing a character or an integer */
   def printCharOrIntFunc(isChar: Boolean): List[Instruction] = {
     var _type: String = ""
     var formatSpecifier: String = ""
@@ -80,7 +80,7 @@ object PredefinedFunctions {
     functionWrapper(funcName, labelName, stringLiterals, funcBody)
   }
 
-  /* Generates the assembly code for printing a string */
+  /* Generates the instructions for printing a string */
   lazy val printStrFunc: List[Instruction] = {
     val funcName = "Print string"
 
@@ -103,7 +103,7 @@ object PredefinedFunctions {
     functionWrapper(funcName, labelName, stringLiterals, funcBody)
   }
 
-  /* Generates the assembly code for printing a pair */
+  /* Generates the instructions for printing a pair */
   lazy val printPairFunc: List[Instruction] = {
     val funcName = "Print pair"
 
@@ -125,7 +125,7 @@ object PredefinedFunctions {
     functionWrapper(funcName, labelName, stringLiterals, funcBody)
   }
 
-  /* Generates the assembly code for printing a bool */
+  /* Generates the instructions for printing a bool */
   lazy val printBoolFunc: List[Instruction] = {
     val funcName = "Print bool"
 
@@ -156,7 +156,7 @@ object PredefinedFunctions {
     functionWrapper(funcName, labelName, stringLiterals, funcBody)
   }
 
-  /* Generates the assembly code for printing with a newline */
+  /* Generates the instructions for printing with a newline */
   lazy val printLnFunc: List[Instruction] = {
     val funcName = "Println"
 
@@ -177,9 +177,9 @@ object PredefinedFunctions {
     functionWrapper(funcName, funcLabel, stringLiterals, funcBody)
   }
 
-  /* Generates the assembly code for malloc */
+  /* Generates the instructions for malloc */
   lazy val mallocFunc: List[Instruction] = {
-    refFunctions += errorOutOfMemoryFunc
+    predefinedFunctions += errorOutOfMemoryFunc
 
     val funcName = "Malloc"
 
@@ -197,7 +197,7 @@ object PredefinedFunctions {
     functionWrapper(funcName, funcLabel, stringLiterals, funcBody)
   }
 
-  /* Generates the assembly code for reading an integer */
+  /* Generates the instructions for reading an integer */
   lazy val readIntFunc: List[Instruction] = {
     val funcName = "Read int"
 
@@ -221,7 +221,7 @@ object PredefinedFunctions {
     functionWrapper(funcName, funcLabel, stringLiterals, funcBody)
   }
 
-  /* Generates the assembly code for reading a character */
+  /* Generates the instructions for reading a character */
   lazy val readCharFunc: List[Instruction] = {
     val funcName = "Read char"
 
@@ -245,7 +245,7 @@ object PredefinedFunctions {
     functionWrapper(funcName, funcLabel, stringLiterals, funcBody)
   }
 
-  /* Generates the assembly code for freeing memory */
+  /* Generates the instructions for freeing memory */
   lazy val freeFunc: List[Instruction] = {
     val funcName = "Free"
 
@@ -261,10 +261,10 @@ object PredefinedFunctions {
     functionWrapper(funcName, funcLabel, stringLiterals, funcBody)
   }
 
-  /* Generates the assembly code for freeing a pair */
+  /* Generates the instructions for freeing a pair */
   lazy val freePairFunc: List[Instruction] = {
-    refFunctions += freeFunc
-    refFunctions += errorNullFunc
+    predefinedFunctions += freeFunc
+    predefinedFunctions += errorNullFunc
 
     val funcName = "Free pair"
 
@@ -282,9 +282,9 @@ object PredefinedFunctions {
     functionWrapper(funcName, funcLabel, stringLiterals, funcBody)
   }
 
-  /* Generates the assembly code for storing an array */
+  /* Generates the instructions for storing an array */
   lazy val arrayStore1Func: List[Instruction] = {
-    refFunctions += errorOutOfBoundsFunc
+    predefinedFunctions += errorOutOfBoundsFunc
     List(
       NewLine(),
       Comment("Array store function", 0),
@@ -302,9 +302,9 @@ object PredefinedFunctions {
     )
   }
 
-  /* Generates the assembly code for loading an array */
+  /* Generates the instructions for loading an array */
   lazy val arrayLoad4Func: List[Instruction] = {
-    refFunctions += errorOutOfBoundsFunc
+    predefinedFunctions += errorOutOfBoundsFunc
     List(
       NewLine(),
       Comment("Array load function", 0),
@@ -322,9 +322,9 @@ object PredefinedFunctions {
     )
   }
 
-  /* Generates the assembly code for storing an array */
+  /* Generates the instructions for storing an array */
   lazy val arrayStore4Func: List[Instruction] = {
-    refFunctions += errorOutOfBoundsFunc
+    predefinedFunctions += errorOutOfBoundsFunc
 
     List(
       NewLine(),
@@ -343,9 +343,9 @@ object PredefinedFunctions {
     )
   }
 
-  /* Generates the assembly code for handling an Out of Memory error */
+  /* Generates the instructions for handling an Out of Memory error */
   private lazy val errorOutOfMemoryFunc: List[Instruction] = {
-    refFunctions += printStrFunc
+    predefinedFunctions += printStrFunc
 
     val funcName = "Error out of memory"
 
@@ -366,7 +366,7 @@ object PredefinedFunctions {
     functionWrapper(funcName, funcLabel, stringLiterals, funcBody)
   }
 
-  /* Generates the assembly code for handling an Out of Bounds error */
+  /* Generates the instructions for handling an Out of Bounds error */
   private lazy val errorOutOfBoundsFunc: List[Instruction] = {
     val funcName = "Error out of bounds"
 
@@ -389,9 +389,9 @@ object PredefinedFunctions {
     functionWrapper(funcName, funcLabel, stringLiterals, funcBody)
   }
 
-  /* Generates the assembly code for handling a Null Pointer error */
+  /* Generates the instructions for handling a Null Pointer error */
   lazy val errorNullFunc: List[Instruction] = {
-    refFunctions += printStrFunc
+    predefinedFunctions += printStrFunc
 
     val funcName = "Error null pointer"
 
@@ -412,9 +412,9 @@ object PredefinedFunctions {
     functionWrapper(funcName, funcLabel, stringLiterals, funcBody)
   }
 
-  /* Generates the assembly code for handling an Overflow error */
+  /* Generates the instructions for handling an Overflow error */
   lazy val errorOverflowFunc: List[Instruction] = {
-    refFunctions += printStrFunc
+    predefinedFunctions += printStrFunc
 
     val funcName = "Error overflow"
 
@@ -435,9 +435,9 @@ object PredefinedFunctions {
     functionWrapper(funcName, funcLabel, stringLiterals, funcBody)
   }
 
-  /* Generates the assembly code for handling a Division by Zero error */
+  /* Generates the instructions for handling a Division by Zero error */
   lazy val errorDivByZeroFunc: List[Instruction] = {
-    refFunctions += printStrFunc
+    predefinedFunctions += printStrFunc
 
     val funcName = "Error division by zero"
 
@@ -458,10 +458,10 @@ object PredefinedFunctions {
     functionWrapper(funcName, funcLabel, stringLiterals, funcBody)
   }
 
-  /* Generates the assembly code for handling a Bad Character error, so when a character
+  /* Generates the instructions for handling a Bad Character error, so when a character
      is not within the acceptable ASCII range */
   lazy val errorBadCharFunc: List[Instruction] = {
-    refFunctions += printStrFunc
+    predefinedFunctions += printStrFunc
 
     val funcName = "Error bad character"
 

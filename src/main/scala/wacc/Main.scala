@@ -70,9 +70,9 @@ object Main {
 
       /* Parsing of expression */
       result match {
-        case Success(x) =>
-          /* Semantic Analysis */
-          val semanticAnalyser = new SemanticAnalyser(x)
+        case Success(ast) =>
+          /* Semantically Analyse AST */
+          val semanticAnalyser = new SemanticAnalyser(ast)
           semanticAnalyser.analyse()
 
           /* Create a new file to store generated assembly */
@@ -84,12 +84,14 @@ object Main {
           /* Create print writer to allow to write assembly code to file */
           val writer = new PrintWriter(file)
 
-          /* Code Generation */
+          /* Generate assembly instructions from AST */
           println("Generating assembly code...")
           val registerAllocator = new BasicRegisterAllocator
           val (reg, _) = registerAllocator.allocateRegister()
-          val assemblyLines = generateAssembly(x, registerAllocator, reg)
-          ARMAssemblyPrinter.printAssembly(assemblyLines, writer)
+          val assemblyInstructions = generateInstructions(ast, registerAllocator, reg)
+
+          /* Write assembly instructions to file using ARM assembly printer */
+          ARMAssemblyPrinter.printAssembly(assemblyInstructions, writer)
           writer.close()
 
           System.exit(SUCCESS_CODE)

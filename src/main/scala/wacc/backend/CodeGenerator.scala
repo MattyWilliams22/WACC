@@ -6,11 +6,19 @@ import scala.collection.mutable.ListBuffer
 import wacc.ASTNodes._
 import wacc.backend.PredefinedFunctions._
 
-/* Generates ARM assembly code from an AST */
+/* Used to generate instructions for an AST */
 object CodeGenerator {
+
+  /* Used to generate a unique label */
   private var labelCounter: Int = -1
+
+  /* Used to generate a unique label for a string literal */
   private var stringCounter: Int = -1
-  val refFunctions: mutable.Set[List[Instruction]] = mutable.Set()
+
+  /* Used to store the predefined functions required by the program */
+  val predefinedFunctions: mutable.Set[List[Instruction]] = mutable.Set()
+
+  /* Used to store the string literals required by the program */
   private val stringPool: mutable.Set[AscizInstr] = mutable.Set()
 
   /* Generates a unique label for a String literal */
@@ -19,21 +27,27 @@ object CodeGenerator {
     ".L._str" + stringCounter
   }
 
+  /* Generates a unique label */
   private def getUniqueLabel: String = {
     labelCounter += 1
     ".L" + labelCounter
   }
 
-  def generateAssembly(ast: ASTNode, allocator: BasicRegisterAllocator, dest: Register): List[Instruction] = {
+  /* Generates instructions for an ASTNode */
+  def generateInstructions(astNode: ASTNode, allocator: BasicRegisterAllocator, dest: Register): List[Instruction] = {
 
-    // Translating Program into ARM assembly
+    /* Generates instructions for a program */
     def programGenerate(funcs: List[Function], stmts: Statement): List[Instruction] = {
-      val stmtLines = generateAssembly(stmts, allocator, dest)
+      /* Generates instructions for the main body of the program */
+      val stmtLines = generateInstructions(stmts, allocator, dest)
+
+      /* Generates instructions for the functions */
       val funcsLines = ListBuffer[Instruction]()
       for (func <- funcs) {
+        /* Assign a new register allocator for each function */
         val funcAllocator = new BasicRegisterAllocator
         val (funcReg, _) = funcAllocator.allocateRegister()
-        val funcLines = generateAssembly(func, funcAllocator, funcReg)
+        val funcLines = generateInstructions(func, funcAllocator, funcReg)
         funcsLines ++= funcLines
       }
       List(
@@ -55,12 +69,16 @@ object CodeGenerator {
         Pop(List(FP, PC))
       ) ++
       funcsLines ++
-      refFunctions.foldLeft(List[Instruction]())(_ ++ _)
+      predefinedFunctions.foldLeft(List[Instruction]())(_ ++ _)
     }
 
-    // Translating Function into ARM assembly
+   /* Generates instructions for a function */
     def functionGenerate(_type: Type, funcName: Ident, params: List[Param], body: Statement): List[Instruction] = {
       allocator.setLocation(funcName.nickname.get, VariableLocation(R0, 0, 4, _type))
+      val stmts = body match {
+        case Statements(stmts) => stmts
+        case _ => List(body)
+      }
       Comment("Start of function", 0) ::
       Label(funcName.nickname.get) ::
       List(
@@ -68,26 +86,20 @@ object CodeGenerator {
         Push(List(R4, R5, R6, R7, R8, R9, R10)),
         Mov(FP, SP)
       ) ++
-      // Generate assembly for parameters
+      /* Generates instructions for the function parameters */
       paramsGenerate(params) ++
-      // Generate assembly for body
-      (body match {
-        case Statements(stmts) => 
-          stmts.flatMap(
-            Push(List(R0, R1, R2, R3)) :: 
-            generateAssembly(_, allocator, dest) ++ 
-            List(Pop(List(R0, R1, R2, R3))))
-        case _ =>
-          Push(List(R0, R1, R2, R3)) ::
-          generateAssembly(body, allocator, dest) ++
-          List(Pop(List(R0, R1, R2, R3)))
-        }) ++
+      /* Generate instructions for function body */
+      stmts.flatMap(
+        Push(List(R0, R1, R2, R3)) :: 
+        generateInstructions(_, allocator, dest) ++ 
+        List(Pop(List(R0, R1, R2, R3)))
+      ) ++
       List(
         Command("ltorg", 4)
       )
     }
 
-    // Translating Param into ARM assembly
+    /* Generates instructions to retrieve a list of parameters */
     def paramsGenerate(params: List[Param]): List[Instruction] = {
       val paramLines = new ListBuffer[Instruction]()
       for (i <- params.indices) {
@@ -112,31 +124,35 @@ object CodeGenerator {
             allocator.setLocation(param.ident.nickname.get, VariableLocation(next, 0, 4, param._type))
           case _ =>
             paramLines ++= rLines
-            paramLines += StrInstr(next, Addr(FP, ImmVal(4 * (params.length - i - 1))))
+            paramLines += Ldr(next, Addr(FP, ImmVal(4 * (params.length - i - 1))))
             allocator.setLocation(param.ident.nickname.get, VariableLocation(next, 0, 4, param._type))
         }
       }
       paramLines.toList
     }
 
-    // Translating Statement into ARM assembly
-    def declareGenerate(_type: Type, id: Ident, value: RValue): List[Instruction] = {
+    /* Generates instructions for a declare statement */
+    def declareGenerate(_type: Type, id: Ident, rvalue: RValue): List[Instruction] = {
+      /* Allocate the register newDest for the identifier */
       val (newDest, rLines) = allocator.allocateRegister()
       allocator.setLocation(id.nickname.get, VariableLocation(newDest, 0, 4, _type))
-      val idLines = generateAssembly(id, allocator, newDest)
-      val valueLines = generateAssembly(value, allocator, newDest)
+      val idLines = generateInstructions(id, allocator, newDest)
+      /* Generate instructions to store the rvalue in newDest */
+      val rvalueLines = generateInstructions(rvalue, allocator, newDest)
       Comment("Start of declare statement", 4) ::
       rLines ++
       idLines ++
-      valueLines ++
+      rvalueLines ++
       List(Comment("End of declare statement", 4))
     }
 
-    // Translating Assign into ARM assembly
+    /* Generates instructions for an assign statement */
     def assignGenerate(lvalue: LValue, rvalue: RValue): List[Instruction] = {
-      // Generate assembly for rvalue
-      val rvalueLines = generateAssembly(rvalue, allocator, dest)
+      /* Generate instructions to load rvalue into dest register */
+      val rvalueLines = generateInstructions(rvalue, allocator, dest)
+      /* Get the target register which contains the lvalue */
       val (beforeLines, afterLines, target) = getLvalueLocation(lvalue)
+      /* Store the rvalue in the target register */
       Comment("Start of assign statement", 4) ::
       rvalueLines ++
       beforeLines ++
@@ -145,18 +161,22 @@ object CodeGenerator {
       List(Comment("End of assign statement", 4))
     }
 
-    // Returning the location of the lvalue
+    /* Generates instructions to retrieve and store the lvalue, 
+       as well as returning the target register that must be assigned to */
     def getLvalueLocation(lvalue: LValue): (List[Instruction], List[Instruction], Register) = {
       lvalue match {
+        /* Returns register location of identifier */
         case Ident(_, nickname, _) =>
           val identLoc: VariableLocation = allocator.lookupLocation(nickname.get).get
           (List(), List(), identLoc.register)
+        /* Returns register location of array element as well as instructions for loading and storing to the array */
         case ArrayElem(ident, indices) =>
           val identLoc: VariableLocation = allocator.lookupLocation(ident.nickname.get).get
           val (before, after, target) = getArrayElemLocation(identLoc._type, identLoc.register, indices)
           (before, after, target)
+        /* Returns register location of pair element as well as instructions for loading and storing to the pair */
         case PairElem(func, lvalue) =>
-          refFunctions += errorNullFunc
+          predefinedFunctions += errorNullFunc
           val (newDest, rLines) = allocator.allocateRegister()
           func match {
             case "fst" =>
@@ -193,7 +213,7 @@ object CodeGenerator {
       }
     }
 
-    // Translating lvalue if it's PairT into ARM assembly
+    /* Checks that a pair pointer is not null */
     def pairLines(lvalue: LValue, loc: Register): List[Instruction] = {
       lvalue.getType match {
         case PairT(_, _) => List(
@@ -204,7 +224,7 @@ object CodeGenerator {
       }
     }
 
-    // Checks if the register is R10, R3 or R8 and allocates a new register if it is
+    /* Checks if the register is R0, R3 or R8 and allocates a new register if it is */
     def checkRegister(regInstr: (Register, List[Instruction])): (Register, List[Instruction]) = {
       val (register, instr) = regInstr
       if (register == R0 || register == R3 || register == R8) {
@@ -213,9 +233,9 @@ object CodeGenerator {
       (register, instr)
     }
 
-    // Returns the location of the array element
+    /* Recurively returns the register location of array element as well as instructions for loading and storing to the array */
     def getArrayElemLocation(arrayType: Type, arrayReg: Register, indices: List[Expr]): (List[Instruction], List[Instruction], Register) = {
-      refFunctions += arrayLoad4Func
+      predefinedFunctions += arrayLoad4Func
       if (indices.isEmpty) {
         return (List(), List(), arrayReg)
       }
@@ -224,7 +244,7 @@ object CodeGenerator {
       val (indexReg, r1Lines) = checkRegister(allocator.allocateRegister())
       val (elemReg, r2Lines) = checkRegister(allocator.allocateRegister())
 
-      val indexLines = generateAssembly(indices.head, allocator, indexReg)
+      val indexLines = generateInstructions(indices.head, allocator, indexReg)
       beforeLines ++= r1Lines
       beforeLines ++= r2Lines
       beforeLines ++= indexLines
@@ -240,10 +260,10 @@ object CodeGenerator {
       beforeLines ++= before
       val storeFunc = getTypeSize(reduceType(arrayType)) match {
         case 1 => 
-          refFunctions += arrayStore1Func
+          predefinedFunctions += arrayStore1Func
           "_arrStore1"
         case _ => 
-          refFunctions += arrayStore4Func
+          predefinedFunctions += arrayStore4Func
           "_arrStore4"
       }
       afterLines ++= after
@@ -261,7 +281,7 @@ object CodeGenerator {
       (beforeLines.toList, afterLines.toList, target)
     }
 
-    // Reduces the type of the array
+    /* Reduces the dimensions of an array by 1 */
     def reduceType(t: Type): Type = {
       t match {
         case ArrayT(tp, d) if d > 1 => ArrayT(tp, d - 1)
@@ -270,14 +290,14 @@ object CodeGenerator {
       }
     }
 
-    // Translating Read into ARM assembly
+    /* Generates instructions for a read statement */
     def readGenerate(lvalue: LValue): List[Instruction] = {
       val _type = lvalue.getType match {
         case BaseT("int") =>
-          refFunctions += readIntFunc
+          predefinedFunctions += readIntFunc
           "i"
         case BaseT("char") =>
-          refFunctions += readCharFunc
+          predefinedFunctions += readCharFunc
           "c"
         case _ => ""
       }
@@ -294,13 +314,13 @@ object CodeGenerator {
       List(Comment("End of read statement", 4))
     }
 
-    // Translating If into ARM assembly
+    /* Generates instructions for a free statement */
     def ifGenerate(cond: Expr, thenS: Statement, elseS: Statement): List[Instruction] = {
       val elseLabel = getUniqueLabel
       val endLabel = getUniqueLabel
-      val condLines = generateAssembly(cond, allocator, dest)
-      val thenLines = generateAssembly(thenS, allocator, dest)
-      val elseLines = generateAssembly(elseS, allocator, dest)
+      val condLines = generateInstructions(cond, allocator, dest)
+      val thenLines = generateInstructions(thenS, allocator, dest)
+      val elseLines = generateInstructions(elseS, allocator, dest)
       Comment("Start of if statement", 4) ::
       condLines ++
       List(
@@ -316,13 +336,13 @@ object CodeGenerator {
       List(Label(endLabel), Comment("End of if statement", 4))
     }
 
-    // Translating While into ARM assembly
+    /* Generates instructions for a while statement */
     def whileGenerate(cond: Expr, stmt: Statement): List[Instruction] = {
       val startLabel = getUniqueLabel
       val endLabel = getUniqueLabel
-      val condLines = generateAssembly(cond, allocator, dest)
+      val condLines = generateInstructions(cond, allocator, dest)
       val (newDest, rLines) = allocator.allocateRegister()
-      val stmtLines = generateAssembly(stmt, allocator, newDest)
+      val stmtLines = generateInstructions(stmt, allocator, newDest)
       Comment("Start of while loop", 4) ::
       Label(startLabel) ::
       condLines ++
@@ -339,21 +359,21 @@ object CodeGenerator {
       )
     }
 
-    // Translating Scope into ARM assembly
+    /* Generates instructions for a new scope */
     def scopeGenerate(body: Statement): List[Instruction] = {
-      val bodyLines = generateAssembly(body, allocator, dest)
+      val bodyLines = generateInstructions(body, allocator, dest)
       Comment("Start of new scope", 4) ::
       bodyLines ++
       List(Comment("End of new scope", 4))
     }
 
-    // Translating Free into ARM assembly
+    /* Generates instructions for a free statement */
     def freeGenerate(exp: Expr): List[Instruction] = {
-      refFunctions += freeFunc
-      val expLines = generateAssembly(exp, allocator, dest)
+      predefinedFunctions += freeFunc
+      val expLines = generateInstructions(exp, allocator, dest)
       val (_type, tLines) = exp.getType match {
         case PairT(_, _) => 
-          refFunctions += freePairFunc
+          predefinedFunctions += freePairFunc
           ("pair", List())
         case ArrayT(_, _) => 
           ("", List(SubInstr(dest, dest, ImmVal(4))))
@@ -369,9 +389,9 @@ object CodeGenerator {
       )
     }
 
-    // Translating Return into ARM assembly
+    /* Generates instructions for a return statement */
     def returnGenerate(exp: Expr): List[Instruction] = {
-      val expLines = generateAssembly(exp, allocator, dest)
+      val expLines = generateInstructions(exp, allocator, dest)
       Comment("Start of return statement", 4) ::
       expLines ++
       List(
@@ -383,10 +403,10 @@ object CodeGenerator {
       )
     }
 
-    // Translating Exit into ARM assembly
+    /* Generates instructions for an exit statement */
     def exitGenerate(exp: Expr): List[Instruction] = {
-      refFunctions += exitFunc
-      val expLines = generateAssembly(exp, allocator, dest)
+      predefinedFunctions += exitFunc
+      val expLines = generateInstructions(exp, allocator, dest)
       Comment("Start of exit statement", 4) ::
       expLines ++
       List(
@@ -398,7 +418,7 @@ object CodeGenerator {
       )
     }
 
-    // Translating Print into ARM assembly
+    /* Generates instructions for a print statement */
     def printGenerate(exp: Expr): List[Instruction] = {
       var _type: Type = exp.getType
       // Get the type of the Ident stored in the node
@@ -425,32 +445,32 @@ object CodeGenerator {
 
       val t = _type match {
         case BaseT("int") =>
-          refFunctions += printCharOrIntFunc(false)
+          predefinedFunctions += printCharOrIntFunc(false)
           "i"
         case BaseT("char") =>
-          refFunctions += printCharOrIntFunc(true)
+          predefinedFunctions += printCharOrIntFunc(true)
           "c"
         case PairLiter(_) =>
-          refFunctions += printPairFunc
+          predefinedFunctions += printPairFunc
           "p"
         case BaseT("string") =>
-          refFunctions += printStrFunc
+          predefinedFunctions += printStrFunc
           "s"
         case ArrayT(BaseT("char"), 1) =>
-          refFunctions += printStrFunc
+          predefinedFunctions += printStrFunc
           "s"
         case BaseT("bool") =>
-          refFunctions += printBoolFunc
+          predefinedFunctions += printBoolFunc
           "b"
         case PairT(_, _) =>
-          refFunctions += printPairFunc
+          predefinedFunctions += printPairFunc
           "p"
         case ArrayT(_, _) => 
-          refFunctions += printPairFunc
+          predefinedFunctions += printPairFunc
           "p"
         case _ => "error"
       }
-      val expLines = generateAssembly(exp, allocator, dest)
+      val expLines = generateInstructions(exp, allocator, dest)
       Comment("Start of print statement", 4) ::
       expLines ++
       List(
@@ -460,9 +480,9 @@ object CodeGenerator {
       )
     }
 
-    // Translating Println into ARM assembly
+    /* Generates instructions for a println statement */
     def printlnGenerate(exp: Expr): List[Instruction] = {
-      refFunctions += printLnFunc
+      predefinedFunctions += printLnFunc
       Comment("Start of println statement", 4) ::
       printGenerate(exp) ++
       List(
@@ -471,15 +491,15 @@ object CodeGenerator {
       )
     }
 
-    // Translating ArrayLiter into ARM assembly
+    /* Generates instructions to create an array literal */
     def arrayLiterGenerate(elems: List[Expr]): List[Instruction] = {
-      refFunctions += mallocFunc
+      predefinedFunctions += mallocFunc
       val (pointer, r1Lines) = allocator.allocateRegister()
       val arrayLines = new ListBuffer[Instruction]()
       var totalSize = 0
       for (elem <- elems) {
         val (next, r2Lines) = allocator.allocateRegister()
-        val elemLines = generateAssembly(elem, allocator, next)
+        val elemLines = generateInstructions(elem, allocator, next)
         val size = getSize(elem)
         val sizeToStore = size match {
           case 1 => OneByte
@@ -513,12 +533,12 @@ object CodeGenerator {
       )
     }
 
-    // Returns size of expression
+    /* Returns the size of expression in bytes */
     def getSize(expr: Expr): Int = {
       getTypeSize(expr.getType)
     }
 
-    // Map type to amount of bytes
+    /* Returns the size of a type in bytes */
     def getTypeSize(t: Type): Int = {
       t match {
         case BaseT("int") => 4
@@ -531,9 +551,9 @@ object CodeGenerator {
       }
     }
 
-    // Translating newPair into ARM assembly
+    /* Generates instructions to create a new pair */
     def newPairGenerate(exp1: Expr, exp2: Expr): List[Instruction] = {
-      refFunctions += mallocFunc
+      predefinedFunctions += mallocFunc
       val (next, rLines) = allocator.allocateRegister()
       val newPairLines = Comment("Start of new pair creation", 4) ::
       rLines ++
@@ -542,11 +562,11 @@ object CodeGenerator {
         BInstr("_malloc", noCondition, storeReturnAddr = true),
         Mov(dest, R0),
       ) ++
-      generateAssembly(exp1, allocator, next) ++
+      generateInstructions(exp1, allocator, next) ++
       List(
         StrInstr(next, Addr(dest, ImmVal(0)))
       ) ++
-      generateAssembly(exp2, allocator, next) ++
+      generateInstructions(exp2, allocator, next) ++
       List(
         StrInstr(next, Addr(dest, ImmVal(4))),
         Comment("End of new pair creation", 4)
@@ -555,6 +575,7 @@ object CodeGenerator {
       newPairLines
     }
 
+    /* Generates instructions for an expression */
     def getExpLines (exp: Either[LValue, Expr]): (List[Instruction], List[Instruction], Register) = {
       exp.fold(
         x => generateExpLines(x),
@@ -562,16 +583,17 @@ object CodeGenerator {
       )
     }
 
+    /* Generates instructions for an expression */
     def generateExpLines(x: ASTNode): (List[Instruction], List[Instruction], Register) = {
       val (next, rLines) = allocator.allocateRegister()
-      val expLines = generateAssembly(x, allocator, next)
+      val expLines = generateInstructions(x, allocator, next)
       allocator.deallocateRegister(next)
       (expLines, rLines, next)
     }
-
-    // Translating PairElem into ARM assembly
+ 
+    /* Generates instructions for extracting a pair element */
     def pairElemGenerate(func: String, lvalue: LValue): List[Instruction] = {
-      refFunctions += errorNullFunc
+      predefinedFunctions += errorNullFunc
       val (lvalueLines, rLines, next) = getExpLines(Left(lvalue))
       val funcLines = func match {
         case "fst" =>
@@ -594,14 +616,15 @@ object CodeGenerator {
       List(Comment("End of pair element extraction", 4))
     }
 
+    /* Generates instructions to evaluate two expressions */
     def addMulGenerate(exp1: Expr, exp2: Expr): (List[Instruction], List[Instruction]) = {
-      refFunctions += errorOverflowFunc
-      val exp1Lines = generateAssembly(exp1, allocator, dest)
-      val exp2Lines = generateAssembly(exp2, allocator, dest)
+      predefinedFunctions += errorOverflowFunc
+      val exp1Lines = generateInstructions(exp1, allocator, dest)
+      val exp2Lines = generateInstructions(exp2, allocator, dest)
       (exp1Lines, exp2Lines)
     }
 
-    // Translating Mul into ARM assembly
+    /* Generates instructions for a multiplication expression */
     def mulGenerate(exp1: Expr, exp2: Expr): List[Instruction] = {
       val (exp1Lines, exp2Lines) = addMulGenerate(exp1, exp2)
       val (val1, r1Lines) = allocator.allocateRegister()
@@ -628,11 +651,11 @@ object CodeGenerator {
       )
     }
 
-    // Translating Div and Mod into ARM assembly
-    def divModGenerate(exp1: Expr, exp2: Expr): List[Instruction] = {
-      refFunctions += errorDivByZeroFunc
-      val exp1Lines = generateAssembly(exp1, allocator, dest)
-      val exp2Lines = generateAssembly(exp2, allocator, dest)
+    /* Generates instructions for a division or modulo expression */
+    def divModGenerate(exp1: Expr, exp2: Expr, reg: Register): List[Instruction] = {
+      predefinedFunctions += errorDivByZeroFunc
+      val exp1Lines = generateInstructions(exp1, allocator, dest)
+      val exp2Lines = generateInstructions(exp2, allocator, dest)
 
       exp1Lines ++
       List(Mov(R0, dest)) ++
@@ -641,31 +664,26 @@ object CodeGenerator {
         Mov(R1, dest),
         CmpInstr(R1, ImmVal(0)),
         BInstr("_errDivZero", EQcond, storeReturnAddr = true),
-        BInstr("__aeabi_idivmod", noCondition, storeReturnAddr = true)
+        BInstr("__aeabi_idivmod", noCondition, storeReturnAddr = true),
+        Mov(dest, reg)
       )
     }
 
-    // Translating Div into ARM assembly
+    /* Generates instructions for a division expression */
     def divGenerate(exp1: Expr, exp2: Expr): List[Instruction] = {
       Comment("Start of division expression", 4) ::
-      divModGenerate(exp1, exp2) ++
-      List(
-        Mov(dest, R0),
-        Comment("End of division expression", 4)
-      )
+      divModGenerate(exp1, exp2, R0) ++
+      List(Comment("End of division expression", 4))
     }
 
-    // Translating Mod into ARM assembly
+    /* Generates instructions for a modulo expression */
     def modGenerate(exp1: Expr, exp2: Expr): List[Instruction] = {
       Comment("Start of modulo expression", 4) ::
-      divModGenerate(exp1, exp2) ++
-      List(
-        Mov(dest, R1),
-        Comment("End of modulo expression", 4)
-      )
+      divModGenerate(exp1, exp2, R1) ++
+      List(Comment("End of modulo expression", 4))
     }
 
-    // Translating Add into ARM assembly
+    /* Generates instructions for an addition expression */
     def addGenerate(exp1: Expr, exp2: Expr): List[Instruction] = {
       val (exp1Lines, exp2Lines) = addMulGenerate(exp1, exp2)
       val (next, rLines) = allocator.allocateRegister()
@@ -683,17 +701,18 @@ object CodeGenerator {
       )
     }
 
+    /* Generates instructions to evaluate exp1 into dest and exp2 into next */
     def exprsGenerateHelper(exp1: Expr, exp2: Expr): (List[Instruction], List[Instruction], List[Instruction], Register) = {
-      val exp1Lines = generateAssembly(exp1, allocator, dest)
+      val exp1Lines = generateInstructions(exp1, allocator, dest)
       val (next, rLines) = allocator.allocateRegister()
-      val exp2Lines = generateAssembly(exp2, allocator, next)
+      val exp2Lines = generateInstructions(exp2, allocator, next)
       allocator.deallocateRegister(next)
       (exp1Lines, rLines, exp2Lines, next)
     }
 
-    // Translating Sub into ARM assembly
+    /* Generates instructions for a subtraction expression */
     def subGenerate(exp1: Expr, exp2: Expr): List[Instruction] = {
-      refFunctions += errorOverflowFunc
+      predefinedFunctions += errorOverflowFunc
       val (exp1Lines, rLines, exp2Lines, next) = exprsGenerateHelper(exp1, exp2)
       Comment("Start of subtraction expression", 4) ::
       exp1Lines ++
@@ -706,6 +725,7 @@ object CodeGenerator {
       )
     }
 
+    /* Generates instructions for a conditional expression */
     def condGenerate(exp1: Expr, exp2: Expr, cond: Condition): List[Instruction] = {
       val (exp1Lines, rLines, exp2Lines, next) = exprsGenerateHelper(exp1, exp2)
       exp1Lines ++
@@ -718,7 +738,7 @@ object CodeGenerator {
       )
     }
 
-    // Translating AND into ARM assembly
+    /* Generates instructions for an and expression */
     def andGenerate(exp1: Expr, exp2: Expr): List[Instruction] = {
       val (exp1Lines, rLines, exp2Lines, next) = exprsGenerateHelper(exp1, exp2)
       Comment("Start of and expression", 4) ::
@@ -732,6 +752,7 @@ object CodeGenerator {
       )
     }
 
+    /* Generates instructions for an or expression */
     def orGenerate(exp1: Expr, exp2: Expr): List[Instruction] = {
       val (exp1Lines, rLines, exp2Lines, next) = exprsGenerateHelper(exp1, exp2)
       Comment("Start of or expression", 4) ::
@@ -745,9 +766,9 @@ object CodeGenerator {
       )
     }
 
-    // Translating NOT into ARM assembly
+    /* Generates instructions for a not expression */
     def notGenerate(exp: Expr): List[Instruction] = {
-      val expLines = generateAssembly(exp, allocator, dest)
+      val expLines = generateInstructions(exp, allocator, dest)
       Comment("Start of not expression", 4) ::
       expLines ++
       List(
@@ -758,9 +779,9 @@ object CodeGenerator {
       )
     }
 
-    // Translating Neg into ARM assembly
+    /* Generates instructions for a negation expression */
     def negGenerate(exp: Expr): List[Instruction] = {
-      refFunctions += errorOverflowFunc
+      predefinedFunctions += errorOverflowFunc
       val (expLines, rLines, tempReg) = getExpLines(Right(exp))
       Comment("Start of negation expression", 4) ::
       rLines ++ 
@@ -772,10 +793,10 @@ object CodeGenerator {
       )
     }
 
-    // Translating Len into ARM assembly
+    /* Generates instructions for a length expression */
     def lenGenerate(exp: Expr): List[Instruction] = {
       val (next, rLines) = allocator.allocateRegister()
-      val expLines = generateAssembly(exp, allocator, next)
+      val expLines = generateInstructions(exp, allocator, next)
       allocator.deallocateRegister(next)
       Comment("Start of length expression", 4) ::
       rLines ++ 
@@ -786,19 +807,19 @@ object CodeGenerator {
       )
     }
 
-    // Translating Ord into ARM assembly
+    /* Generates instructions for an ord expression */
     def ordGenerate(exp: Expr): List[Instruction] = {
-      val expLines = generateAssembly(exp, allocator, dest)
+      val expLines = generateInstructions(exp, allocator, dest)
       Comment("Start of ord expression", 4) ::
       expLines ++
       List(Comment("End of ord expression", 4))
     }
 
-    // Translating Chr into ARM assembly
+    /* Generates instructions for a chr expression */
     def chrGenerate(exp: Expr): List[Instruction] = {
-      refFunctions += errorBadCharFunc
+      predefinedFunctions += errorBadCharFunc
       val (next, rLines) = allocator.allocateRegister()
-      val expLines = generateAssembly(exp, allocator, dest)
+      val expLines = generateInstructions(exp, allocator, dest)
       Comment("Start of chr expression", 4) ::
       expLines ++
       rLines ++
@@ -811,7 +832,7 @@ object CodeGenerator {
       )
     }
 
-    // Translating Num into ARM assembly
+    /* Generates instructions for loading a number into dest */
     def numGenerate(n: Int): List[Instruction] = {
       val instr = if (n < 0 || n > 255) {
         Ldr(dest, IntLiteral(n))
@@ -825,7 +846,7 @@ object CodeGenerator {
       )
     }
 
-    // Translating Bool into ARM assembly
+    /* Generates instructions for loading a boolean into dest */
     def boolGenerate(b: String): List[Instruction] = {
       Comment("Load boolean", 4) ::
       (b match {
@@ -840,7 +861,7 @@ object CodeGenerator {
       })
     }
 
-    // Translating Ch into ARM assembly
+    /* Generates instructions for loading a character into dest */
     def chGenerate(c: Char): List[Instruction] = {
       List(
         Comment("Load character", 4),
@@ -848,10 +869,9 @@ object CodeGenerator {
       )
     }
 
-    // Translating Ident into ARM assembly
+    /* Generates instructions for loading an identifier into dest */
     def identGenerate(n: String): List[Instruction] = {
       val location: Option[VariableLocation] = allocator.lookupLocation(n)
-
       Comment("Load identifier", 4) ::
       (location match {
         case Some(VariableLocation(reg, off, size, _type)) =>
@@ -869,7 +889,7 @@ object CodeGenerator {
       })
     }
 
-    // Translating Str into ARM assembly
+    /* Generates instructions for loading a string into dest */
     def strGenerate(s: String): List[Instruction] = {
       val label = getStringLabel
       val asciz = AscizInstr(label, StringLiteral(s))
@@ -880,15 +900,15 @@ object CodeGenerator {
       )
     }
 
-    // Translating ArrayElem into ARM assembly
+    /* Generates instructions for loading an array element into dest */
     def arrayElemGenerate(id: Ident, indices: List[Expr]) = {
-      refFunctions += arrayLoad4Func
-      val idLines = generateAssembly(id, allocator, dest)
+      predefinedFunctions += arrayLoad4Func
+      val idLines = generateInstructions(id, allocator, dest)
       val indicesLines = new ListBuffer[Instruction]()
       for (index <- indices) {
-        // Check if allocated register is R10, R3 or R8 and allocate a new register if it is
+        /* Check if allocated register is R10, R3 or R8 and allocate a new register if it is */
         val (next, rLines) = checkRegister(allocator.allocateRegister())
-        val indexLines = generateAssembly(index, allocator, next)
+        val indexLines = generateInstructions(index, allocator, next)
         indicesLines ++= rLines
         indicesLines ++= indexLines
         indicesLines ++= List(
@@ -905,7 +925,7 @@ object CodeGenerator {
       List(Comment("End of array element extraction", 4))
     }
 
-    // Translating Call into ARM assembly
+    /* Generates instructions for a function call */
     def callGenerate(funcName: Ident, args: List[Expr]): List[Instruction] = {
       Comment("Start of function call", 4) ::
       Push(List(R1, R2, R3)) ::
@@ -918,13 +938,13 @@ object CodeGenerator {
       )
     }
 
-    // Translating the arguments of a function call into ARM assembly
+    /* Generates instructions for function call arguments */
     def argsGenerate(args: List[Expr]): List[Instruction] = {
       val argsLines = new ListBuffer[Instruction]()
       for (i <- args.indices) {
         val arg = args(i)
         val (next, rLines) = allocator.allocateRegister()
-        val argLines = generateAssembly(arg, allocator, next)
+        val argLines = generateInstructions(arg, allocator, next)
         argsLines ++= rLines
         argsLines ++= argLines
         allocator.deallocateRegister(next)
@@ -943,7 +963,8 @@ object CodeGenerator {
       argsLines.toList
     }
 
-    ast match {
+    /* Identifies the ast node and generates the corresponding instructions */
+    astNode match {
       case Program(funcs, stmts) =>
         programGenerate(funcs, stmts)
 
@@ -972,7 +993,7 @@ object CodeGenerator {
         scopeGenerate(body)
 
       case Statements(stmts) =>
-        val stmtLines = stmts.flatMap(generateAssembly(_, allocator, dest))
+        val stmtLines = stmts.flatMap(generateInstructions(_, allocator, dest))
         stmtLines
 
       case Free(exp) =>
@@ -1068,10 +1089,10 @@ object CodeGenerator {
           Mov(dest, ImmVal(0))
         )
 
-      case Ident(s, n, _) =>
+      case Ident(_, n, _) =>
         n match {
           case Some(v) => identGenerate(v)
-          case None => identGenerate(s)
+          case None => List()
         }
 
       case ArrayElem(f, p) =>
