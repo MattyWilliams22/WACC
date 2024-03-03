@@ -2,6 +2,8 @@ package wacc.backend
 
 import wacc.backend.CodeGenerator.predefinedFunctions
 
+import scala.collection.mutable.ListBuffer
+
 /*
  * This file contains functions taken from the reference compiler provided for the WACC language. We have
  * converted these functions into our own Internal Representation and extracted a generic function wrapper
@@ -12,32 +14,35 @@ import wacc.backend.CodeGenerator.predefinedFunctions
 object PredefinedFunctions {
 
   /* Generates the instructions for a generic function, given the specified parameters */
-  private def functionWrapper(funcName: String, funcLabel: String, stringLiterals: List[Instruction],
-                      funcBody: List[Instruction]): List[Instruction] = {
-    NewLine() ::
-    stringLiterals ++
-    List(
+  private def functionWrapper(funcName: String, funcLabel: String, stringLiterals: ListBuffer[Instruction],
+                      funcBody: ListBuffer[Instruction]): ListBuffer[Instruction] = {
+    val funcLines = ListBuffer[Instruction]()
+
+    funcLines += NewLine()
+    funcLines ++= stringLiterals
+    funcLines ++= List(
       Command("align 4", 0),
       Comment(s"$funcName function", 0),
       Label(funcLabel),
       Push(List(FP, LR)),
-      Mov(FP, SP)) ++
-    funcBody ++
-    List(
+      Mov(FP, SP))
+    funcLines ++= funcBody
+    funcLines ++= List(
       Mov(SP, FP),
       Pop(List(FP, PC)))
+
+    funcLines
   }
 
-
   /* Generates the instructions for exiting a program with a given exit code */
-  lazy val exitFunc: List[Instruction] = {
+  lazy val exitFunc: ListBuffer[Instruction] = {
     val funcName = "Exit"
 
     val funcLabel = "_exit"
 
-    val stringLiterals = List()
+    val stringLiterals = ListBuffer[Instruction]()
 
-    val funcBody = List(
+    val funcBody = ListBuffer[Instruction](
       BicInstr(SP, SP, ImmVal(7)),
       BInstr("exit", noCondition, storeReturnAddr = true)
     )
@@ -46,7 +51,7 @@ object PredefinedFunctions {
   }
 
   /* Generates the instructions for printing a character or an integer */
-  def printCharOrIntFunc(isChar: Boolean): List[Instruction] = {
+  def printCharOrIntFunc(isChar: Boolean): ListBuffer[Instruction] = {
     var _type: String = ""
     var formatSpecifier: String = ""
 
@@ -64,11 +69,11 @@ object PredefinedFunctions {
 
     val labelName = s"_print${_type}"
 
-    val stringLiterals = List(
+    val stringLiterals = ListBuffer[Instruction](
       AscizInstr(s".L._print${_type}_str0", StringLiteral(formatSpecifier))
     )
 
-    val funcBody = List(
+    val funcBody = ListBuffer[Instruction](
       BicInstr(SP, SP, ImmVal(7)),
       Mov(R1, R0),
       AdrInstr(R0, s".L._print${_type}_str0"),
@@ -81,16 +86,16 @@ object PredefinedFunctions {
   }
 
   /* Generates the instructions for printing a string */
-  lazy val printStrFunc: List[Instruction] = {
+  lazy val printStrFunc: ListBuffer[Instruction] = {
     val funcName = "Print string"
 
     val labelName = "_prints"
 
-    val stringLiterals = List(
+    val stringLiterals = ListBuffer[Instruction](
       AscizInstr(".L._prints_str0", StringLiteral("%.*s"))
     )
 
-    val funcBody = List(
+    val funcBody = ListBuffer[Instruction](
       BicInstr(SP, SP, ImmVal(7)),
       Mov(R2, R0),
       Ldr(R1, Addr(R0, ImmVal(-4))),
@@ -104,16 +109,16 @@ object PredefinedFunctions {
   }
 
   /* Generates the instructions for printing a pair */
-  lazy val printPairFunc: List[Instruction] = {
+  lazy val printPairFunc: ListBuffer[Instruction] = {
     val funcName = "Print pair"
 
     val labelName = "_printp"
 
-    val stringLiterals = List(
+    val stringLiterals = ListBuffer[Instruction](
       AscizInstr(".L._printp_str0", StringLiteral("%p")),
     )
 
-    val funcBody = List(
+    val funcBody = ListBuffer[Instruction](
       BicInstr(SP, SP, ImmVal(7)),
       Mov(R1, R0),
       AdrInstr(R0, ".L._printp_str0"),
@@ -126,18 +131,18 @@ object PredefinedFunctions {
   }
 
   /* Generates the instructions for printing a bool */
-  lazy val printBoolFunc: List[Instruction] = {
+  lazy val printBoolFunc: ListBuffer[Instruction] = {
     val funcName = "Print bool"
 
     val labelName = "_printb"
 
-    val stringLiterals = List(
+    val stringLiterals = ListBuffer[Instruction](
       AscizInstr(".L._printb_str0", StringLiteral("false")),
       AscizInstr(".L._printb_str1", StringLiteral("true")),
       AscizInstr(".L._printb_str2", StringLiteral("%.*s")),
     )
 
-    val funcBody = List(
+    val funcBody = ListBuffer[Instruction](
       BicInstr(SP, SP, ImmVal(7)),
       CmpInstr(R0, ImmVal(0)),
       BInstr(".L._printb0", NEcond),
@@ -157,16 +162,16 @@ object PredefinedFunctions {
   }
 
   /* Generates the instructions for printing with a newline */
-  lazy val printLnFunc: List[Instruction] = {
+  lazy val printLnFunc: ListBuffer[Instruction] = {
     val funcName = "Println"
 
     val funcLabel = "_println"
 
-    val stringLiterals = List(
+    val stringLiterals = ListBuffer[Instruction](
       AscizInstr(".L._println_str0", StringLiteral("")),
     )
 
-    val funcBody = List(
+    val funcBody = ListBuffer[Instruction](
       BicInstr(SP, SP, ImmVal(7)),
       AdrInstr(R0, ".L._println_str0"),
       BInstr("puts", noCondition, storeReturnAddr = true),
@@ -178,16 +183,16 @@ object PredefinedFunctions {
   }
 
   /* Generates the instructions for malloc */
-  lazy val mallocFunc: List[Instruction] = {
+  lazy val mallocFunc: ListBuffer[Instruction] = {
     predefinedFunctions += errorOutOfMemoryFunc
 
     val funcName = "Malloc"
 
     val funcLabel = "_malloc"
 
-    val stringLiterals = List()
+    val stringLiterals = ListBuffer[Instruction]()
 
-    val funcBody = List(
+    val funcBody = ListBuffer[Instruction](
       BicInstr(SP, SP, ImmVal(7)),
       BInstr("malloc", noCondition, storeReturnAddr = true),
       CmpInstr(R0, ImmVal(0)),
@@ -198,16 +203,16 @@ object PredefinedFunctions {
   }
 
   /* Generates the instructions for reading an integer */
-  lazy val readIntFunc: List[Instruction] = {
+  lazy val readIntFunc: ListBuffer[Instruction] = {
     val funcName = "Read int"
 
     val funcLabel = "_readi"
 
-    val stringLiterals = List(
+    val stringLiterals = ListBuffer[Instruction](
       AscizInstr(".L._readi_str0", StringLiteral("%d")),
     )
 
-    val funcBody = List(
+    val funcBody = ListBuffer[Instruction](
       BicInstr(SP, SP, ImmVal(7)),
       SubInstr(SP, SP, ImmVal(8)),
       StrInstr(R0, Addr(SP, ImmVal(0))),
@@ -222,16 +227,16 @@ object PredefinedFunctions {
   }
 
   /* Generates the instructions for reading a character */
-  lazy val readCharFunc: List[Instruction] = {
+  lazy val readCharFunc: ListBuffer[Instruction] = {
     val funcName = "Read char"
 
     val funcLabel = "_readc"
 
-    val stringLiterals = List(
+    val stringLiterals = ListBuffer[Instruction](
       AscizInstr(".L._readc_str0", StringLiteral(" %c")),
     )
 
-    val funcBody = List(
+    val funcBody = ListBuffer[Instruction](
       BicInstr(SP, SP, ImmVal(7)),
       SubInstr(SP, SP, ImmVal(8)),
       StrInstr(R0, Addr(SP, ImmVal(0))),
@@ -246,14 +251,14 @@ object PredefinedFunctions {
   }
 
   /* Generates the instructions for freeing memory */
-  lazy val freeFunc: List[Instruction] = {
+  lazy val freeFunc: ListBuffer[Instruction] = {
     val funcName = "Free"
 
     val funcLabel = "_free"
 
-    val stringLiterals = List()
+    val stringLiterals = ListBuffer[Instruction]()
 
-    val funcBody = List(
+    val funcBody = ListBuffer[Instruction](
       BicInstr(SP, SP, ImmVal(7)),
       BInstr("free", noCondition, storeReturnAddr = true),
     )
@@ -262,7 +267,7 @@ object PredefinedFunctions {
   }
 
   /* Generates the instructions for freeing a pair */
-  lazy val freePairFunc: List[Instruction] = {
+  lazy val freePairFunc: ListBuffer[Instruction] = {
     predefinedFunctions += freeFunc
     predefinedFunctions += errorNullFunc
 
@@ -270,9 +275,9 @@ object PredefinedFunctions {
 
     val funcLabel = "_freepair"
 
-    val stringLiterals = List()
+    val stringLiterals = ListBuffer[Instruction]()
 
-    val funcBody = List(
+    val funcBody = ListBuffer[Instruction](
       BicInstr(SP, SP, ImmVal(7)),
       CmpInstr(R0, ImmVal(0)),
       BInstr("_errNull", EQcond, storeReturnAddr = true),
@@ -283,9 +288,9 @@ object PredefinedFunctions {
   }
 
   /* Generates the instructions for storing an array */
-  lazy val arrayStore1Func: List[Instruction] = {
+  lazy val arrayStore1Func: ListBuffer[Instruction] = {
     predefinedFunctions += errorOutOfBoundsFunc
-    List(
+    ListBuffer[Instruction](
       NewLine(),
       Comment("Array store function", 0),
       Label("_arrStore1"),
@@ -303,9 +308,9 @@ object PredefinedFunctions {
   }
 
   /* Generates the instructions for loading an array */
-  lazy val arrayLoad4Func: List[Instruction] = {
+  lazy val arrayLoad4Func: ListBuffer[Instruction] = {
     predefinedFunctions += errorOutOfBoundsFunc
-    List(
+    ListBuffer[Instruction](
       NewLine(),
       Comment("Array load function", 0),
       Label("_arrLoad4"),
@@ -323,10 +328,10 @@ object PredefinedFunctions {
   }
 
   /* Generates the instructions for storing an array */
-  lazy val arrayStore4Func: List[Instruction] = {
+  lazy val arrayStore4Func: ListBuffer[Instruction] = {
     predefinedFunctions += errorOutOfBoundsFunc
 
-    List(
+    ListBuffer[Instruction](
       NewLine(),
       Comment("Array store function", 0),
       Label("_arrStore4"),
@@ -344,18 +349,18 @@ object PredefinedFunctions {
   }
 
   /* Generates the instructions for handling an Out of Memory error */
-  private lazy val errorOutOfMemoryFunc: List[Instruction] = {
+  private lazy val errorOutOfMemoryFunc: ListBuffer[Instruction] = {
     predefinedFunctions += printStrFunc
 
     val funcName = "Error out of memory"
 
     val funcLabel = "_errOutOfMemory"
 
-    val stringLiterals = List(
+    val stringLiterals = ListBuffer[Instruction](
       AscizInstr(".L._errOutOfMemory_str0", ErrorMessage(OutOfMemoryErr))
     )
 
-    val funcBody = List(
+    val funcBody = ListBuffer[Instruction](
       BicInstr(SP, SP, ImmVal(7)),
       AdrInstr(R0, ".L._errOutOfMemory_str0"),
       BInstr("_prints", noCondition, storeReturnAddr = true),
@@ -367,16 +372,16 @@ object PredefinedFunctions {
   }
 
   /* Generates the instructions for handling an Out of Bounds error */
-  private lazy val errorOutOfBoundsFunc: List[Instruction] = {
+  private lazy val errorOutOfBoundsFunc: ListBuffer[Instruction] = {
     val funcName = "Error out of bounds"
 
     val funcLabel = "_errOutOfBounds"
 
-    val stringLiterals = List(
+    val stringLiterals = ListBuffer[Instruction](
       AscizInstr(".L._errOutOfBounds_str0", ErrorMessage(IndexOutOfBoundsErr))
     )
 
-    val funcBody = List(
+    val funcBody = ListBuffer[Instruction](
       BicInstr(SP, SP, ImmVal(7)),
       AdrInstr(R0, ".L._errOutOfBounds_str0"),
       BInstr("printf", noCondition, storeReturnAddr = true),
@@ -390,18 +395,18 @@ object PredefinedFunctions {
   }
 
   /* Generates the instructions for handling a Null Pointer error */
-  lazy val errorNullFunc: List[Instruction] = {
+  lazy val errorNullFunc: ListBuffer[Instruction] = {
     predefinedFunctions += printStrFunc
 
     val funcName = "Error null pointer"
 
     val funcLabel = "_errNull"
 
-    val stringLiterals = List(
+    val stringLiterals = ListBuffer[Instruction](
       AscizInstr(".L._errNull_str0", ErrorMessage(NullReferenceErr))
     )
 
-    val funcBody = List(
+    val funcBody = ListBuffer[Instruction](
       BicInstr(SP, SP, ImmVal(7)),
       AdrInstr(R0, ".L._errNull_str0"),
       BInstr("_prints", noCondition, storeReturnAddr = true),
@@ -413,18 +418,18 @@ object PredefinedFunctions {
   }
 
   /* Generates the instructions for handling an Overflow error */
-  lazy val errorOverflowFunc: List[Instruction] = {
+  lazy val errorOverflowFunc: ListBuffer[Instruction] = {
     predefinedFunctions += printStrFunc
 
     val funcName = "Error overflow"
 
     val funcLabel = "_errOverflow"
 
-    val stringLiterals = List(
+    val stringLiterals = ListBuffer[Instruction](
       AscizInstr(".L._errOverflow_str0", ErrorMessage(IntegerOverflowUnderflowErr))
     )
 
-    val funcBody = List(
+    val funcBody = ListBuffer[Instruction](
       BicInstr(SP, SP, ImmVal(7)),
       AdrInstr(R0, ".L._errOverflow_str0"),
       BInstr("_prints", noCondition, storeReturnAddr = true),
@@ -436,18 +441,18 @@ object PredefinedFunctions {
   }
 
   /* Generates the instructions for handling a Division by Zero error */
-  lazy val errorDivByZeroFunc: List[Instruction] = {
+  lazy val errorDivByZeroFunc: ListBuffer[Instruction] = {
     predefinedFunctions += printStrFunc
 
     val funcName = "Error division by zero"
 
     val funcLabel = "_errDivZero"
 
-    val stringLiterals = List(
+    val stringLiterals = ListBuffer[Instruction](
       AscizInstr(".L._errDivZero_str0", ErrorMessage(DivByZeroErr))
     )
 
-    val funcBody = List(
+    val funcBody = ListBuffer[Instruction](
       BicInstr(SP, SP, ImmVal(7)),
       AdrInstr(R0, ".L._errDivZero_str0"),
       BInstr("_prints", noCondition, storeReturnAddr = true),
@@ -460,18 +465,18 @@ object PredefinedFunctions {
 
   /* Generates the instructions for handling a Bad Character error, so when a character
      is not within the acceptable ASCII range */
-  lazy val errorBadCharFunc: List[Instruction] = {
+  lazy val errorBadCharFunc: ListBuffer[Instruction] = {
     predefinedFunctions += printStrFunc
 
     val funcName = "Error bad character"
 
     val funcLabel = "_errBadChar"
 
-    val stringLiterals = List(
+    val stringLiterals = ListBuffer[Instruction](
       AscizInstr(".L._errBadChar_str0", ErrorMessage(CharNotInRangeErr))
     )
 
-    val funcBody = List(
+    val funcBody = ListBuffer[Instruction](
       BicInstr(SP, SP, ImmVal(7)),
       AdrInstr(R0, ".L._errBadChar_str0"),
       BInstr("printf", noCondition, storeReturnAddr = true),

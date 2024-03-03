@@ -91,7 +91,7 @@ object Main {
           val assemblyInstructions = generateInstructions(ast, registerAllocator, reg)
 
           /* Write assembly instructions to file using ARM assembly printer */
-          ARMAssemblyPrinter.printAssembly(assemblyInstructions, writer)
+          ARMAssemblyPrinter.printAssembly(assemblyInstructions.toList, writer)
           writer.close()
 
           System.exit(SUCCESS_CODE)

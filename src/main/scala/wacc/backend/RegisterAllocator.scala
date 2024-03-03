@@ -1,12 +1,12 @@
 package wacc.backend
 
 import scala.collection.mutable
-
+import scala.collection.mutable.ListBuffer
 import wacc.ASTNodes._
 
 /* Represents an object that is used to allocate general purpose registers within the ARM architecture */
 sealed trait RegisterAllocator {
-  def allocateRegister(): (Register, List[Instruction])
+  def allocateRegister(): (Register, ListBuffer[Instruction])
 }
 
 /* Represents the location of a variable in the program state, as well as the variable's type */
@@ -28,9 +28,9 @@ class BasicRegisterAllocator extends RegisterAllocator {
   private var stackPointer = 0
 
   /* Allocate a register */
-  def allocateRegister(): (Register, List[Instruction]) = {
+  def allocateRegister(): (Register, ListBuffer[Instruction]) = {
     var result: Register = R4
-    var instructions: List[Instruction] = List.empty[Instruction]
+    val instructions = ListBuffer[Instruction]()
 
     /* If there are available registers, allocate the first one */
     if (availableRegisters.nonEmpty) {
@@ -45,7 +45,7 @@ class BasicRegisterAllocator extends RegisterAllocator {
           case Some(name) => 
             stackPointer -= 4
             varMap(name) = VariableLocation(FP, stackPointer, varMap(name).size, varMap(name)._type)
-            instructions = List(StrInstr(reg, Addr(FP, ImmVal(stackPointer))))
+            instructions += StrInstr(reg, Addr(FP, ImmVal(stackPointer)))
             return (reg, instructions)
           case _ =>
         }
