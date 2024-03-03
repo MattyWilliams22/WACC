@@ -8,7 +8,7 @@ class SemanticAnalyser(program: Program) {
   val symbolTable: SymbolTable = program.symbolTable
 
   def analyse(): Unit = {
-    println("Running Semantic Analysis...\n")
+    println("Running Semantic Analysis...")
     symbolTable.generateSymbolTable(program)
     val semanticErrors: List[SemanticError] = program.check()
     if (semanticErrors.nonEmpty) {

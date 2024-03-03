@@ -74,8 +74,6 @@ object Main {
           /* Semantic Analysis */
           val semanticAnalyser = new SemanticAnalyser(x)
           semanticAnalyser.analyse()
-          
-          println(x)
 
           /* Create a new file to store generated assembly */
           val inputFile = new File(arg)
@@ -87,6 +85,7 @@ object Main {
           val writer = new PrintWriter(file)
 
           /* Code Generation */
+          println("Generating assembly code...")
           val registerAllocator = new BasicRegisterAllocator
           val (reg, _) = registerAllocator.allocateRegister()
           val assemblyLines = generateAssembly(x, registerAllocator, reg)

@@ -48,8 +48,6 @@ class BasicRegisterAllocator extends RegisterAllocator {
       }
     }
 
-    println(s"Allocated register: $result")
-
     /* Remove the allocated register from the list of available registers */
     if (availableRegisters.length < 2) {
       availableRegisters = List.empty[Register]
@@ -68,8 +66,6 @@ class BasicRegisterAllocator extends RegisterAllocator {
   }
 
   def deallocateRegister(register: Register): Unit = {
-    println(s"Deallocated register: $register")
-
     /* Add the deallocated register to the list of available registers */
     availableRegisters = register :: availableRegisters
   }

@@ -11,7 +11,7 @@ clean:
 	scala-cli clean . && rm -f wacc-compiler *.s execFile
 
 test: all
-	python3 integration_test_runner.py valid basic variables sequence expressions runtime if while pairs IO
+	python3 integration_test_runner.py
 
 test-%: all
 	python3 integration_test_runner.py $*

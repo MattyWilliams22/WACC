@@ -58,24 +58,42 @@ object ARMAssemblyPrinter {
     }
 
     def formatInstr(instr: Instruction): String = instr match {
-      case Comment(comment) => s"@ $comment"
-      case Command(str, indent) => " " * indent + "." + str
-      case Label(name) => name + ":"
-      case Push(regs) => s"    push {${regs.map(formatReg).mkString(", ")}}"
-      case Pop(regs) => s"    pop {${regs.map(formatReg).mkString(", ")}}"
-      case Ldr(reg, operand) => s"    ldr ${formatReg(reg)}, ${formatOperand(operand)}"
-      case AdrInstr(reg, label) => s"    adr ${formatReg(reg)}, $label"
-      case Mov(reg, operand, condition) => s"    mov${formatCondition(condition)} ${formatReg(reg)}, ${formatOperand(operand)}"
-      case AddInstr(reg, operand1, operand2) => s"    add ${formatReg(reg)}, ${formatOperand(operand1)}, ${formatOperand(operand2)}"
-      case AddsInstr(reg, operand1, operand2) => s"    adds ${formatReg(reg)}, ${formatOperand(operand1)}, ${formatOperand(operand2)}"
-      case SubInstr(reg, operand1, operand2) => s"    sub ${formatReg(reg)}, ${formatOperand(operand1)}, ${formatOperand(operand2)}"
-      case SubsInstr(reg, operand1, operand2) => s"    subs ${formatReg(reg)}, ${formatOperand(operand1)}, ${formatOperand(operand2)}"
-      case SmullInstr(reg1, reg2, operand1, operand2) => s"    smull ${formatReg(reg1)}, ${formatReg(reg2)}, ${formatOperand(operand1)}, ${formatOperand(operand2)}"
-      case CmpInstr(operand1, operand2, shift) => s"    cmp ${formatOperand(operand1)}, ${formatOperand(operand2)}${formatShift(shift)}"
-      case Tst(operand1, operand2, shift) => s"    tst ${formatOperand(operand1)}, ${formatOperand(operand2)}${formatShift(shift)}"
-      case BInstr(label, condition) => s"    b${formatCondition(condition)} $label"
-      case BlInstr(label, condition) => s"    bl${formatCondition(condition)} $label"
-      case BicInstr(reg, operand1, operand2) => s"    bic ${formatReg(reg)}, ${formatOperand(operand1)}, ${formatOperand(operand2)}"
+      case Comment(comment) =>
+        s"@ $comment"
+      case Command(str, indent) =>
+        " " * indent + "." + str
+      case Label(name) =>
+        name + ":"
+      case Push(regs) =>
+        s"    push {${regs.map(formatReg).mkString(", ")}}"
+      case Pop(regs) =>
+        s"    pop {${regs.map(formatReg).mkString(", ")}}"
+      case Ldr(reg, operand) =>
+        s"    ldr ${formatReg(reg)}, ${formatOperand(operand)}"
+      case AdrInstr(reg, label) =>
+        s"    adr ${formatReg(reg)}, $label"
+      case Mov(reg, operand, condition) =>
+        s"    mov${formatCondition(condition)} ${formatReg(reg)}, ${formatOperand(operand)}"
+      case AddInstr(reg, operand1, operand2) =>
+        s"    add ${formatReg(reg)}, ${formatOperand(operand1)}, ${formatOperand(operand2)}"
+      case AddsInstr(reg, operand1, operand2) =>
+        s"    adds ${formatReg(reg)}, ${formatOperand(operand1)}, ${formatOperand(operand2)}"
+      case SubInstr(reg, operand1, operand2) =>
+        s"    sub ${formatReg(reg)}, ${formatOperand(operand1)}, ${formatOperand(operand2)}"
+      case SubsInstr(reg, operand1, operand2) =>
+        s"    subs ${formatReg(reg)}, ${formatOperand(operand1)}, ${formatOperand(operand2)}"
+      case SmullInstr(reg1, reg2, operand1, operand2) =>
+        s"    smull ${formatReg(reg1)}, ${formatReg(reg2)}, ${formatOperand(operand1)}, ${formatOperand(operand2)}"
+      case CmpInstr(operand1, operand2, shift) =>
+        s"    cmp ${formatOperand(operand1)}, ${formatOperand(operand2)}${formatShift(shift)}"
+      case Tst(operand1, operand2, shift) =>
+        s"    tst ${formatOperand(operand1)}, ${formatOperand(operand2)}${formatShift(shift)}"
+      case BInstr(label, condition) =>
+        s"    b${formatCondition(condition)} $label"
+      case BlInstr(label, condition) =>
+        s"    bl${formatCondition(condition)} $label"
+      case BicInstr(reg, operand1, operand2) =>
+        s"    bic ${formatReg(reg)}, ${formatOperand(operand1)}, ${formatOperand(operand2)}"
       case AscizInstr(label, string) =>
         val escapedString = string
           .replace("\\", "\\\\")
@@ -89,8 +107,10 @@ object ARMAssemblyPrinter {
           .replace("\u0000", "\\0")
 
         s"   .word ${escapedString.length}\n$label:\n   .asciz \"$escapedString\""
-      case StrInstr(reg1, operand, size) => s"    str${formatSize(size)} ${formatReg(reg1)}, ${formatOperand(operand)}"
-      case RsbsInstr(reg, operand) => s"    rsbs ${formatReg(reg)}, ${formatOperand(operand)}, #0"
+      case StrInstr(reg1, operand, size) =>
+        s"    str${formatSize(size)} ${formatReg(reg1)}, ${formatOperand(operand)}"
+      case RsbsInstr(reg, operand) =>
+        s"    rsbs ${formatReg(reg)}, ${formatOperand(operand)}, #0"
       case NewLine() => ""
     }
 
