@@ -85,7 +85,7 @@ object CodeGenerator {
         Push(List(FP, LR)),
         Push(List(R4, R5, R6, R7, R8, R9, R10)),
         Mov(FP, SP),
-        SubInstr(SP, SP, ImmVal(8))
+        SubInstr(SP, SP, ImmVal(4 * params.length - 4))
       ) ++
       /* Generates instructions for the function parameters */
       paramsGenerate(params) ++
