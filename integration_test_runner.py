@@ -151,8 +151,8 @@ def run_tests(tests_to_run):
     "array": (0, 0, "Array"),
     "if": (0, 0, "Conditional"),
     "while": (0, 0, "Loop"),
-    "scope": (0, 1, "Scope"),
-    "simple_functions": (0, 3, "Simple Function"),
+    "scope": (0, 0, "Scope"),
+    "simple_functions": (0, 0, "Simple Function"),
     "nested_functions": (0, 0, "Nested Function"),
     "runtimeErr": (0, 0, "Runtime Error"),
     "heap": (0, 0, "Heap")
@@ -214,10 +214,6 @@ def run_tests(tests_to_run):
 base = "wacc_examples/"
 tests = add_tests_to_dict(base)
 runningTests = []
-ignoredTests = ["wacc_examples/valid/scope/printAllTypes.wacc",
-                "wacc_examples/valid/function/simple_functions/usesArgumentWhilstMakingArgument.wacc",
-                "wacc_examples/valid/function/simple_functions/manyArgumentsChar.wacc",
-                "wacc_examples/valid/function/simple_functions/manyArgumentsInt.wacc"]
 
 # If no arguments are given, run all tests
 if len(sys.argv) < 2:
@@ -248,7 +244,10 @@ else:
       sys.exit(1)
 
 errorTests = []
-runningTests = [test for test in runningTests if test not in ignoredTests]
+ignoredTests = ["wacc_examples/valid/scope/printAllTypes.wacc",
+                "wacc_examples/valid/function/simple_functions/usesArgumentWhilstMakingArgument.wacc",
+                "wacc_examples/valid/function/simple_functions/manyArgumentsChar.wacc",
+                "wacc_examples/valid/function/simple_functions/manyArgumentsInt.wacc"]
 
 print("Running tests...")
 
@@ -260,7 +259,7 @@ validTotal = len(tests["valid"])
 
 totalPasses = validPasses + syntaxPasses + semanticPasses
 numberTests = validTotal + syntaxTotal + semanticTotal
-numberIgnored = numberTests - len(runningTests)
+numberIgnored = numberTests - len(runningTests) + len(ignoredTests)
 
 for file in glob.glob(os.path.join(".", '*.s')):
   os.remove(file)
@@ -301,6 +300,7 @@ else:
   print(f"Total: {totalPasses} / {numberTests}")
   print(f"Ignored: {numberIgnored} tests")
 
+errorTests = [test for test in errorTests if test not in ignoredTests]
 if len(errorTests) > 0:
   print("")
   print("Failed tests:")
