@@ -136,7 +136,7 @@ def compile_run_assembly_file(fname, assembly_file):
     errorTests.append(fname)
     return False
 
-def run_tests(tests_to_run):
+def run_tests(tests_to_run, flag):
   syntaxPasses = 0
   semanticPasses = 0
   validPasses = 0
@@ -160,8 +160,12 @@ def run_tests(tests_to_run):
 
   for test in tests_to_run:
     for fname in glob.glob(test):
-      print(f"sh compile {fname}")
-      proc = subprocess.run(["sh", "compile", fname], stdout=subprocess.DEVNULL)
+      if flag == "-o":
+        print(f"sh compile {flag} {fname}")
+        proc = subprocess.run(["sh", "compile", flag, fname], stdout=subprocess.DEVNULL)
+      else:
+        print(f"sh compile {fname}")
+        proc = subprocess.run(["sh", "compile", fname], stdout=subprocess.DEVNULL)
 
       actual = proc.returncode
       expected = parser_code(fname)
@@ -222,7 +226,7 @@ elif sys.argv[1] == "--syntax":
   runningTests = tests["invalid-syntax"] + tests["valid"]
 elif sys.argv[1] == "--semantic":
   runningTests = tests["invalid-semantic"] + tests["valid"]
-elif len(sys.argv) == 2:
+elif (len(sys.argv) == 2) or (len(sys.argv) == 3 and "-o" in sys.argv):
   runningTests = tests[sys.argv[1]]
 else:
   if sys.argv[1] == "valid":
@@ -230,6 +234,12 @@ else:
       runningTests = tests["invalid"]
     else:
       sys.argv = sys.argv[:-1]
+
+    if not ('-o' in sys.argv):
+      runningTests = tests["invalid"]
+    else:
+      sys.argv = sys.argv[:-1]
+
     tags = ['-'.join([sys.argv[1], tag]) for tag in sys.argv[2:]]
   else:
     if len(sys.argv) == 3:
@@ -252,7 +262,10 @@ ignoredTests = ["wacc_examples/valid/scope/printAllTypes.wacc",
 print("Running tests...")
 
 # Run the tests
-syntaxPasses, semanticPasses, validPasses, validSubTests = run_tests(runningTests)
+if "-o" in sys.argv:
+  syntaxPasses, semanticPasses, validPasses, validSubTests = run_tests(runningTests, "-o")
+else:
+  syntaxPasses, semanticPasses, validPasses, validSubTests = run_tests(runningTests, "")
 syntaxTotal = len(tests["invalid-syntax"])
 semanticTotal = len(tests["invalid-semantic"])
 validTotal = len(tests["valid"])

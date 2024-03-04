@@ -10,6 +10,7 @@ import wacc.frontend.ErrorOutput._
 import wacc.frontend.Error._
 import wacc.frontend.{SemanticAnalyser, parser}
 import wacc.backend.ARMAssemblyPrinter
+import wacc.extensions.Optimiser._
 
 object Main {
   val FILE_ERR_CODE = 150
@@ -27,11 +28,22 @@ object Main {
     }
 
     var input = ""
-    val arg = args(0)
+    var arg = args(0)
+    var optimise = false
+
+    /* Check for -o flag */
+    if (arg == "-o") {
+      if (args.length < 2) {
+        println("Please specify an input file!")
+        System.exit(FILE_ERR_CODE)
+      }
+      arg = args(1)
+      optimise = true
+    }
 
     /* Parses files only if argument ends with ".wacc" */
     if(arg.endsWith(".wacc")) {
-      val inputFile = new File(args(0))
+      val inputFile = new File(arg)
 
       /* Checks if file exists */
       if (!inputFile.exists()) {
@@ -55,9 +67,8 @@ object Main {
       input = arg
     }
 
-
     /* To be able to run tests */
-    if (args.length > 1) {
+    if (args.length > 1 && args(0) != "-o"){
       /* Invoke your parser's parse method */
       val result: Result[SyntaxError, Expr] = parser.parseTest(input)
       result match {
@@ -75,6 +86,18 @@ object Main {
           val semanticAnalyser = new SemanticAnalyser(ast)
           semanticAnalyser.analyse()
 
+          /* Generate assembly instructions from AST */
+          println("Generating assembly code...")
+          val registerAllocator = new BasicRegisterAllocator
+          val (reg, _) = registerAllocator.allocateRegister()
+          var assemblyInstructions = generateInstructions(ast, registerAllocator, reg)
+
+          /* Check if the code should be optimised */
+          if (optimise) {
+            println("Optimising code...")
+            assemblyInstructions = optimiseInstructions(assemblyInstructions)
+          }
+
           /* Create a new file to store generated assembly */
           val inputFile = new File(arg)
           val outputFileName = inputFile.getName.split('.').head + ".s"
@@ -83,12 +106,6 @@ object Main {
 
           /* Create print writer to allow to write assembly code to file */
           val writer = new PrintWriter(file)
-
-          /* Generate assembly instructions from AST */
-          println("Generating assembly code...")
-          val registerAllocator = new BasicRegisterAllocator
-          val (reg, _) = registerAllocator.allocateRegister()
-          val assemblyInstructions = generateInstructions(ast, registerAllocator, reg)
 
           /* Write assembly instructions to file using ARM assembly printer */
           ARMAssemblyPrinter.printAssembly(assemblyInstructions.toList, writer)
