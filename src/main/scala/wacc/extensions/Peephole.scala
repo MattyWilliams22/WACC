@@ -5,87 +5,91 @@ import scala.collection.mutable.ListBuffer
 import wacc.backend._
 
 object Peephole {
-  def optimise(instructions: List[Instruction]): List[Instruction] = {
-    var optimisedInstructions = redundant_mov(instructions)
-    optimisedInstructions = redundant_sub_add(optimisedInstructions)
-    optimisedInstructions
+
+  type Transformation = (Instruction, List[Instruction]) => List[Instruction]
+
+  val transformations: List[Transformation] = List(redundant_sub_add, redundant_cmp)
+
+  def optimise(instr: Instruction, remaining: List[Instruction], transformations: List[Transformation] = transformations): List[Instruction] = {
+    transformations match {
+      case Nil => List(instr)
+      case head :: tail =>
+        head(instr, remaining) match {
+          case Nil => optimise(instr, remaining, tail)
+          case transformed => transformed
+        }
+    }
   }
 
-  /* Removes instructions of the form:
+  def processInstructions(instructions: List[Instruction]): List[Instruction] = {
+    instructions match {
+      case Nil => Nil
+      case head :: tail => optimise(head, tail, transformations) ++ processInstructions(tail)
+    }
+  }
+
+  /* Removes instructions of the form
+      add r0, r0, 0
+      sub r0, r0, 0
+  */
+  def redundant_sub_add(instr: Instruction, remaining: List[Instruction]): List[Instruction] = {
+    instr match {
+      case AddInstr(dest, src, ImmVal(0), _) if dest == src => Nil
+      case SubInstr(dest, src, ImmVal(0), _) if dest == src => Nil
+      case _ => List(instr)
+    }
+  }
+
+  /* Removes instructions of the form
+      cmp r0, 0
+      cmp r0, 0
+  */
+  def redundant_cmp(instr: Instruction, remaining: List[Instruction]): List[Instruction] = {
+    instr match {
+      case CmpInstr(dest, ImmVal(0)) => remaining match {
+        case Nil => List(instr)
+        case head :: tail => head match {
+          case CmpInstr(dest, ImmVal(0)) => Nil
+          case _ => List(instr)
+        }
+      }
+      case _ => List(instr)
+    }
+  }
+
+  /* Removes instructions of the form
       mov r0, r0
   */
-  def redundant_mov(instructions: List[Instruction]): List[Instruction] = {
-    instructions match {
-      case Nil => Nil
-      case head :: tail => head match {
-        case Mov(dest, src, _) if dest == src => redundant_mov(tail)
-        case _ => head :: redundant_mov(tail)
-      }
+  def redundant_move(instr: Instruction, remaining: List[Instruction]): List[Instruction] = {
+    instr match {
+      case Mov(dest, src, _) if dest == src => Nil
+      case _ => List(instr)
     }
   }
 
-  /* Removes instructions of the form:
-      add r0, r0, #0
-      sub r0, r0, #0
-  */
-  def redundant_sub_add(instructions: List[Instruction]): List[Instruction] = {
-    instructions match {
-      case Nil => Nil
-      case head :: tail => head match {
-        case AddInstr(dest, src, ImmVal(0), noCondition) => redundant_sub_add(tail)
-        case SubInstr(dest, src, ImmVal(0), noCondition) => redundant_sub_add(tail)
-        case _ => head :: redundant_sub_add(tail)
-      }
-    }
-  }
-
-  /* Removes instructions of the form:
-      cmp r0, r0
-  */
-  def redundant_cmp(instructions: List[Instruction]): List[Instruction] = {
-    instructions match {
-      case Nil => Nil
-      case head :: tail => head match {
-        case CmpInstr(dest, src) if dest == src => redundant_cmp(tail)
-        case _ => head :: redundant_cmp(tail)
-      }
-    }
-  }
-
-  /* Combine instructions with mov and add/sub
+  /* Combines instructions of the form
       mov r0, r1
       add r0, r0, #1
       =>
       add r0, r1, #1
-     OR
+    OR
       mov r0, #1
       add r0, r0, r1
       =>
       add r0, r1, #1
   */
-  def combine_mov_add_sub(instructions: List[Instruction]): List[Instruction] = {
-    instructions
+  def combine_mov_add_sub(instr: Instruction, remaining: List[Instruction]): List[Instruction] = {
+    remaining
   }
 
-  /* Combine instructions with mov and other instructions
-      mov r0, r1
-      cmp r0, #1
-      =>
-      cmp r1, #1
-    OR
-      mov r0, r1
-      bic r0, r0, #1
-      =>
-      bic r0, r1, #1
-    OR
+  /* Combines instructions of the form
       mov r0, r1
       mov r2, r0
       =>
       mov r2, r1
-    etc.
   */
-  def combine_mov(instructions: List[Instruction]): List[Instruction] = {
-    instructions
+  def combine_mov_mov(instr: Instruction, remaining: List[Instruction]): List[Instruction] = {
+    remaining
   }
 
   /* Remove redundant str ldr pairs
@@ -95,8 +99,7 @@ object Peephole {
       ldr r0, [r1]
       str r0, [r1]
   */
-  def redundant_str_ldr(instructions: List[Instruction]): List[Instruction] = {
-    instructions
+  def redundant_str_ldr(instr: Instruction, remaining: List[Instruction]): List[Instruction] = {
+    remaining
   }
-
 }
