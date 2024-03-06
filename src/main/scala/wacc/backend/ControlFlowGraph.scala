@@ -122,18 +122,36 @@ class ControlFlowGraph {
 
       nodeId += 1
     }
-
-    println(cfgNodes.mkString("\n"))
   }
 
   def getCFGNode(id: Int): CFGNode = {
-    val newNode = cfgNodes.find(_.id == id)
+    val newNode: Option[CFGNode] = cfgNodes.find(_.id == id)
     newNode match {
       case Some(n) => n
       case None =>
         val n = new CFGNode(id)
         cfgNodes += n
         n
+    }
+  }
+
+  def setLiveInsAndOuts(): Unit = {
+    val worklist = mutable.Queue[CFGNode]()
+    cfgNodes.map(n => worklist.enqueue(n))
+
+    while (worklist.nonEmpty) {
+      val node = worklist.dequeue()
+      val newLiveOut = node.succs.map(_.liveIn).foldLeft(mutable.Set[Register]())(_ ++ _)
+      if (newLiveOut != node.liveOut) {
+        node.liveOut.clear()
+        node.liveOut ++= newLiveOut
+        val newLiveIn = node.uses ++ (node.liveOut diff node.defs)
+        if (newLiveIn != node.liveIn) {
+          node.liveIn.clear()
+          node.liveIn ++= newLiveIn
+          node.succs.map(n => worklist.enqueue(n))
+        }
+      }
     }
   }
 }

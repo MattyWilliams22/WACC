@@ -98,7 +98,7 @@ object Main {
           var temporaryInstructions = generateInstructions(ast, registerAllocator, reg)
           val controlFlowGraph = new ControlFlowGraph
           controlFlowGraph.buildCFG(temporaryInstructions)
-          controlFlowGraph.printCFG
+          controlFlowGraph.printCFG()
           mapInstructions(temporaryInstructions)
           var assemblyInstructions = replaceInstructions(temporaryInstructions)
 
