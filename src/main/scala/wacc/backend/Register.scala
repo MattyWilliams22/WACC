@@ -74,3 +74,7 @@ case object LR extends Register {
 case object PC extends Register {
   val number: Int = 15
 }
+
+case class T(n: Int) extends Register {
+  val number: Int = -1
+}

@@ -10,6 +10,10 @@ import wacc.frontend.ErrorOutput._
 import wacc.frontend.Error._
 import wacc.frontend.{SemanticAnalyser, parser}
 import wacc.backend.ARMAssemblyPrinter
+import wacc.backend.TemporaryRegisterAllocator
+import wacc.backend.RegisterMapping._
+import wacc.backend.Register
+import wacc.backend.GraphColouring._
 import wacc.extensions.Optimiser._
 
 object Main {
@@ -88,9 +92,11 @@ object Main {
 
           /* Generate assembly instructions from AST */
           println("Generating assembly code...")
-          val registerAllocator = new BasicRegisterAllocator
+          val registerAllocator = new TemporaryRegisterAllocator
           val (reg, _) = registerAllocator.allocateRegister()
-          var assemblyInstructions = generateInstructions(ast, registerAllocator, reg)
+          var temporaryInstructions = generateInstructions(ast, registerAllocator, reg)
+          mapInstructions(temporaryInstructions)
+          var assemblyInstructions = replaceInstructions(temporaryInstructions)
 
           /* Check if the code should be optimised */
           if (optimise) {
