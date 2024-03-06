@@ -95,7 +95,7 @@ object Main {
           /* Check if the code should be optimised */
           if (optimise) {
             println("Optimising code...")
-            assemblyInstructions = optimiseInstructions(assemblyInstructions)
+            assemblyInstructions = optimiseInstructions(assemblyInstructions.toList)
           }
 
           /* Create a new file to store generated assembly */

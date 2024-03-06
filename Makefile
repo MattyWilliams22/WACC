@@ -11,7 +11,7 @@ clean:
 	scala-cli clean . && rm -f wacc-compiler *.s execFile
 
 test: all
-	python3 integration_test_runner.py
+	python3 integration_test_runner.py -o
 
 test-%: all
 	python3 integration_test_runner.py $*

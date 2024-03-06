@@ -8,16 +8,14 @@ object Peephole {
 
   type Transformation = (Instruction, List[Instruction]) => List[Instruction]
 
-  val transformations: List[Transformation] = List(redundant_sub_add, redundant_cmp)
+  val transformations: List[Transformation] = List(redundant_sub_add, redundant_cmp, redundant_move, combine_mov_add_sub, combine_mov_mov, redundant_str_ldr)
 
   def optimise(instr: Instruction, remaining: List[Instruction], transformations: List[Transformation] = transformations): List[Instruction] = {
-    transformations match {
-      case Nil => List(instr)
-      case head :: tail =>
-        head(instr, remaining) match {
-          case Nil => optimise(instr, remaining, tail)
-          case transformed => transformed
-        }
+    transformations.foldLeft(List(instr)) { (current, transform) =>
+      current match {
+        case Nil => return Nil
+        case _ => transform(current.head, remaining)
+      }
     }
   }
 
@@ -79,7 +77,7 @@ object Peephole {
       add r0, r1, #1
   */
   def combine_mov_add_sub(instr: Instruction, remaining: List[Instruction]): List[Instruction] = {
-    remaining
+    List(instr)
   }
 
   /* Combines instructions of the form
@@ -89,7 +87,12 @@ object Peephole {
       mov r2, r1
   */
   def combine_mov_mov(instr: Instruction, remaining: List[Instruction]): List[Instruction] = {
-    remaining
+    // (instr, getNextInstruction(remaining)) match {
+    //   case (Mov(dest1, src1, cond1), Some(Mov(dest2, src2, cond2))) if dest1 == src2 && cond1 == cond2 =>
+    //     List(Mov(dest2, src1, cond1))
+    //   case _ => List(instr)
+    // }
+    List(instr)
   }
 
   /* Remove redundant str ldr pairs
@@ -100,6 +103,14 @@ object Peephole {
       str r0, [r1]
   */
   def redundant_str_ldr(instr: Instruction, remaining: List[Instruction]): List[Instruction] = {
-    remaining
+    List(instr)
+  }
+
+  def getNextInstruction(remaining: List[Instruction]): Option[Instruction] = {
+    remaining match {
+      case Nil => None
+      case Comment(_, _) :: tail => getNextInstruction(tail)
+      case head :: _ => Some(head)
+    }
   }
 }
