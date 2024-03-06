@@ -6,7 +6,7 @@ import scala.collection.mutable.ListBuffer
 class RegisterMapping(val regMap: Map[Register, Register]) {
 
   private def getRegColour(reg: Register): Register = {
-    regMap.getOrElse(reg, reg)
+    regMap(reg)
   }
 
   private def getGeneralColour(op: GeneralOperand): GeneralOperand = {

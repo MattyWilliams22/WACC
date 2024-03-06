@@ -1,10 +1,14 @@
 package wacc.backend
 
+import scala.collection.mutable.SortedSet
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 class ControlFlowGraph {
-  val cfgNodes = mutable.Set[CFGNode]()
+  object CFGNodeOrdering extends Ordering[CFGNode] {
+    def compare(a: CFGNode, b: CFGNode) = a.id compare b.id
+  }
+  val cfgNodes = mutable.SortedSet[CFGNode]()(CFGNodeOrdering)
   var labelToNode = mutable.Map[String, CFGNode]()
   var labelReferences = mutable.Map[String, ListBuffer[CFGNode]]()
 
@@ -39,7 +43,9 @@ class ControlFlowGraph {
       println("Node " + cfgNode.id + ":")
       println("Uses: " + cfgNode.uses.mkString(", "))
       println("Defs: " + cfgNode.defs.mkString(", "))
-      println("-> " + cfgNode.succs.map(_.id).mkString(", "))
+      println("Succs: " + cfgNode.succs.map(_.id).mkString(", "))
+      println("LiveIn: " + cfgNode.liveIn.mkString(", "))
+      println("LiveOut: " + cfgNode.liveOut.mkString(", "))
     }
   }
 
@@ -136,20 +142,17 @@ class ControlFlowGraph {
   }
 
   def setLiveInsAndOuts(): Unit = {
-    val worklist = mutable.Queue[CFGNode]()
-    cfgNodes.map(n => worklist.enqueue(n))
+    var hasChanged = true
 
-    while (worklist.nonEmpty) {
-      val node = worklist.dequeue()
-      val newLiveOut = node.succs.map(_.liveIn).foldLeft(mutable.Set[Register]())(_ ++ _)
-      if (newLiveOut != node.liveOut) {
-        node.liveOut.clear()
-        node.liveOut ++= newLiveOut
-        val newLiveIn = node.uses ++ (node.liveOut diff node.defs)
-        if (newLiveIn != node.liveIn) {
-          node.liveIn.clear()
-          node.liveIn ++= newLiveIn
-          node.succs.map(n => worklist.enqueue(n))
+    while (hasChanged) {
+      hasChanged = false
+      for (node <- cfgNodes) {
+        val oldIn = node.liveIn
+        val oldOut = node.liveOut
+        node.liveIn = node.uses ++ (node.liveOut diff node.defs)
+        node.liveOut = node.succs.flatMap(_.liveIn)
+        if (oldIn != node.liveIn || oldOut != node.liveOut) {
+          hasChanged = true
         }
       }
     }

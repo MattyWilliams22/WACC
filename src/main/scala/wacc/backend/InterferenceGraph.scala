@@ -6,6 +6,7 @@ import scala.collection.mutable.ListBuffer
 class InterferenceGraph {
   var nodes = mutable.Map[Register, InterferenceNode]()
 
+  val allRegs: Set[Register] = Set(R0, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, FP, IP, SP, LR, PC)
   val allColours: Set[Register] = Set(R4, R5, R6, R7, R8, R9, R10, R1, R2, R3, IP)
 
   def printInterferenceGraph(): Unit = {
@@ -42,19 +43,28 @@ class InterferenceGraph {
     var colourMap = mutable.Map[Register, Register]()
     initColourMap(colourMap)
     for ((reg, node) <- nodes) {
-      val adjacentColours: Set[Register] = node.neighbours.map(colourMap).toSet
-      val availableColours: Set[Register] = allColours diff adjacentColours
-      if (availableColours.nonEmpty) {
-        colourMap += (reg -> availableColours.head)
-      } else {
-        colourMap += (reg -> reg)
+      if (!colourMap.contains(reg)) {
+        val adjacentColours: mutable.Set[Register] = mutable.Set.empty
+        for (neighbour <- node.neighbours) {
+          val neighbourColour = colourMap.get(neighbour)
+          neighbourColour match {
+            case Some(colour) => adjacentColours += colour
+            case None =>
+          }
+        }
+        val availableColours: Set[Register] = allColours diff adjacentColours
+        if (availableColours.nonEmpty) {
+          colourMap += (reg -> availableColours.head)
+        } else {
+          colourMap += (reg -> reg)
+        }
       }
     }
     colourMap.toMap
   }
 
   private def initColourMap(colourMap: mutable.Map[Register, Register]): Unit = {
-    for (reg <- allColours) {
+    for (reg <- allRegs) {
       colourMap += (reg -> reg)
     }
   }
