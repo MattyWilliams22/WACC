@@ -3,18 +3,13 @@ package wacc.backend
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
-object RegisterMapping {
-  val regMap: mutable.Map[Register, Register] = mutable.Map.empty
+class RegisterMapping(val regMap: Map[Register, Register]) {
 
-  def addRegisterMapping(from: Register, to: Register) = {
-    regMap.put(from, to)
-  }
-
-  def getRegColour(reg: Register): Register = {
+  private def getRegColour(reg: Register): Register = {
     regMap.getOrElse(reg, reg)
   }
 
-  def getGeneralColour(op: GeneralOperand): GeneralOperand = {
+  private def getGeneralColour(op: GeneralOperand): GeneralOperand = {
     op match {
       case r: Register => getRegColour(r)
       case RegShift(r, s) => RegShift(getRegColour(r), s)
@@ -22,14 +17,14 @@ object RegisterMapping {
     }
   }
 
-  def getLdrColour(op: LdrOperand): LdrOperand = {
+  private def getLdrColour(op: LdrOperand): LdrOperand = {
     op match {
       case a: Addr => getAddrColour(a)
       case _ => op
     }
   }
 
-  def getAddrColour(op: Addr): Addr = {
+  private def getAddrColour(op: Addr): Addr = {
     op match {
       case Addr(r, o) => Addr(getRegColour(r), getGeneralColour(o))
       case _ => op
@@ -40,7 +35,7 @@ object RegisterMapping {
     instrs.map(replaceInstruction)
   }
 
-  def replaceInstruction(instr: Instruction): Instruction = {
+  private def replaceInstruction(instr: Instruction): Instruction = {
     instr match {
       case Push(regs) =>
         Push(regs.map(r => getRegColour(r)))
