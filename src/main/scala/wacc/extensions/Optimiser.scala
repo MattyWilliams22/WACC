@@ -10,8 +10,10 @@ object Optimiser {
     instructions match {
       case Nil => ListBuffer.from(List())
       case instr :: remaining =>
-        val transformed = ListBuffer.from(optimise(instr, remaining))
-        transformed ++= optimiseInstructions(remaining)
+        val optimisedInstr = optimise(instr, remaining)
+        val transformed = ListBuffer.from(optimisedInstr._1)
+        val newRemaining = optimisedInstr._2
+        transformed ++= optimiseInstructions(newRemaining)
     }
   }
 }
