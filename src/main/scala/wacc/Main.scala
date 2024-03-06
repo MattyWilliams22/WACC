@@ -14,6 +14,7 @@ import wacc.backend.TemporaryRegisterAllocator
 import wacc.backend.RegisterMapping._
 import wacc.backend.Register
 import wacc.backend.GraphColouring._
+import wacc.backend.ControlFlowGraph
 import wacc.extensions.Optimiser._
 
 object Main {
@@ -95,6 +96,9 @@ object Main {
           val registerAllocator = new TemporaryRegisterAllocator
           val (reg, _) = registerAllocator.allocateRegister()
           var temporaryInstructions = generateInstructions(ast, registerAllocator, reg)
+          val controlFlowGraph = new ControlFlowGraph
+          controlFlowGraph.buildCFG(temporaryInstructions)
+          controlFlowGraph.printCFG
           mapInstructions(temporaryInstructions)
           var assemblyInstructions = replaceInstructions(temporaryInstructions)
 
