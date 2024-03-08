@@ -96,7 +96,13 @@ object Peephole {
       str r0, [r1]
   */
   def redundant_str_ldr(instr: Instruction, remaining: List[Instruction]): (List[Instruction], List[Instruction]) = {
-    (List(instr), remaining)
+    (instr, getNextInstruction(remaining)) match {
+      case (StrInstr(dest1, op1, _), Some(Ldr(dest2, op2))) if dest1 == dest2 && op1 == op2 =>
+        (Nil, dropInstructions(remaining, 1))
+      case (Ldr(dest1, op1), Some(StrInstr(dest2, op2, _))) if dest1 == dest2 && op1 == op2 =>
+        (Nil, dropInstructions(remaining, 1))
+      case _ => (List(instr), remaining)
+    }
   }
 
   def getNextInstruction(remaining: List[Instruction]): Option[Instruction] = {
