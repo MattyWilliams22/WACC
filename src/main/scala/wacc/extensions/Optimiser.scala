@@ -1,6 +1,7 @@
 package wacc.extensions
 
 import wacc.backend.Instruction
+import wacc.backend.Comment
 import wacc.extensions.Peephole._
 import scala.collection.mutable.ListBuffer
 
@@ -15,5 +16,9 @@ object Optimiser {
         val newRemaining = optimisedInstr._2
         transformed ++= optimiseInstructions(newRemaining)
     }
+  }
+
+  def removeComments(instructions: ListBuffer[Instruction]): ListBuffer[Instruction] = {
+    instructions.filterNot(instr => instr.isInstanceOf[Comment])
   }
 }

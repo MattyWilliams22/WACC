@@ -96,6 +96,7 @@ object Main {
           if (optimise) {
             println("Optimising code...")
             assemblyInstructions = optimiseInstructions(assemblyInstructions.toList)
+            assemblyInstructions = removeComments(assemblyInstructions)
           }
 
           /* Create a new file to store generated assembly */
