@@ -65,7 +65,7 @@ object Peephole {
       add r0, r0, #1
   */
   def combineMovAdd(instr: Instruction, remaining: List[Instruction]): (List[Instruction], List[Instruction]) = {
-    (instr, getNextInstruction(remaining)) match {
+    (instr, getInstruction(remaining)) match {
       case (Mov(dest1, ImmVal(value), _), Some(AddInstr(dest2, op1, op2, updateFlags))) if dest1 == op2 =>
         (List(AddInstr(dest2, op1, ImmVal(value), updateFlags)), dropInstructions(remaining, 1))
       case _ => (List(instr), remaining)
@@ -79,7 +79,7 @@ object Peephole {
       mov r2, r1
   */
   def combineDoubleMov(instr: Instruction, remaining: List[Instruction]): (List[Instruction], List[Instruction]) = {
-    (instr, getNextInstruction(remaining), getNextNextInstruction(remaining)) match {
+    (instr, getInstruction(remaining), getInstruction(remaining, 1)) match {
       case (Comment("Start of identifier ", _), Some(Mov(dest1, src1, cond1)), Some(Mov(dest2, src2, cond2))) if dest1 == src2 && cond1 == cond2 =>
         (List(Mov(dest2, src1, cond1)), dropInstructions(remaining, 2))
       case _ => (List(instr), remaining)
@@ -94,7 +94,7 @@ object Peephole {
       str r0, [r1]
   */
   def removeRedundantStrLdr(instr: Instruction, remaining: List[Instruction]): (List[Instruction], List[Instruction]) = {
-    (instr, getNextInstruction(remaining)) match {
+    (instr, getInstruction(remaining)) match {
       case (instr1@StrInstr(dest1, op1, _), Some(Ldr(dest2, op2))) if dest1 == dest2 && op1 == op2 =>
         (List(instr1), dropInstructions(remaining, 1))
       case (instr1@Ldr(dest1, op1), Some(StrInstr(dest2, op2, _))) if dest1 == dest2 && op1 == op2 =>
@@ -110,29 +110,20 @@ object Peephole {
       ldr r0, [r2]
   */
   def removeRedundantLdr(instr: Instruction, remaining: List[Instruction]): (List[Instruction], List[Instruction]) = {
-    (instr, getNextInstruction(remaining)) match {
+    (instr, getInstruction(remaining)) match {
       case (Ldr(dest1, op1), Some(Ldr(dest2, op2))) if dest1 == dest2 =>
         (List(Ldr(dest1, op2)), dropInstructions(remaining, 1))
       case _ => (List(instr), remaining)
     }
   }
 
-  /* Gets the next non-comment instruction */
-  def getNextInstruction(remaining: List[Instruction]): Option[Instruction] = {
+  /* Gets the nth non-comment instruction. By default, n = 0 */
+  def getInstruction(remaining: List[Instruction], n: Int = 0): Option[Instruction] = {
     remaining match {
       case Nil => None
-      case Comment(_, _) :: tail => getNextInstruction(tail)
+      case Comment(_, _) :: tail => getInstruction(tail, n)
+      case head :: tail if n > 0 => getInstruction(tail, n - 1)
       case head :: _ => Some(head)
-    }
-  }
-
-  /* Gets the next non-comment instruction after the first */
-  def getNextNextInstruction(remaining: List[Instruction]): Option[Instruction] = {
-    getNextInstruction(remaining) match {
-      case None => None
-      case Some(firstInstruction) =>
-        val remainingAfterFirst = remaining.dropWhile(_ != firstInstruction).drop(1)
-        getNextInstruction(remainingAfterFirst)
     }
   }
 
