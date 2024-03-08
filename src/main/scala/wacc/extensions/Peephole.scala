@@ -70,7 +70,6 @@ object Peephole {
         (List(AddInstr(dest2, op1, ImmVal(value), updateFlags)), dropInstructions(remaining, 1))
       case _ => (List(instr), remaining)
     }
-    //(List(instr), remaining)
   }
 
   /* Combines instructions of the form
@@ -80,12 +79,11 @@ object Peephole {
       mov r2, r1
   */
   def combineDoubleMov(instr: Instruction, remaining: List[Instruction]): (List[Instruction], List[Instruction]) = {
-    // (instr, getNextInstruction(remaining)) match {
-    //   case (Mov(dest1, src1, cond1), Some(Mov(dest2, src2, cond2))) if dest1 == src2 && cond1 == cond2 =>
-    //     (List(Mov(dest2, src1, cond1)), dropInstructions(remaining, 1))
-    //   case _ => (List(instr), remaining)
-    // }
-    (List(instr), remaining)
+    (instr, getNextInstruction(remaining), getNextNextInstruction(remaining)) match {
+      case (Comment("Start of identifier ", _), Some(Mov(dest1, src1, cond1)), Some(Mov(dest2, src2, cond2))) if dest1 == src2 && cond1 == cond2 =>
+        (List(Mov(dest2, src1, cond1)), dropInstructions(remaining, 2))
+      case _ => (List(instr), remaining)
+    }
   }
 
   /* Remove redundant str ldr pairs
@@ -119,6 +117,7 @@ object Peephole {
     }
   }
 
+  /* Gets the next non-comment instruction */
   def getNextInstruction(remaining: List[Instruction]): Option[Instruction] = {
     remaining match {
       case Nil => None
@@ -127,6 +126,17 @@ object Peephole {
     }
   }
 
+  /* Gets the next non-comment instruction after the first */
+  def getNextNextInstruction(remaining: List[Instruction]): Option[Instruction] = {
+    getNextInstruction(remaining) match {
+      case None => None
+      case Some(firstInstruction) =>
+        val remainingAfterFirst = remaining.dropWhile(_ != firstInstruction).drop(1)
+        getNextInstruction(remainingAfterFirst)
+    }
+  }
+
+  /* Drops n instructions from the list */
   def dropInstructions(remaining: List[Instruction], n: Int): List[Instruction] = {
     remaining match {
       case Nil => Nil
