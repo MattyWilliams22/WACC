@@ -59,18 +59,18 @@ object Peephole {
   }
 
   /* Combines instructions of the form
-      mov r0, r1
-      add r0, r0, #1
-      =>
-      add r0, r1, #1
-    OR
-      mov r0, #1
+      mov r1, #1
       add r0, r0, r1
       =>
-      add r0, r1, #1
+      add r0, r0, #1
   */
   def combineMovAdd(instr: Instruction, remaining: List[Instruction]): (List[Instruction], List[Instruction]) = {
-    (List(instr), remaining)
+    (instr, getNextInstruction(remaining)) match {
+      case (Mov(dest1, ImmVal(value), _), Some(AddInstr(dest2, op1, op2, updateFlags))) if dest1 == op2 =>
+        (List(AddInstr(dest2, op1, ImmVal(value), updateFlags)), dropInstructions(remaining, 1))
+      case _ => (List(instr), remaining)
+    }
+    //(List(instr), remaining)
   }
 
   /* Combines instructions of the form
