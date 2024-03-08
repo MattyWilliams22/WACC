@@ -3,11 +3,13 @@ package wacc.backend
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
+case class RegisterLocation(reg: Register, offset: Int)
+
 class InterferenceGraph {
   var nodes = mutable.Map[Register, InterferenceNode]()
 
   val allRegs: Set[Register] = Set(R0, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, FP, IP, SP, LR, PC)
-  val allColours: Set[Register] = Set(R4, R5, R6, R7, R8, R9, R10, R1, R2, R3, IP)
+  val allColours: Set[Register] = Set(R4, R5, R6, R7, R8, R9, R10, R1, R2, R3, IP, R0)
 
   def printInterferenceGraph(): Unit = {
     for ((reg, node) <- nodes) {
@@ -39,8 +41,10 @@ class InterferenceGraph {
     }
   }
 
-  def getColourMap: Map[Register, Register] = {
-    var colourMap = mutable.Map[Register, Register]()
+  var stackPointer = 0
+
+  def getColourMap: Map[Register, RegisterLocation] = {
+    var colourMap = mutable.Map[Register, RegisterLocation]()
     initColourMap(colourMap)
     for ((reg, node) <- nodes) {
       if (!colourMap.contains(reg)) {
@@ -48,24 +52,27 @@ class InterferenceGraph {
         for (neighbour <- node.neighbours) {
           val neighbourColour = colourMap.get(neighbour)
           neighbourColour match {
-            case Some(colour) => adjacentColours += colour
+            case Some(colour) => adjacentColours += (colour).reg
             case None =>
           }
         }
         val availableColours: Set[Register] = allColours diff adjacentColours
         if (availableColours.nonEmpty) {
-          colourMap += (reg -> availableColours.head)
+          colourMap += (reg -> RegisterLocation(availableColours.head, 0))
         } else {
-          colourMap += (reg -> reg)
+          if (!colourMap.contains(reg)) {
+            stackPointer -= 4
+            colourMap += (reg -> RegisterLocation(FP, stackPointer))
+          }
         }
       }
     }
     colourMap.toMap
   }
 
-  private def initColourMap(colourMap: mutable.Map[Register, Register]): Unit = {
+  private def initColourMap(colourMap: mutable.Map[Register, RegisterLocation]): Unit = {
     for (reg <- allRegs) {
-      colourMap += (reg -> reg)
+      colourMap += (reg -> RegisterLocation(reg, -1))
     }
   }
 }

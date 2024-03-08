@@ -27,9 +27,9 @@ object GraphColouring {
     newInstrs
   }
 
-  private def printColourMap(colourMap: Map[Register, Register]): Unit = {
+  private def printColourMap(colourMap: Map[Register, RegisterLocation]): Unit = {
     for ((reg, colour) <- colourMap) {
-      println(reg.toString() + " -> " + colour)
+      println(reg.toString() + " -> " + colour.reg.toString())
     }
   }
 
