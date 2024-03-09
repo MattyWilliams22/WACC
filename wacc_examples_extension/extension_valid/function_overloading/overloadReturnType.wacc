@@ -1,0 +1,24 @@
+# using two functions with the same name and arguments, but different return types
+
+# Output:
+# 6
+# false
+#
+
+# Program:
+
+begin
+  int f(int x, bool y) is
+    return x
+  end
+
+  bool f(int x, bool y) is
+    return y
+  end
+
+  int z = call f(6, true);
+  println z;
+
+  bool w = call f(3, false);
+  println w
+end
