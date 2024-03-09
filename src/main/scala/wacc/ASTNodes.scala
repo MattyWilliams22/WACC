@@ -649,26 +649,8 @@ object ASTNodes {
   private def getFunctionNickname(funcName: Ident, params: List[Param], retType: Option[Type]): Unit = {
     val nodes = currentSymbolTable.lookupAllFunctions(funcName.str)
     for (node <- nodes) {
-      var matches = true
-      node match {
-        case Function(t, i, ps, _) => {
-          if (ps.length != params.length) {
-            matches = false
-          } else {
-            for (i <- ps.indices) {
-              if (ps(i)._type != params(i)._type) {
-                matches = false
-              }
-            }
-          }
-          retType match {
-            case Some(retT) => if (retT != t) matches = false
-            case None =>
-          }
-          if (matches) {
-            funcName.nickname = i.nickname
-          }
-        }
+      if (checkMatches(node, params.map(p => p._type), retType)) {
+        funcName.nickname = node.ident.nickname
       }
     }
   }
@@ -676,30 +658,34 @@ object ASTNodes {
   private def getFunctionNode(funcName: Ident, args: List[Expr], retType: Option[Type]): Option[Function] = {
     val nodes = currentSymbolTable.lookupAllFunctions(funcName.str)
     for (node <- nodes) {
-      var matches = true
-      node match {
-        case Function(t, i, ps, _) => {
-          if (ps.length != args.length) {
-            matches = false
-          } else {
-            for (i <- ps.indices) {
-              if (ps(i)._type != args(i).getType) {
-                matches = false
-              }
-            }
-          }
-          retType match {
-            case Some(retT) => if (retT != t) matches = false
-            case None =>
-          }
-          if (matches) {
-            return Some(node)
-          }
-        }
-        case _ =>
+      if (checkMatches(node, args.map(arg => arg.getType), retType)) {
+        return Some(node)
       }
     }
     None
+  }
+
+  private def checkMatches(node: ASTNode, argTypes: List[Type], retType: Option[Type]): Boolean = {
+    var matches = true
+    node match {
+      case Function(t, i, ps, _) => {
+        if (ps.length != argTypes.length) {
+          matches = false
+        } else {
+          for (i <- ps.indices) {
+            if (ps(i)._type != argTypes(i)) {
+              matches = false
+            }
+          }
+        }
+        retType match {
+          case Some(retT) => if (retT != t) matches = false
+          case None =>
+        }
+      }
+      case _ => matches = false
+    }
+    matches
   }
 
   sealed trait Expr extends RValue {
