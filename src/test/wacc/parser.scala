@@ -263,7 +263,7 @@ class ParserSpec extends AnyFlatSpec with Matchers {
             Declare(
               BaseT("int"), 
               Ident("result", None, None), 
-              Call(Ident("add", None, None), List(Num(3), Num(4)))
+              Call(Ident("add", None, None), List(Num(3), Num(4)), None)
             )
           ))
         )
