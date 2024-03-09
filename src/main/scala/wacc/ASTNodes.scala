@@ -83,9 +83,17 @@ object ASTNodes {
     // Checks the semantics of a function
     def check(): Boolean = {
 
+      // Get the nickname of the function
       getFunctionNickname(ident, param_list)
 
       val tempSymbolTable: SymbolTable = currentSymbolTable
+      currentSymbolTable = argSymbolTable
+
+      // Check the parameters of the function
+      for (param <- param_list) {
+        checkValid(param.check(), "Invalid parameter", param)
+      }
+
       currentSymbolTable = bodySymbolTable
 
       // Check the body of the function
@@ -584,20 +592,24 @@ object ASTNodes {
   case class Call(funcName: Ident, args: List[Expr]) extends RValue {
     // Semantically check a function call
     def check(): Boolean = {
+      // Check that the arguments are semantically valid
+      for (arg <- args) {
+        checkValid(arg.check(), "Invalid argument", arg)
+      }
+
       currentSymbolTable.canAccessVars = false
       val funcForm = getFunctionNode(funcName, args)
+
       funcName.nickname = funcForm match {
         case Some(Function(_, i, _, _)) => i.nickname
         case _ => None
       }
       currentSymbolTable.canAccessVars = true
 
-
       funcForm match {
         case Some(Function(_, _, params, _)) =>
           checkValid(args.length == params.length, "Invalid number of arguments", Call(funcName, args))
           for (i <- 0 to (params.length-1).min(args.length-1)) {
-            checkValid(args(i).check(), "Invalid argument", args(i))
             checkValid(args(i).getType == params(i).getType, "Invalid argument type", args(i))
           }
         case _ =>
@@ -658,6 +670,7 @@ object ASTNodes {
             }
           }
         }
+        case _ => matches = false
       }
       if (matches) {
         return Some(node)
@@ -970,16 +983,22 @@ object ASTNodes {
     // Get the type of the identifier
     def getType: Type = {
       // Search the symbol table for the type of the identifier
-      currentSymbolTable.lookupAllVariables(str) match {
-        case Some(x) => x match {
-          case param: Param =>
-            param._type
-          case declare: Declare =>
-            declare._type
-          case _ =>
-            BaseT("ERROR")
+      if (_type.isDefined) {
+        _type.get
+      } else {
+        currentSymbolTable.lookupAllVariables(str) match {
+          case Some(x) => x match {
+            case param: Param =>
+              _type = Option(param._type)
+              param._type
+            case declare: Declare =>
+              _type = Option(declare._type)
+              declare._type
+            case _ =>
+              BaseT("ERROR")
+          }
+          case None => BaseT("ERROR")
         }
-        case None => BaseT("ERROR")
       }
     }
 
