@@ -36,6 +36,9 @@ class SymbolTable(var parent: Option[SymbolTable],
           }
         }
       }
+      if (node._type != func._type) {
+        matches = false
+      }
       if (matches) {
         System.exit(SEMANTIC_ERR_CODE)
       }

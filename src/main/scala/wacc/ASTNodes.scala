@@ -84,7 +84,7 @@ object ASTNodes {
     def check(): Boolean = {
 
       // Get the nickname of the function
-      getFunctionNickname(ident, param_list)
+      getFunctionNickname(ident, param_list, Some(_type))
 
       val tempSymbolTable: SymbolTable = currentSymbolTable
       currentSymbolTable = argSymbolTable
@@ -180,6 +180,12 @@ object ASTNodes {
     // Semantically check a declare statement
     def check(): Boolean = {
       currentSymbolTable.generateSymbolTable(this)
+
+      value match {
+        case c: Call => 
+          c.retType = Some(_type)
+        case _ =>
+      }
       // Check the value on the right of the declaration
       checkValid(value.check(), "Invalid Rvalue", value)
       ident.check()
@@ -211,6 +217,11 @@ object ASTNodes {
     def check(): Boolean = {
       // Check that the lvalue and rvalue are semantically valid
       checkValid(lvalue.check(), "Invalid lvalue", lvalue)
+      rvalue match {
+        case c: Call => 
+          c.retType = Some(lvalue.getType)
+        case _ =>
+      }
       checkValid(rvalue.check(), "Invalid rvalue", rvalue)
 
       // Check that the types of lvalue and rvalue are complementary
@@ -589,7 +600,7 @@ object ASTNodes {
     }
   }
 
-  case class Call(funcName: Ident, args: List[Expr]) extends RValue {
+  case class Call(funcName: Ident, args: List[Expr], var retType: Option[Type]) extends RValue {
     // Semantically check a function call
     def check(): Boolean = {
       // Check that the arguments are semantically valid
@@ -598,7 +609,8 @@ object ASTNodes {
       }
 
       currentSymbolTable.canAccessVars = false
-      val funcForm = getFunctionNode(funcName, args)
+      val funcForm = getFunctionNode(funcName, args, retType)
+      checkValid(funcForm.isDefined, "Function does not exist", Call(funcName, args, retType))
 
       funcName.nickname = funcForm match {
         case Some(Function(_, i, _, _)) => i.nickname
@@ -608,7 +620,7 @@ object ASTNodes {
 
       funcForm match {
         case Some(Function(_, _, params, _)) =>
-          checkValid(args.length == params.length, "Invalid number of arguments", Call(funcName, args))
+          checkValid(args.length == params.length, "Invalid number of arguments", Call(funcName, args, retType))
           for (i <- 0 to (params.length-1).min(args.length-1)) {
             checkValid(args(i).getType == params(i).getType, "Invalid argument type", args(i))
           }
@@ -619,19 +631,22 @@ object ASTNodes {
 
     // Get the type of the function call
     def getType: Type = {
-      getFunctionType(funcName, args)
+      retType match {
+        case Some(t) => t
+        case None => getFunctionType(funcName, args, retType)
+      }
     }
   }
 
-  private def getFunctionType(funcName: Ident, args: List[Expr]): Type = {
-    val funcForm = getFunctionNode(funcName, args)
+  private def getFunctionType(funcName: Ident, args: List[Expr], retType: Option[Type]): Type = {
+    val funcForm = getFunctionNode(funcName, args, retType)
     funcForm match {
       case Some(Function(t, _, _, _)) => t
       case _ => BaseT("ERROR")
     }
   }
 
-  private def getFunctionNickname(funcName: Ident, params: List[Param]): Unit = {
+  private def getFunctionNickname(funcName: Ident, params: List[Param], retType: Option[Type]): Unit = {
     val nodes = currentSymbolTable.lookupAllFunctions(funcName.str)
     for (node <- nodes) {
       var matches = true
@@ -646,6 +661,10 @@ object ASTNodes {
               }
             }
           }
+          retType match {
+            case Some(retT) => if (retT != t) matches = false
+            case None =>
+          }
           if (matches) {
             funcName.nickname = i.nickname
           }
@@ -654,7 +673,7 @@ object ASTNodes {
     }
   }
 
-  private def getFunctionNode(funcName: Ident, args: List[Expr]): Option[Function] = {
+  private def getFunctionNode(funcName: Ident, args: List[Expr], retType: Option[Type]): Option[Function] = {
     val nodes = currentSymbolTable.lookupAllFunctions(funcName.str)
     for (node <- nodes) {
       var matches = true
@@ -669,11 +688,15 @@ object ASTNodes {
               }
             }
           }
+          retType match {
+            case Some(retT) => if (retT != t) matches = false
+            case None =>
+          }
+          if (matches) {
+            return Some(node)
+          }
         }
-        case _ => matches = false
-      }
-      if (matches) {
-        return Some(node)
+        case _ =>
       }
     }
     None

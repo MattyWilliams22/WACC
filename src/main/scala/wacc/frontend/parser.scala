@@ -103,8 +103,8 @@ object parser {
   private lazy val rvalue: Parsley[RValue] = {
     atomic("newpair(" ~> expr <~ "," <~> expr <~ ")").map(x => NewPair(x._1, x._2)) |
       atomic((call ~> ident <~ "(") <~> option(sepBy(expr, ",")) <~ ")").map {
-        case (name: String, Some(x: List[Expr])) => Call(Ident(name, None, None), x)
-        case (name: String, None) => Call(Ident(name, None, None), List())
+        case (name: String, Some(x: List[Expr])) => Call(Ident(name, None, None), x, None)
+        case (name: String, None) => Call(Ident(name, None, None), List(), None)
       } |
       atomic(expr) |
       atomic(pairElem).map(x => PairElem(x._1, x._2)) |
