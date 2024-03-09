@@ -82,10 +82,11 @@ object ASTNodes {
 
     // Checks the semantics of a function
     def check(): Boolean = {
+
+      getFunctionNickname(ident, param_list)
+
       val tempSymbolTable: SymbolTable = currentSymbolTable
       currentSymbolTable = bodySymbolTable
-
-      ident.check()
 
       // Check the body of the function
       checkValid(body.check(), "Invalid function body", body)
@@ -583,15 +584,17 @@ object ASTNodes {
   case class Call(funcName: Ident, args: List[Expr]) extends RValue {
     // Semantically check a function call
     def check(): Boolean = {
-      // Check that the function name is semantically valid
       currentSymbolTable.canAccessVars = false
-      checkValid(funcName.check(), "Function does not exist in scope", funcName)
+      val funcForm = getFunctionNode(funcName, args)
+      funcName.nickname = funcForm match {
+        case Some(Function(_, i, _, _)) => i.nickname
+        case _ => None
+      }
       currentSymbolTable.canAccessVars = true
 
-      // Check that the arguments are semantically valid and have the correct types
-      val funcForm = funcName.getNode
+
       funcForm match {
-        case Function(_, _, params, _) =>
+        case Some(Function(_, _, params, _)) =>
           checkValid(args.length == params.length, "Invalid number of arguments", Call(funcName, args))
           for (i <- 0 to (params.length-1).min(args.length-1)) {
             checkValid(args(i).check(), "Invalid argument", args(i))
@@ -604,8 +607,63 @@ object ASTNodes {
 
     // Get the type of the function call
     def getType: Type = {
-      funcName.getType
+      getFunctionType(funcName, args)
     }
+  }
+
+  private def getFunctionType(funcName: Ident, args: List[Expr]): Type = {
+    val funcForm = getFunctionNode(funcName, args)
+    funcForm match {
+      case Some(Function(t, _, _, _)) => t
+      case _ => BaseT("ERROR")
+    }
+  }
+
+  private def getFunctionNickname(funcName: Ident, params: List[Param]): Unit = {
+    val nodes = currentSymbolTable.lookupAllFunctions(funcName.str)
+    for (node <- nodes) {
+      var matches = true
+      node match {
+        case Function(t, i, ps, _) => {
+          if (ps.length != params.length) {
+            matches = false
+          } else {
+            for (i <- ps.indices) {
+              if (ps(i)._type != params(i)._type) {
+                matches = false
+              }
+            }
+          }
+          if (matches) {
+            funcName.nickname = i.nickname
+          }
+        }
+      }
+    }
+  }
+
+  private def getFunctionNode(funcName: Ident, args: List[Expr]): Option[Function] = {
+    val nodes = currentSymbolTable.lookupAllFunctions(funcName.str)
+    for (node <- nodes) {
+      var matches = true
+      node match {
+        case Function(t, i, ps, _) => {
+          if (ps.length != args.length) {
+            matches = false
+          } else {
+            for (i <- ps.indices) {
+              if (ps(i)._type != args(i).getType) {
+                matches = false
+              }
+            }
+          }
+        }
+      }
+      if (matches) {
+        return Some(node)
+      }
+    }
+    None
   }
 
   sealed trait Expr extends RValue {
@@ -887,23 +945,8 @@ object ASTNodes {
 
     // Semantically check an identifier
     def check(): Boolean = {
-      // Check that the identifier is in the symbol table
-      val funcDef = currentSymbolTable.lookupAllFunctions(str)
-      var valid = funcDef match {
-        case Some(x) => {
-          x match {
-            case Function(t, i, _, _) => {
-              nickname = i.nickname
-              _type = Option(t)
-            }
-            case _ => return false
-          }
-          true
-        }
-        case None => false
-      }
       val varDef = currentSymbolTable.lookupAllVariables(str)
-      valid = valid || (varDef match {
+      val valid = (varDef match {
         case Some(x) => {
           x match {
             case Declare(t, i, _) => {
@@ -936,10 +979,7 @@ object ASTNodes {
           case _ =>
             BaseT("ERROR")
         }
-        case None => currentSymbolTable.lookupAllFunctions(str) match {
-          case Some(x) => x._type
-          case None => BaseT("ERROR")
-        }
+        case None => BaseT("ERROR")
       }
     }
 
@@ -947,16 +987,13 @@ object ASTNodes {
     def getNode: ASTNode = {
       currentSymbolTable.lookupAllVariables(str) match {
         case Some(x) => x
-        case None => currentSymbolTable.lookupAllFunctions(str) match {
-          case Some(x) => x
-          case None => BaseT("ERROR")
-        }
+        case None => BaseT("ERROR")
       }
     }
 
     // Check if the identifier is a function
     def isFunction: Boolean = {
-      currentSymbolTable.lookupAllFunctions(str).isDefined
+      false
     }
   }
 

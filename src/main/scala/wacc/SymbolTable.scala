@@ -1,16 +1,18 @@
 package wacc
 
 import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
 
 import wacc.ASTNodes._
 import wacc.Main.SEMANTIC_ERR_CODE
 
 class SymbolTable(var parent: Option[SymbolTable],
                   var canAccessVars: Boolean = true,
-                  val funcMap: mutable.Map[String, Function] = mutable.Map.empty[String, Function],
+                  val funcMap: mutable.Map[String, List[Function]] = mutable.Map.empty[String, List[Function]],
                   val varMap: mutable.Map[String, ASTNode] = mutable.Map.empty[String, ASTNode]) {
 
   private var varCounter: Int = 0
+  private var funcCounter: Int = 0
   private val topLevelSymbolTable: Option[SymbolTable] = None
 
   private def incrementVarCounter(): Unit = {
@@ -19,9 +21,26 @@ class SymbolTable(var parent: Option[SymbolTable],
   }
 
   private def addFunction(name: String, node: Function): String = {
-    val uniqueName = "wacc_" + node.ident.str
+    val uniqueName = "wacc_" + node.ident.str + "_" + funcCounter
+    funcCounter += 1
     node.ident.nickname = Some(uniqueName)
-    funcMap.put(name, node)
+    val funcs = funcMap.getOrElse(name, List())
+    for (func <- funcs) {
+      var matches = true
+      if (func.param_list.length != node.param_list.length) {
+        matches = false 
+      } else {
+        for (i <- func.param_list.indices) {
+          if (func.param_list(i)._type != node.param_list(i)._type) {
+            matches = false
+          }
+        }
+      }
+      if (matches) {
+        System.exit(SEMANTIC_ERR_CODE)
+      }
+    }
+    funcMap.put(name, node :: funcs)
     uniqueName
   }
 
@@ -45,9 +64,6 @@ class SymbolTable(var parent: Option[SymbolTable],
     node match {
       case prog: Program =>
         for (func <- prog.functions) {
-          if (lookupFunction(func.ident.str).isDefined) {
-            System.exit(SEMANTIC_ERR_CODE)
-          }
           addFunction(func.ident.str, func)
           val symbolTable = func.argSymbolTable
           symbolTable.parent = Option(this)
@@ -93,7 +109,9 @@ class SymbolTable(var parent: Option[SymbolTable],
     }
   }
 
-  private def lookupFunction(name: String): Option[Function] = funcMap.get(name)
+  private def lookupFunctions(name: String): List[Function] = {
+    funcMap.get(name).getOrElse(List())
+  }
   private def lookupVariable(name: String): Option[ASTNode] = varMap.get(name)
 
   def lookupAllVariables(name: String): Option[ASTNode] = {
@@ -112,17 +130,17 @@ class SymbolTable(var parent: Option[SymbolTable],
     }
   }
 
-  def lookupAllFunctions(name: String): Option[Function] = {
+  def lookupAllFunctions(name: String): List[Function] = {
     var table: Option[SymbolTable] = Option(this)
 
+    var funcs: ListBuffer[Function] = ListBuffer()
     while (table.isDefined) {
-      val res = table.get.lookupFunction(name)
-      if (res.isDefined) {
-        return res
-      }
+      val res = table.get.lookupFunctions(name)
+      funcs ++= res
       table = table.get.getParent
     }
-    None
+
+    funcs.toList
   }
 
   private def getParent: Option[SymbolTable] = parent

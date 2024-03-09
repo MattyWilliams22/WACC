@@ -83,8 +83,13 @@ object Main {
       result match {
         case Success(ast) =>
           /* Semantically Analyse AST */
+
+          println("AST before: " + ast.toString)
+
           val semanticAnalyser = new SemanticAnalyser(ast)
           semanticAnalyser.analyse()
+
+          println("AST after: " + ast.toString)
 
           /* Generate assembly instructions from AST */
           println("Generating assembly code...")
