@@ -10,12 +10,10 @@ import wacc.frontend.ErrorOutput._
 import wacc.frontend.Error._
 import wacc.frontend.{SemanticAnalyser, parser}
 import wacc.backend.ARMAssemblyPrinter
-import wacc.backend.TemporaryRegisterAllocator
-import wacc.backend.RegisterMapping._
 import wacc.backend.Register
-import wacc.backend.GraphColouring._
 import wacc.backend.ControlFlowGraph
 import wacc.extensions.Optimiser._
+import wacc.extensions.ControlFlowAnalysis._
 
 object Main {
   val FILE_ERR_CODE = 150
@@ -93,14 +91,19 @@ object Main {
 
           /* Generate assembly instructions from AST */
           println("Generating assembly code...")
-          val registerAllocator = new TemporaryRegisterAllocator
+          val registerAllocator = new BasicRegisterAllocator
           val (reg, _) = registerAllocator.allocateRegister()
-          var temporaryInstructions = generateInstructions(ast, registerAllocator, reg)
+          var assemblyInstructions = generateInstructions(ast, registerAllocator, reg)
+
+          println("assembly before: " + assemblyInstructions)
+
           val controlFlowGraph = new ControlFlowGraph
-          controlFlowGraph.buildCFG(temporaryInstructions)
-          controlFlowGraph.printCFG
-          mapInstructions(temporaryInstructions)
-          var assemblyInstructions = replaceInstructions(temporaryInstructions)
+          controlFlowGraph.buildCFG(assemblyInstructions)
+          analyseControlFlow(controlFlowGraph)
+          controlFlowGraph.printCFG()
+          assemblyInstructions = controlFlowGraph.makeInstructions()
+
+          println("assembly after: " + assemblyInstructions)
 
           /* Check if the code should be optimised */
           if (optimise) {

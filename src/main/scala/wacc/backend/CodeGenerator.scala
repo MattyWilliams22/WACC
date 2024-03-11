@@ -34,7 +34,7 @@ object CodeGenerator {
   }
 
   /* Generates instructions for an ASTNode */
-  def generateInstructions(astNode: ASTNode, allocator: TemporaryRegisterAllocator, dest: Register): ListBuffer[Instruction] = {
+  def generateInstructions(astNode: ASTNode, allocator: BasicRegisterAllocator, dest: Register): ListBuffer[Instruction] = {
 
     /* Generates instructions for a program */
     def programGenerate(funcs: List[Function], stmts: Statement): ListBuffer[Instruction] = {
@@ -48,7 +48,7 @@ object CodeGenerator {
 
       for (func <- funcs) {
         /* Assign a new register allocator for each function */
-        val funcAllocator = new TemporaryRegisterAllocator
+        val funcAllocator = new BasicRegisterAllocator
         val (funcReg, _) = funcAllocator.allocateRegister()
         val funcLines = generateInstructions(func, funcAllocator, funcReg)
         funcsLines ++= funcLines

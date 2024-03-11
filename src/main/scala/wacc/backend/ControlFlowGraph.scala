@@ -4,14 +4,20 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 class ControlFlowGraph {
-  val cfgNodes = mutable.Set[CFGNode]()
+  object CFGNodeOrdering extends Ordering[CFGNode] {
+    def compare(a: CFGNode, b: CFGNode) = a.id compare b.id
+  }
+  val cfgNodes = mutable.SortedSet[CFGNode]()(CFGNodeOrdering)
   var labelToNode = mutable.Map[String, CFGNode]()
   var labelReferences = mutable.Map[String, ListBuffer[CFGNode]]()
+  var startNode: Option[CFGNode] = None
 
   private def addLabelToNode(label: String, node: CFGNode): Unit = {
     labelToNode += (label -> node)
+    val isString = label.startsWith(".L.")
     if (labelReferences.contains(label)) {
       labelReferences(label).map(n => n.succs += node)
+      labelReferences(label).map(n => node.succs += n)
     }
   }
 
@@ -48,11 +54,20 @@ class ControlFlowGraph {
 
     for (instr <- instrs) {
       val node = getCFGNode(nodeId)
+      node.instr = Some(instr)
       
       instr match {
+        case Comment(_, _) =>
+          node.succs += getCFGNode(nodeId + 1)
+        case Command(str, _) => 
+          str match {
+            case "ltorg" =>
+            case _ => 
+              node.succs += getCFGNode(nodeId + 1)
+          }
         case Label(name) =>
           addLabelToNode(name, node)
-          nodeId -= 1
+          node.succs += getCFGNode(nodeId + 1)
         case Push(regs) =>
           regs.map(r => node.uses += r)
           node.succs += getCFGNode(nodeId + 1)
@@ -105,6 +120,8 @@ class ControlFlowGraph {
           node.uses += reg2
           checkIfOperandUsed(node, operand)
           node.succs += getCFGNode(nodeId + 1)
+        case AscizInstr(label: String, operand: AscizOperand) =>
+          addLabelToNode(label, node)
         case StrInstr(reg, operand, size) =>
           node.uses += reg
           checkIfOperandUsed(node, operand)
@@ -116,8 +133,6 @@ class ControlFlowGraph {
           node.succs += getCFGNode(nodeId + 1)
         case NewLine() => 
           getCFGNode(nodeId - 1).succs -= getCFGNode(nodeId)
-        case _ => 
-          nodeId -= 1
       }
 
       nodeId += 1
@@ -135,5 +150,16 @@ class ControlFlowGraph {
         cfgNodes += n
         n
     }
+  }
+
+  def makeInstructions(): ListBuffer[Instruction] = {
+    val instrs = ListBuffer[Instruction]()
+    for (node <- cfgNodes) {
+      node.instr match {
+        case Some(i) => instrs += i
+        case None =>
+      }
+    }
+    instrs
   }
 }
