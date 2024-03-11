@@ -6,15 +6,19 @@ import wacc.backend._
 
 object Peephole {
 
+  /* Represents a transformation that can be applied to a list of instructions */
   type Transformation = (Instruction, List[Instruction]) => (List[Instruction], Boolean)
 
-  val transformations: List[Transformation] = List(removeRedundantSubAdd, removeRedundantCmp, removeRedundantMov, combineMovAdd, combineDoubleMov, removeRedundantStrLdr, removeRedundantLdr)
+  /* List of transformations to apply to the list of instructions */
+  val transformations: List[Transformation] = List(removeRedundantSubAdd, removeRedundantCmp, removeRedundantMov, combineMovAdd, combineDoubleMov, removeRedundantStrLdr, removeRedundantLdr, combineMovSub)
 
+  /* Optimises instructions using the given transformations */
   def optimise(instr: Instruction, remaining: List[Instruction], transformations: List[Transformation] = transformations): (List[Instruction], List[Instruction]) = {
     var changed = true
     var currentInstr = instr
     var remainingInstrs = remaining
 
+    /* Apply transformations until no more changes are made, allowing for transformations to be repeated and cascaded */
     while (changed) {
       changed = false
 
@@ -49,14 +53,8 @@ object Peephole {
       cmp r0, 0
   */
   def removeRedundantCmp(instr: Instruction, remaining: List[Instruction]): (List[Instruction], Boolean) = {
-    instr match {
-      case CmpInstr(dest, ImmVal(0)) => remaining match {
-        case Nil => (instr :: remaining, false)
-        case head :: tail => head match {
-          case CmpInstr(dest, ImmVal(0)) => (remaining, true)
-          case _ => (instr :: remaining, false)
-        }
-      }
+    (instr, getInstruction(remaining)) match {
+      case (CmpInstr(dest1, ImmVal(0)), Some(CmpInstr(dest2, ImmVal(0)))) if dest1 == dest2 => (remaining, true)
       case _ => (instr :: remaining, false)
     }
   }
@@ -81,6 +79,20 @@ object Peephole {
     (instr, getInstruction(remaining)) match {
       case (Mov(dest1, ImmVal(value), _), Some(AddInstr(dest2, op1, op2, updateFlags))) if dest1 == op2 =>
         (AddInstr(dest2, op1, ImmVal(value), updateFlags) :: dropInstructions(remaining, 1), true)
+      case _ => (instr :: remaining, false)
+    }
+  }
+
+  /* Combines instructions of the form
+      mov r1, #1
+      sub r0, r0, r1
+      =>
+      sub r0, r0, #1
+  */
+  def combineMovSub(instr: Instruction, remaining: List[Instruction]): (List[Instruction], Boolean) = {
+    (instr, getInstruction(remaining)) match {
+      case (Mov(dest1, ImmVal(value), _), Some(SubInstr(dest2, op1, op2, updateFlags))) if dest1 == op2 =>
+        (SubInstr(dest2, op1, ImmVal(value), updateFlags) :: dropInstructions(remaining, 1), true)
       case _ => (instr :: remaining, false)
     }
   }

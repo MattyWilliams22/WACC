@@ -14,7 +14,9 @@ def get_return_code(fname):
   return 0
 
 def parser_code(fname):
-  if (not fname.startswith("wacc_examples/in")):
+  if fname.startswith("wacc_examples_extension/extension_invalid"):
+    return 200
+  elif (not fname.startswith("wacc_examples/in")):
     return 0
   else:
     if "syntax" in fname:
@@ -75,8 +77,16 @@ def compare_output(expected_output, actual_output):
       return False
   return True
 
+def runningExtension():
+  for arg in sys.argv:
+    if "extension" in arg:
+      return True
+  if len(sys.argv) < 2 or (len(sys.argv) == 2 and "-o" in sys.argv):
+    return True
+  return False
+
 # Adds all the tests to the tests dictionary
-def add_tests_to_dict(base):
+def add_tests_to_dict(base) :
   tests = dict()
   for directory in list_directories_in_directory(base):
     # Added valid and invalid directories to the tests dictionary
@@ -140,6 +150,8 @@ def run_tests(tests_to_run, flag):
   syntaxPasses = 0
   semanticPasses = 0
   validPasses = 0
+  extensionValidPasses = 0
+  extensionInvalidPasses = 0
 
   # Dictionary of test categories to their respective counts
   validSubTests = {
@@ -151,11 +163,16 @@ def run_tests(tests_to_run, flag):
     "array": (0, 0, "Array"),
     "if": (0, 0, "Conditional"),
     "while": (0, 0, "Loop"),
-    "scope": (0, 0, "Scope"),
-    "simple_functions": (0, 0, "Simple Function"),
+    "scope": (0, 1, "Scope"),
+    "simple_functions": (0, 3, "Simple Function"),
     "nested_functions": (0, 0, "Nested Function"),
     "runtimeErr": (0, 0, "Runtime Error"),
     "heap": (0, 0, "Heap")
+  }
+
+  # Dictionary of test categories to their respective counts
+  validExtensionSubTests = {
+    "function_overloading": (0, 0, "Function Overloading")
   }
 
   for test in tests_to_run:
@@ -171,11 +188,13 @@ def run_tests(tests_to_run, flag):
       expected = parser_code(fname)
 
       if actual == expected:
-        if fname.startswith("wacc_examples/in"):
+        if fname.startswith("wacc_examples/in") or fname.startswith("wacc_examples_extension/extension_in"):
           if "syntax" in fname:
             syntaxPasses += 1
           elif "semantic" in fname:
             semanticPasses += 1
+          elif "extension" in fname:
+            extensionInvalidPasses += 1
         else:
           # If compilation was successful, run the corresponding assembly file
           assembly_file = os.path.basename(fname).replace('.wacc', '.s')
@@ -189,18 +208,32 @@ def run_tests(tests_to_run, flag):
               validSubDir = "nested_functions"
             elif "pairs/" in fname:
               validSubDir = "heap"
+            elif "function_overloading/" in fname:
+              validSubDir = "function_overloading"
             else:
               fileNameParts = fname.split("/")
               validSubDir = fileNameParts[2]
 
-            value = validSubTests[validSubDir]
-            validSubTests[validSubDir] = (value[0], value[1] + 1, value[2])
+            if fname.startswith("wacc_examples/valid"):
+              value = validSubTests[validSubDir]
+              validSubTests[validSubDir] = (value[0], value[1] + 1, value[2])
+            else:
+              value = validExtensionSubTests[validSubDir]
+              validExtensionSubTests[validSubDir] = (value[0], value[1] + 1, value[2])
 
             # Compile the assembly file
             if compile_run_assembly_file(fname, assembly_file):
-              validPasses += 1
-              value = validSubTests[validSubDir]
-              validSubTests[validSubDir] = (value[0] + 1, value[1], value[2])
+              if "extension" in fname:
+                extensionValidPasses += 1
+              else:
+                validPasses += 1
+
+              if fname.startswith("wacc_examples/valid"):
+                value = validSubTests[validSubDir]
+                validSubTests[validSubDir] = (value[0] + 1, value[1], value[2])
+              else:
+                value = validExtensionSubTests[validSubDir]
+                validExtensionSubTests[validSubDir] = (value[0] + 1, value[1], value[2])
 
             # Remove the assembly and executable files
             os.remove(assembly_file)
@@ -213,15 +246,17 @@ def run_tests(tests_to_run, flag):
         print(f"Failed test {fname}. Expected exit code {expected} but got {actual}")
         errorTests.append(fname)
     print("")
-  return (syntaxPasses, semanticPasses, validPasses, validSubTests)
+  return (syntaxPasses, semanticPasses, validPasses, validSubTests, extensionInvalidPasses, extensionValidPasses)
 
 base = "wacc_examples/"
+extension_base = "wacc_examples_extension/"
 tests = add_tests_to_dict(base)
+tests.update(add_tests_to_dict(extension_base))
 runningTests = []
 
 # If no arguments are given, run all tests
 if len(sys.argv) < 2 or (len(sys.argv) == 2 and "-o" in sys.argv):
-  runningTests = tests["valid"] + tests["invalid"]
+  runningTests = tests["valid"] + tests["invalid"] + tests["extension_invalid"] + tests["extension_valid"]
 elif sys.argv[1] == "--syntax":
   runningTests = tests["invalid-syntax"] + tests["valid"]
 elif sys.argv[1] == "--semantic":
@@ -258,21 +293,25 @@ ignoredTests = ["wacc_examples/valid/scope/printAllTypes.wacc",
                 "wacc_examples/valid/function/simple_functions/usesArgumentWhilstMakingArgument.wacc",
                 "wacc_examples/valid/function/simple_functions/manyArgumentsChar.wacc",
                 "wacc_examples/valid/function/simple_functions/manyArgumentsInt.wacc"]
+runningTests = [test for test in runningTests if test not in ignoredTests]
 
 print("Running tests...")
 
 # Run the tests
 if "-o" in sys.argv:
-  syntaxPasses, semanticPasses, validPasses, validSubTests = run_tests(runningTests, "-o")
+  syntaxPasses, semanticPasses, validPasses, validSubTests, extensionInvalidPasses, extensionValidPasses = run_tests(runningTests, "-o")
 else:
-  syntaxPasses, semanticPasses, validPasses, validSubTests = run_tests(runningTests, "")
+  syntaxPasses, semanticPasses, validPasses, validSubTests, extensionInvalidPasses, extensionValidPasses = run_tests(runningTests, "")
 syntaxTotal = len(tests["invalid-syntax"])
 semanticTotal = len(tests["invalid-semantic"])
 validTotal = len(tests["valid"])
+extentionInvalidTotal = len(tests["extension_invalid"])
+extensionValidTotal = len(tests["extension_valid"])
+extensionTotal = extentionInvalidTotal + extensionValidTotal
 
-totalPasses = validPasses + syntaxPasses + semanticPasses
-numberTests = validTotal + syntaxTotal + semanticTotal
-numberIgnored = numberTests - len(runningTests) + len(ignoredTests)
+totalPasses = validPasses + syntaxPasses + semanticPasses + extensionValidPasses + extensionInvalidPasses
+numberTests = validTotal + syntaxTotal + semanticTotal + extensionTotal
+numberIgnored = numberTests - len(runningTests)
 
 for file in glob.glob(os.path.join(".", '*.s')):
   os.remove(file)
@@ -288,7 +327,7 @@ if len(sys.argv) >= 2 and sys.argv[1] == "--syntax":
   print(f"    Syntax: {syntaxPasses} / {syntaxTotal}")
   print(f"Total: {totalPasses} / {numberTests}")
   print(f"Ignored: {numberIgnored} tests")
-elif len(sys.argv) >=2 and sys.argv[1] == "--semantic":
+elif len(sys.argv) >= 2 and sys.argv[1] == "--semantic":
   print(f"Finished running tests. Results: ")
   print(f"    Valid: {validPasses} / {validTotal}")
 
@@ -310,6 +349,10 @@ else:
   print(f"Invalid: {syntaxPasses + semanticPasses} / {syntaxTotal + semanticTotal}")
   print(f"    Syntax: {syntaxPasses} / {syntaxTotal}")
   print(f"    Semantic: {semanticPasses} / {semanticTotal}")
+  if runningExtension():
+    print(f"Extension: {extensionValidPasses + extensionInvalidPasses} / {extensionTotal}")
+    print(f"    Invalid: {extensionInvalidPasses} / {extentionInvalidTotal}")
+    print(f"    Valid: {extensionValidPasses} / {extensionValidTotal}")
   print(f"Total: {totalPasses} / {numberTests}")
   print(f"Ignored: {numberIgnored} tests")
 

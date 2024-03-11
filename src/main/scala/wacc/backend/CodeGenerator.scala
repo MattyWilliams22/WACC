@@ -1132,7 +1132,7 @@ object CodeGenerator {
       case PairElem(func, lvalue) =>
         pairElemGenerate(func, lvalue)
 
-      case Call(funcName, args) =>
+      case Call(funcName, args, retType) =>
         callGenerate(funcName, args)
 
       case x: BinOp =>
