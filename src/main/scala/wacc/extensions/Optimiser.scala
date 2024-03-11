@@ -18,6 +18,7 @@ object Optimiser {
     }
   }
 
+  /* Removes all comments from the list of instructions */
   def removeComments(instructions: ListBuffer[Instruction]): ListBuffer[Instruction] = {
     instructions.filterNot(instr => instr.isInstanceOf[Comment])
   }
