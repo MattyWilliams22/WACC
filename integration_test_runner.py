@@ -220,7 +220,7 @@ tests = add_tests_to_dict(base)
 runningTests = []
 
 # If no arguments are given, run all tests
-if len(sys.argv) < 2:
+if len(sys.argv) < 2 or (len(sys.argv) == 2 and "-o" in sys.argv):
   runningTests = tests["valid"] + tests["invalid"]
 elif sys.argv[1] == "--syntax":
   runningTests = tests["invalid-syntax"] + tests["valid"]

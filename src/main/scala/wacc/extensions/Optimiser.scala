@@ -6,14 +6,14 @@ import scala.collection.mutable.ListBuffer
 
 object Optimiser {
 
-  def optimiseInstructions(instructions: ListBuffer[Instruction]): ListBuffer[Instruction] = {
-    val transformedInstructions = new ListBuffer[Instruction]()
-    for (i <- 0 until instructions.length) {
-      val instr = instructions(i)
-      val remaining = instructions.slice(i + 1, instructions.length).toList
-      val transformed = optimise(instr, remaining)
-      transformedInstructions ++= transformed
+  def optimiseInstructions(instructions: List[Instruction]): ListBuffer[Instruction] = {
+    instructions match {
+      case Nil => ListBuffer.from(List())
+      case instr :: remaining =>
+        val optimisedInstr = optimise(instr, remaining)
+        val transformed = ListBuffer.from(optimisedInstr._1)
+        val newRemaining = optimisedInstr._2
+        transformed ++= optimiseInstructions(newRemaining)
     }
-    transformedInstructions
   }
 }
