@@ -1,0 +1,12 @@
+# utilises the gcd function from the standard library
+
+# Output:
+# 12
+#
+
+# Program:
+
+begin
+  int x = call gcd(36, 24);
+  println x
+end

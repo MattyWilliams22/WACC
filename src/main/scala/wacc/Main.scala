@@ -11,6 +11,8 @@ import wacc.frontend.Error._
 import wacc.frontend.{SemanticAnalyser, parser}
 import wacc.backend.ARMAssemblyPrinter
 import wacc.extensions.Optimiser._
+import wacc.extensions.StandardLibrary
+import wacc.backend.PredefinedFunctions
 
 object Main {
   val FILE_ERR_CODE = 150
@@ -82,9 +84,15 @@ object Main {
       /* Parsing of expression */
       result match {
         case Success(ast) =>
+          /* Compile standard library */
+          val stdLibSymbolTable = StandardLibrary.compileStdLib()
+
           /* Semantically Analyse AST */
-          val semanticAnalyser = new SemanticAnalyser(ast)
+          val semanticAnalyser = new SemanticAnalyser(ast, Some(stdLibSymbolTable))
           semanticAnalyser.analyse()
+
+          /* Write all pre-defined functions to file */
+          PredefinedFunctions.writePredefinedFunctionsToFile()
 
           /* Generate assembly instructions from AST */
           println("Generating assembly code...")
