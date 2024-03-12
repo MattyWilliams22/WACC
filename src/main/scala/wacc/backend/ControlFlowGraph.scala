@@ -14,10 +14,8 @@ class ControlFlowGraph {
 
   private def addLabelToNode(label: String, node: CFGNode): Unit = {
     labelToNode += (label -> node)
-    val isString = label.startsWith(".L.")
     if (labelReferences.contains(label)) {
       labelReferences(label).map(n => n.succs += node)
-      labelReferences(label).map(n => node.succs += n)
     }
   }
 
@@ -42,7 +40,7 @@ class ControlFlowGraph {
 
   def printCFG(): Unit = {
     for (cfgNode <- cfgNodes) {
-      println("Node " + cfgNode.id + ":")
+      println("Node " + cfgNode.id + ": " + cfgNode.instr.getOrElse("No instruction"))
       println("Uses: " + cfgNode.uses.mkString(", "))
       println("Defs: " + cfgNode.defs.mkString(", "))
       println("-> " + cfgNode.succs.map(_.id).mkString(", "))
@@ -57,7 +55,7 @@ class ControlFlowGraph {
       node.instr = Some(instr)
       
       instr match {
-        case Comment(_, _) =>
+        case Comment(comment, _) =>
           node.succs += getCFGNode(nodeId + 1)
         case Command(str, _) => 
           str match {
@@ -68,6 +66,10 @@ class ControlFlowGraph {
         case Label(name) =>
           addLabelToNode(name, node)
           node.succs += getCFGNode(nodeId + 1)
+          name match {
+            case "main" => startNode = Some(node)
+            case _ =>
+          }
         case Push(regs) =>
           regs.map(r => node.uses += r)
           node.succs += getCFGNode(nodeId + 1)
@@ -121,7 +123,6 @@ class ControlFlowGraph {
           checkIfOperandUsed(node, operand)
           node.succs += getCFGNode(nodeId + 1)
         case AscizInstr(label: String, operand: AscizOperand) =>
-          addLabelToNode(label, node)
         case StrInstr(reg, operand, size) =>
           node.uses += reg
           checkIfOperandUsed(node, operand)
