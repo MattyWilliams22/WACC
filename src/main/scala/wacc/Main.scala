@@ -89,13 +89,17 @@ object Main {
           val semanticAnalyser = new SemanticAnalyser(ast)
           semanticAnalyser.analyse()
 
-          analyseProgram(ast)
+          println("AST before: " + ast)
+
+          val newAST = analyseProgram(ast)
+
+          println("AST after: " + newAST)
 
           /* Generate assembly instructions from AST */
           println("Generating assembly code...")
           val registerAllocator = new BasicRegisterAllocator
           val (reg, _) = registerAllocator.allocateRegister()
-          var assemblyInstructions = generateInstructions(ast, registerAllocator, reg)
+          var assemblyInstructions = generateInstructions(newAST, registerAllocator, reg)
 
           println("assembly before: " + assemblyInstructions)
 
