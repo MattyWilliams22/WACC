@@ -11,9 +11,7 @@ import wacc.frontend.Error._
 import wacc.frontend.{SemanticAnalyser, parser}
 import wacc.backend.ARMAssemblyPrinter
 import wacc.backend.Register
-import wacc.backend.ControlFlowGraph
 import wacc.extensions.Optimiser._
-import wacc.extensions.ControlFlowAnalysis._
 
 object Main {
   val FILE_ERR_CODE = 150
@@ -94,7 +92,7 @@ object Main {
           /* Perform control flow analysis on the generated AST */
           if (optimise) {
             println("AST before: " + ast)
-            val newAST = analyseProgram(ast)
+            val newAST = controlFlowOptimise(ast)
             println("AST after: " + newAST)
           }
           
@@ -107,11 +105,7 @@ object Main {
           /* Perform control flow analysis on the generated assembly instructions */
           if (optimise) {
             println("assembly before: " + assemblyInstructions)
-            val controlFlowGraph = new ControlFlowGraph
-            controlFlowGraph.buildCFG(assemblyInstructions)
-            analyseControlFlowGraph(controlFlowGraph)
-            controlFlowGraph.printCFG()
-            assemblyInstructions = controlFlowGraph.makeInstructions()
+            assemblyInstructions = controlFlowOptimise(assemblyInstructions)
             println("assembly after: " + assemblyInstructions)
           }
           
