@@ -57,7 +57,7 @@ class ControlFlowGraph {
       
       instr match {
         case Comment(comment, _) =>
-          node.succs += getCFGNode(nodeId + 1)
+          nodeId -= 1
         case Command(str, _) => 
           str match {
             case "align 4" =>
