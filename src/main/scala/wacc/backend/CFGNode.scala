@@ -3,7 +3,7 @@ package wacc.backend
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
-class CFGNode(val id: Int) {
+class CFGNode(val id: Int, var instr: Option[Instruction] = None) {
   val uses = mutable.Set[Register]()
   val defs = mutable.Set[Register]()
   val succs = mutable.Set[CFGNode]()

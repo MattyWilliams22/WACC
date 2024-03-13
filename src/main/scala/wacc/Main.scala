@@ -10,10 +10,10 @@ import wacc.frontend.ErrorOutput._
 import wacc.frontend.Error._
 import wacc.frontend.{SemanticAnalyser, parser}
 import wacc.backend.ARMAssemblyPrinter
-import wacc.backend.TemporaryRegisterAllocator
 import wacc.backend.Register
-import wacc.backend.GraphColouring._
+import wacc.backend.ControlFlowGraph
 import wacc.extensions.Optimiser._
+import wacc.extensions.ControlFlowAnalysis._
 
 object Main {
   val FILE_ERR_CODE = 150
@@ -89,18 +89,33 @@ object Main {
           val semanticAnalyser = new SemanticAnalyser(ast)
           semanticAnalyser.analyse()
 
+          println("AST before: " + ast)
+
+          val newAST = analyseProgram(ast)
+
+          println("AST after: " + newAST)
+
           /* Generate assembly instructions from AST */
           println("Generating assembly code...")
-          val registerAllocator = new TemporaryRegisterAllocator
+          val registerAllocator = new BasicRegisterAllocator
           val (reg, _) = registerAllocator.allocateRegister()
-          var temporaryInstructions = generateInstructions(ast, registerAllocator, reg)
+          var assemblyInstructions = generateInstructions(newAST, registerAllocator, reg)
 
-          var assemblyInstructions = colourInstructions(temporaryInstructions)
+          println("assembly before: " + assemblyInstructions)
+
+          val controlFlowGraph = new ControlFlowGraph
+          controlFlowGraph.buildCFG(assemblyInstructions)
+          analyseControlFlowGraph(controlFlowGraph)
+          controlFlowGraph.printCFG()
+          assemblyInstructions = controlFlowGraph.makeInstructions()
+
+          println("assembly after: " + assemblyInstructions)
 
           /* Check if the code should be optimised */
           if (optimise) {
             println("Optimising code...")
-            assemblyInstructions = optimiseInstructions(assemblyInstructions)
+            assemblyInstructions = optimiseInstructions(assemblyInstructions.toList)
+            assemblyInstructions = removeComments(assemblyInstructions)
           }
 
           /* Create a new file to store generated assembly */

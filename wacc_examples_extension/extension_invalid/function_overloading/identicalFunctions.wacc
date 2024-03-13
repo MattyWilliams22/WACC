@@ -1,0 +1,25 @@
+# attempt to overload a function with the same return type and same number and type
+# of arguments
+
+# Output:
+
+# Exit:
+# 200
+
+# Program:
+
+begin
+  int f(int x, bool y) is
+    return x
+  end
+
+  int f(int w, bool z) is
+    return w
+  end
+
+  int z = call f(6, true);
+  println z;
+
+  int w = call f(3, false);
+  println w
+end

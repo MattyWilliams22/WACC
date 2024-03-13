@@ -34,7 +34,7 @@ object CodeGenerator {
   }
 
   /* Generates instructions for an ASTNode */
-  def generateInstructions(astNode: ASTNode, allocator: TemporaryRegisterAllocator, dest: Register): ListBuffer[Instruction] = {
+  def generateInstructions(astNode: ASTNode, allocator: BasicRegisterAllocator, dest: Register): ListBuffer[Instruction] = {
 
     /* Generates instructions for a program */
     def programGenerate(funcs: List[Function], stmts: Statement): ListBuffer[Instruction] = {
@@ -48,7 +48,7 @@ object CodeGenerator {
 
       for (func <- funcs) {
         /* Assign a new register allocator for each function */
-        val funcAllocator = new TemporaryRegisterAllocator
+        val funcAllocator = new BasicRegisterAllocator
         val (funcReg, _) = funcAllocator.allocateRegister()
         val funcLines = generateInstructions(func, funcAllocator, funcReg)
         funcsLines ++= funcLines
@@ -76,7 +76,9 @@ object CodeGenerator {
       val funcLines = ListBuffer[Instruction]()
       allocator.setLocation(funcName.nickname.get, VariableLocation(R0, 0, 4, _type))
 
-      funcLines ++= List(Comment("Start of function", 4),
+      funcLines ++= List(
+        NewLine(),
+        Comment("Start of function", 4),
         Label(funcName.nickname.get),
         Push(List(FP, LR)),
         Push(List(R4, R5, R6, R7, R8, R9, R10)),
@@ -1132,7 +1134,7 @@ object CodeGenerator {
       case PairElem(func, lvalue) =>
         pairElemGenerate(func, lvalue)
 
-      case Call(funcName, args) =>
+      case Call(funcName, args, retType) =>
         callGenerate(funcName, args)
 
       case x: BinOp =>

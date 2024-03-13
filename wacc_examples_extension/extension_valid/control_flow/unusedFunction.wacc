@@ -1,0 +1,20 @@
+# the function g is not used so it is removed by the compiler during control flow analysis
+
+# Output:
+# 16
+
+# Program:
+
+begin
+  int f(int z) is
+    return z * 3 + 1
+  end
+
+  int g(int z) is
+    return z * (3 + 1)
+  end
+
+  int x = 5;
+  x = call f(x);
+  println x
+end

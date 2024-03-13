@@ -1,0 +1,16 @@
+# the if statement is reduced to the 'then' case by the compiler
+
+# Output:
+# 10
+
+# Program:
+
+begin
+  int x = 1;
+  if true then
+    x = 10
+  else
+    x = -3
+  fi;
+  println x
+end
