@@ -4,7 +4,7 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 import wacc.ASTNodes._
-import wacc.Main.SEMANTIC_ERR_CODE
+import wacc.frontend.SemanticError
 
 class SymbolTable(var parent: Option[SymbolTable],
                   var canAccessVars: Boolean = true,
@@ -40,7 +40,7 @@ class SymbolTable(var parent: Option[SymbolTable],
         matches = false
       }
       if (matches) {
-        System.exit(SEMANTIC_ERR_CODE)
+        semanticErrors += SemanticError(s"Function ${node.ident.str} defined more than once with the same parameters and return type", node)
       }
     }
     funcMap.put(name, node :: funcs)
@@ -78,7 +78,7 @@ class SymbolTable(var parent: Option[SymbolTable],
       case func: Function =>
         for (param <- func.param_list) {
           if (lookupVariable(param.ident.str).isDefined) {
-            System.exit(SEMANTIC_ERR_CODE)
+            semanticErrors += SemanticError(s"Parameter ${param.ident.str} defined more than once", param)
           }
           addVariable(param.ident.str, param)
         }
@@ -86,7 +86,7 @@ class SymbolTable(var parent: Option[SymbolTable],
 
       case Declare(_, ident, _) =>
         if (lookupVariable(ident.str).isDefined) {
-          System.exit(SEMANTIC_ERR_CODE)
+          semanticErrors += SemanticError(s"Variable ${ident.str} defined more than once in this scope", ident)
         }
         addVariable(ident.str, node)
 
