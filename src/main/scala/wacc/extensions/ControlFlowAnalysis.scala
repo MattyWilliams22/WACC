@@ -135,10 +135,11 @@ object ControlFlowAnalysis {
   }
   
   def analyseControlFlowGraph(cfg: ControlFlowGraph): Unit = {
-    var allSuccs: ListBuffer[CFGNode] = ListBuffer()
-    for (cfgNode <- cfg.cfgNodes) {
-      allSuccs ++= cfgNode.succs
-    }
+    removeUnusedNodes(cfg)
+    simplifyBranches(cfg)
+  }
+
+  private def removeUnusedNodes(cfg: ControlFlowGraph): Unit = {
     val reached = reachableFromStart(cfg)
     val nodesToRemove = cfg.cfgNodes diff reached
     for (node <- nodesToRemove) {
@@ -166,5 +167,43 @@ object ControlFlowAnalysis {
     }
     
     visited.toSet
+  }
+
+  private def simplifyBranches(cfg: ControlFlowGraph): Unit = {
+    val nodes = cfg.cfgNodes.toList
+    for (node <- nodes) {
+      checkJumpToUnconditionalJump(cfg, node)
+      checkJumpToNextInstruction(cfg, node)
+    }
+  }
+
+  private def checkJumpToUnconditionalJump(cfg: ControlFlowGraph, node: CFGNode): Unit = {
+    node.instr match {
+      case Some(BInstr(target, cond, link)) if cond != noCondition =>
+        val labelNode = cfg.labelToNode(target)
+        val nextNode = labelNode.succs.head
+        nextNode.instr match {
+          case Some(BInstr(newTarget, noCondition, _)) =>
+            node.instr = Some(BInstr(newTarget, cond, link))
+            node.succs -= labelNode
+            node.succs ++= labelNode.succs
+          case _ =>
+        }
+      case _ =>
+    }
+  }
+
+  private def checkJumpToNextInstruction(cfg: ControlFlowGraph, node: CFGNode): Unit = {
+    node.instr match {
+      case Some(BInstr(target, cond, link)) =>
+        val labelNode = cfg.labelToNode.get(target)
+        if (labelNode.isDefined && labelNode.get.id == node.id + 1) {
+          val prevNode = cfg.getCFGNode(node.id - 1)
+          prevNode.succs -= node
+          prevNode.succs += labelNode.get
+          cfg.cfgNodes -= node
+        }
+      case _ =>
+    }
   }
 }
