@@ -59,6 +59,12 @@ class ControlFlowGraph {
           node.succs += getCFGNode(nodeId + 1)
         case Command(str, _) => 
           str match {
+            case "align 4" =>
+              startNode match {
+                case None => startNode = Some(node)
+                case _ =>
+              }
+              node.succs += getCFGNode(nodeId + 1)
             case "ltorg" =>
             case _ => 
               node.succs += getCFGNode(nodeId + 1)
@@ -66,10 +72,6 @@ class ControlFlowGraph {
         case Label(name) =>
           addLabelToNode(name, node)
           node.succs += getCFGNode(nodeId + 1)
-          name match {
-            case "main" => startNode = Some(node)
-            case _ =>
-          }
         case Push(regs) =>
           regs.map(r => node.uses += r)
           node.succs += getCFGNode(nodeId + 1)
