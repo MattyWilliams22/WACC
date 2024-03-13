@@ -8,14 +8,17 @@ import wacc.backend._
 
 object ControlFlowAnalysis {
   
+  /* Analyse the program to remove unreachable code within while loops and if statements */
   def analyseProgram(prog: Program): Program = {
     Program(prog.functions.map(analyseFunction), analyseStatement(prog.statement))
   }
   
+  /* Analyse the function to remove unreachable code within while loops and if statements */
   private def analyseFunction(func: Function): Function = {
     Function(func._type, func.ident, func.param_list, analyseStatement(func.body))
   }
   
+  /* Analyse the statement to remove unreachable code within while loops and if statements, by checking the condition of the statement */
   private def analyseStatement(stmt: Statement): Statement = {
     stmt match {
       case If(cond, thenS, elseS) =>
@@ -38,6 +41,8 @@ object ControlFlowAnalysis {
     }
   }
   
+  /* Analyse the condition expression of an if statement or while loop to see if it is
+  a constant value */
   private def analyseExpr(expr: Expr): Expr = {
     expr match {
       case And(exp1, exp2) =>
@@ -78,6 +83,7 @@ object ControlFlowAnalysis {
     }
   }
 
+  /* Analyse the comparison of two expressions to see if the result is a constant value */
   private def analyseComparison(exp1: Expr, exp2: Expr, comparison: (Int, Int) => Boolean): Option[Expr] = {
     (analyseExpr(exp1), analyseExpr(exp2)) match {
       case (Ch(c1), Ch(c2)) => 
@@ -96,6 +102,7 @@ object ControlFlowAnalysis {
     }
   }
 
+  /* Analyse the less than expression to see if the result is a constant value */
   private def analyseLT(exp1: Expr, exp2: Expr): Expr = {
     analyseComparison(exp1, exp2, _ < _) match {
       case Some(expr) => expr
@@ -103,6 +110,7 @@ object ControlFlowAnalysis {
     }
   }
 
+  /* Analyse the less than or equal to expression to see if the result is a constant value */
   private def analyseLTEQ(exp1: Expr, exp2: Expr): Expr = {
     analyseComparison(exp1, exp2, _ <= _) match {
       case Some(expr) => expr
@@ -110,6 +118,7 @@ object ControlFlowAnalysis {
     }
   }
 
+  /* Analyse the greater than expression to see if the result is a constant value */
   private def analyseGT(exp1: Expr, exp2: Expr): Expr = {
     analyseComparison(exp1, exp2, _ > _) match {
       case Some(expr) => expr
@@ -117,6 +126,7 @@ object ControlFlowAnalysis {
     }
   }
 
+  /* Analyse the greater than or equal to expression to see if the result is a constant value */
   private def analyseGTEQ(exp1: Expr, exp2: Expr): Expr = {
     analyseComparison(exp1, exp2, _ >= _) match {
       case Some(expr) => expr

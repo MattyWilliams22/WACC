@@ -89,29 +89,33 @@ object Main {
           val semanticAnalyser = new SemanticAnalyser(ast)
           semanticAnalyser.analyse()
 
-          println("AST before: " + ast)
+          var newAST = ast
 
-          val newAST = analyseProgram(ast)
-
-          println("AST after: " + newAST)
-
+          /* Perform control flow analysis on the generated AST */
+          if (optimise) {
+            println("AST before: " + ast)
+            val newAST = analyseProgram(ast)
+            println("AST after: " + newAST)
+          }
+          
           /* Generate assembly instructions from AST */
           println("Generating assembly code...")
           val registerAllocator = new BasicRegisterAllocator
           val (reg, _) = registerAllocator.allocateRegister()
           var assemblyInstructions = generateInstructions(newAST, registerAllocator, reg)
 
-          println("assembly before: " + assemblyInstructions)
-
-          val controlFlowGraph = new ControlFlowGraph
-          controlFlowGraph.buildCFG(assemblyInstructions)
-          analyseControlFlowGraph(controlFlowGraph)
-          controlFlowGraph.printCFG()
-          assemblyInstructions = controlFlowGraph.makeInstructions()
-
-          println("assembly after: " + assemblyInstructions)
-
-          /* Check if the code should be optimised */
+          /* Perform control flow analysis on the generated assembly instructions */
+          if (optimise) {
+            println("assembly before: " + assemblyInstructions)
+            val controlFlowGraph = new ControlFlowGraph
+            controlFlowGraph.buildCFG(assemblyInstructions)
+            analyseControlFlowGraph(controlFlowGraph)
+            controlFlowGraph.printCFG()
+            assemblyInstructions = controlFlowGraph.makeInstructions()
+            println("assembly after: " + assemblyInstructions)
+          }
+          
+          /* Check if the code should be optimised using the peephole */
           if (optimise) {
             println("Optimising code...")
             assemblyInstructions = optimiseInstructions(assemblyInstructions.toList)
