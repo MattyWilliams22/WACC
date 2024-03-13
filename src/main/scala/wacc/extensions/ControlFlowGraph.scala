@@ -1,8 +1,9 @@
-package wacc.backend
+package wacc.extensions
 
 import scala.collection.mutable.SortedSet
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
+import wacc.backend._
 
 class ControlFlowGraph {
   object CFGNodeOrdering extends Ordering[CFGNode] {
@@ -59,7 +60,7 @@ class ControlFlowGraph {
       
       instr match {
         case Comment(comment, _) =>
-          node.succs += getCFGNode(nodeId + 1)
+          nodeId -= 1
         case Command(str, _) => 
           str match {
             case "align 4" =>

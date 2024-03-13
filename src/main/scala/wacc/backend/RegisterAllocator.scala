@@ -7,6 +7,14 @@ import wacc.ASTNodes._
 /* Represents an object that is used to allocate general purpose registers within the ARM architecture */
 sealed trait RegisterAllocator {
   def allocateRegister(): (Register, ListBuffer[Instruction])
+
+  def deallocateRegister(register: Register): Unit
+
+  def setLocation(varName: String, location: VariableLocation): Unit
+
+  def lookupLocation(varName: String): Option[VariableLocation]
+
+  def getNewRegisterAllocator(): RegisterAllocator
 }
 
 /* Represents the location of a variable in the program state, as well as the variable's type */
@@ -76,10 +84,13 @@ class BasicRegisterAllocator extends RegisterAllocator {
     /* Add the deallocated register to the list of available registers */
     availableRegisters = register :: availableRegisters
   }
+
+  def getNewRegisterAllocator(): RegisterAllocator = {
+    new BasicRegisterAllocator()
+  }
 }
 
 class TemporaryRegisterAllocator extends RegisterAllocator {
-  /* List of all registers that can be allocated by register allocator */
   private var registerCount: Int = 0
 
   /* Map of variable names to their locations where they are stored */
@@ -108,5 +119,9 @@ class TemporaryRegisterAllocator extends RegisterAllocator {
   /* Deallocate a register */
   def deallocateRegister(register: Register): Unit = {
     
+  }
+
+  def getNewRegisterAllocator(): RegisterAllocator = {
+    new TemporaryRegisterAllocator()
   }
 }

@@ -1,7 +1,10 @@
-package wacc.backend
+package wacc.extensions
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
+
+import wacc.backend.Register
+import wacc.backend.Instruction
 
 class CFGNode(val id: Int, var instr: Option[Instruction] = None) {
   val uses = mutable.Set[Register]()

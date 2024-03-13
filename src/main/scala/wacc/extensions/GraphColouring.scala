@@ -1,9 +1,9 @@
-package wacc.backend
+package wacc.extensions
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
-import wacc.backend.RegisterMapping
+import wacc.backend._
 
 object GraphColouring {
 

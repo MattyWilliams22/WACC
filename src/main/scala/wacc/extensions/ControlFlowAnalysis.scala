@@ -8,14 +8,17 @@ import wacc.backend._
 
 object ControlFlowAnalysis {
   
+  /* Analyse the program to remove unreachable code within while loops and if statements */
   def analyseProgram(prog: Program): Program = {
     Program(prog.functions.map(analyseFunction), analyseStatement(prog.statement))
   }
   
+  /* Analyse the function to remove unreachable code within while loops and if statements */
   private def analyseFunction(func: Function): Function = {
     Function(func._type, func.ident, func.param_list, analyseStatement(func.body))
   }
   
+  /* Analyse the statement to remove unreachable code within while loops and if statements, by checking the condition of the statement */
   private def analyseStatement(stmt: Statement): Statement = {
     stmt match {
       case If(cond, thenS, elseS) =>
@@ -38,6 +41,8 @@ object ControlFlowAnalysis {
     }
   }
   
+  /* Analyse the condition expression of an if statement or while loop to see if it is
+  a constant value */
   private def analyseExpr(expr: Expr): Expr = {
     expr match {
       case And(exp1, exp2) =>
@@ -78,6 +83,7 @@ object ControlFlowAnalysis {
     }
   }
 
+  /* Analyse the comparison of two expressions to see if the result is a constant value */
   private def analyseComparison(exp1: Expr, exp2: Expr, comparison: (Int, Int) => Boolean): Option[Expr] = {
     (analyseExpr(exp1), analyseExpr(exp2)) match {
       case (Ch(c1), Ch(c2)) => 
@@ -96,6 +102,7 @@ object ControlFlowAnalysis {
     }
   }
 
+  /* Analyse the less than expression to see if the result is a constant value */
   private def analyseLT(exp1: Expr, exp2: Expr): Expr = {
     analyseComparison(exp1, exp2, _ < _) match {
       case Some(expr) => expr
@@ -103,6 +110,7 @@ object ControlFlowAnalysis {
     }
   }
 
+  /* Analyse the less than or equal to expression to see if the result is a constant value */
   private def analyseLTEQ(exp1: Expr, exp2: Expr): Expr = {
     analyseComparison(exp1, exp2, _ <= _) match {
       case Some(expr) => expr
@@ -110,6 +118,7 @@ object ControlFlowAnalysis {
     }
   }
 
+  /* Analyse the greater than expression to see if the result is a constant value */
   private def analyseGT(exp1: Expr, exp2: Expr): Expr = {
     analyseComparison(exp1, exp2, _ > _) match {
       case Some(expr) => expr
@@ -117,6 +126,7 @@ object ControlFlowAnalysis {
     }
   }
 
+  /* Analyse the greater than or equal to expression to see if the result is a constant value */
   private def analyseGTEQ(exp1: Expr, exp2: Expr): Expr = {
     analyseComparison(exp1, exp2, _ >= _) match {
       case Some(expr) => expr
@@ -125,10 +135,11 @@ object ControlFlowAnalysis {
   }
   
   def analyseControlFlowGraph(cfg: ControlFlowGraph): Unit = {
-    var allSuccs: ListBuffer[CFGNode] = ListBuffer()
-    for (cfgNode <- cfg.cfgNodes) {
-      allSuccs ++= cfgNode.succs
-    }
+    removeUnusedNodes(cfg)
+    simplifyBranches(cfg)
+  }
+
+  private def removeUnusedNodes(cfg: ControlFlowGraph): Unit = {
     val reached = reachableFromStart(cfg)
     val nodesToRemove = cfg.cfgNodes diff reached
     for (node <- nodesToRemove) {
@@ -156,5 +167,43 @@ object ControlFlowAnalysis {
     }
     
     visited.toSet
+  }
+
+  private def simplifyBranches(cfg: ControlFlowGraph): Unit = {
+    val nodes = cfg.cfgNodes.toList
+    for (node <- nodes) {
+      checkJumpToUnconditionalJump(cfg, node)
+      checkJumpToNextInstruction(cfg, node)
+    }
+  }
+
+  private def checkJumpToUnconditionalJump(cfg: ControlFlowGraph, node: CFGNode): Unit = {
+    node.instr match {
+      case Some(BInstr(target, cond, link)) if cond != noCondition =>
+        val labelNode = cfg.labelToNode(target)
+        val nextNode = labelNode.succs.head
+        nextNode.instr match {
+          case Some(BInstr(newTarget, noCondition, _)) =>
+            node.instr = Some(BInstr(newTarget, cond, link))
+            node.succs -= labelNode
+            node.succs ++= labelNode.succs
+          case _ =>
+        }
+      case _ =>
+    }
+  }
+
+  private def checkJumpToNextInstruction(cfg: ControlFlowGraph, node: CFGNode): Unit = {
+    node.instr match {
+      case Some(BInstr(target, cond, link)) =>
+        val labelNode = cfg.labelToNode.get(target)
+        if (labelNode.isDefined && labelNode.get.id == node.id + 1) {
+          val prevNode = cfg.getCFGNode(node.id - 1)
+          prevNode.succs -= node
+          prevNode.succs += labelNode.get
+          cfg.cfgNodes -= node
+        }
+      case _ =>
+    }
   }
 }

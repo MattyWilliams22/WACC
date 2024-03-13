@@ -1,7 +1,9 @@
-package wacc.backend
+package wacc.extensions
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
+
+import wacc.backend._
 
 class RegisterMapping(val regMap: Map[Register, RegisterLocation]) {
 

@@ -1,7 +1,9 @@
-package wacc.backend
+package wacc.extensions
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
+
+import wacc.backend._
 
 class InterferenceNode(val reg: Register) {
   var neighbours = mutable.Set[Register]()
