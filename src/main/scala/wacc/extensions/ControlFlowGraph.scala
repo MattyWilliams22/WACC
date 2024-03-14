@@ -169,8 +169,9 @@ class ControlFlowGraph {
   }
 
   def setLiveInsAndOuts(): Unit = {
-    var hasChanged = true
+    separateFunctions()
 
+    var hasChanged = true
     while (hasChanged) {
       hasChanged = false
       for (node <- cfgNodes) {
@@ -181,6 +182,19 @@ class ControlFlowGraph {
         if (oldIn != node.liveIn || oldOut != node.liveOut) {
           hasChanged = true
         }
+      }
+    }
+  }
+
+  private def separateFunctions(): Unit = {
+    for (node <- cfgNodes) {
+      node.instr match {
+        case Some(BInstr(label, _, true)) => 
+          labelToNode.get(label) match {
+            case Some(n) => node.succs -= n
+            case None => 
+          }
+        case _ => 
       }
     }
   }

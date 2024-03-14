@@ -1,7 +1,6 @@
 package wacc.backend
 
-import wacc.backend.CodeGenerator.predefinedFunctions
-
+import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 /*
@@ -11,7 +10,7 @@ import scala.collection.mutable.ListBuffer
  * Source: https://teaching.doc.ic.ac.uk/wacc_compiler/
  * Author: Jamie Willis
  */
-object PredefinedFunctions {
+class PredefinedFunctions(val predefinedFunctions: mutable.Set[ListBuffer[Instruction]]) {
 
   /* Generates the instructions for a generic function, given the specified parameters */
   private def functionWrapper(funcName: String, funcLabel: String, stringLiterals: ListBuffer[Instruction],

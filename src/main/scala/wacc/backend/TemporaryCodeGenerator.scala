@@ -4,10 +4,10 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 import wacc.ASTNodes._
-import wacc.backend.PredefinedFunctions._
+import wacc.backend.PredefinedFunctions
 
 /* Used to generate instructions for an AST */
-object CodeGenerator {
+object TemporaryCodeGenerator {
 
   /* Used to generate a unique label */
   private var labelCounter: Int = -1
@@ -17,6 +17,8 @@ object CodeGenerator {
   
   /* Used to store the predefined functions required by the program */
   val predefinedFunctions: mutable.Set[ListBuffer[Instruction]] = mutable.Set()
+
+  val fs: PredefinedFunctions = new PredefinedFunctions(predefinedFunctions)
 
   /* Used to store the string literals required by the program */
   private val stringPool: mutable.Set[AscizInstr] = mutable.Set()
@@ -34,14 +36,15 @@ object CodeGenerator {
   }
 
   /* Generates instructions for an ASTNode */
-  def generateInstructions(astNode: ASTNode, allocator: RegisterAllocator, dest: Register): ListBuffer[Instruction] = {
+  def generateTemporaryInstructions(astNode: ASTNode, allocator: RegisterAllocator, dest: Register): ListBuffer[Instruction] = {
 
     /* Generates instructions for a program */
     def programGenerate(funcs: List[Function], stmts: Statement): ListBuffer[Instruction] = {
       val programLines = ListBuffer[Instruction]()
 
       /* Generates instructions for the main body of the program */
-      val stmtLines = generateInstructions(stmts, allocator, dest)
+      val (newDest, _) = allocator.allocateRegister()
+      val stmtLines = generateTemporaryInstructions(stmts, allocator, newDest)
 
       /* Generates instructions for the functions */
       val funcsLines = ListBuffer[Instruction]()
@@ -50,7 +53,7 @@ object CodeGenerator {
         /* Assign a new register allocator for each function */
         val funcAllocator = allocator.getNewRegisterAllocator()
         val (funcReg, _) = funcAllocator.allocateRegister()
-        val funcLines = generateInstructions(func, funcAllocator, funcReg)
+        val funcLines = generateTemporaryInstructions(func, funcAllocator, funcReg)
         funcsLines ++= funcLines
       }
 
@@ -81,23 +84,23 @@ object CodeGenerator {
         Comment("Start of function", 4),
         Label(funcName.nickname.get),
         Push(List(FP, LR)),
-        Push(List(R4, R5, R6, R7, R8, R9, R10)),
         Mov(FP, SP),
         SubInstr(SP, SP, ImmVal(4 * params.length - 4))
       )
       /* Generates instructions for the function parameters */
       funcLines ++= paramsGenerate(params)
       /* Generate instructions for function body */
+      val (newDest, _) = allocator.allocateRegister()
       body match {
         case Statements(stmts) =>
           stmts.foreach { stmt =>
             funcLines += Push(List(R0, R1, R2, R3))
-            funcLines ++= generateInstructions(stmt, allocator, dest)
+            funcLines ++= generateTemporaryInstructions(stmt, allocator, newDest)
             funcLines += Pop(List(R0, R1, R2, R3))
           }
         case _ =>
           funcLines += Push(List(R0, R1, R2, R3))
-          funcLines ++= generateInstructions(body, allocator, dest)
+          funcLines ++= generateTemporaryInstructions(body, allocator, newDest)
           funcLines += Pop(List(R0, R1, R2, R3))
       }
       funcLines += Command("ltorg", 4)
@@ -113,23 +116,18 @@ object CodeGenerator {
         val (next, rLines) = allocator.allocateRegister()
         i match {
           case 0 =>
-            paramLines ++= rLines
             paramLines += Mov(next, R0)
             allocator.setLocation(param.ident.nickname.get, VariableLocation(next, 0, 4, param._type))
           case 1 =>
-            paramLines ++= rLines
             paramLines += Mov(next, R1)
             allocator.setLocation(param.ident.nickname.get, VariableLocation(next, 0, 4, param._type))
           case 2 =>
-            paramLines ++= rLines
             paramLines += Mov(next, R2)
             allocator.setLocation(param.ident.nickname.get, VariableLocation(next, 0, 4, param._type))
           case 3 =>
-            paramLines ++= rLines
             paramLines += Mov(next, R3)
             allocator.setLocation(param.ident.nickname.get, VariableLocation(next, 0, 4, param._type))
           case _ =>
-            paramLines ++= rLines
             paramLines += Ldr(next, Addr(FP, ImmVal(4 * (params.length - i - 1))))
             allocator.setLocation(param.ident.nickname.get, VariableLocation(next, 0, 4, param._type))
         }
@@ -144,13 +142,12 @@ object CodeGenerator {
       /* Allocate the register newDest for the identifier */
       val (newDest, rLines) = allocator.allocateRegister()
       allocator.setLocation(id.nickname.get, VariableLocation(newDest, 0, 4, _type))
-      val idLines = generateInstructions(id, allocator, newDest)
+      val idLines = generateTemporaryInstructions(id, allocator, newDest)
 
       /* Generate instructions to store the rvalue in newDest */
-      val valueLines = generateInstructions(value, allocator, newDest)
+      val valueLines = generateTemporaryInstructions(value, allocator, newDest)
 
       declareLines += Comment("Start of declare", 4)
-      declareLines ++= rLines
       declareLines ++= idLines
       declareLines ++= valueLines
 
@@ -162,7 +159,8 @@ object CodeGenerator {
       val assignLines = ListBuffer[Instruction]()
 
       /* Generate instructions to load rvalue into dest register */
-      val rvalueLines = generateInstructions(rvalue, allocator, dest)
+      val (newDest, _) = allocator.allocateRegister()
+      val rvalueLines = generateTemporaryInstructions(rvalue, allocator, newDest)
 
       /* Get the target register which contains the lvalue */
       val (beforeLines, afterLines, target) = getLvalueLocation(lvalue)
@@ -171,7 +169,7 @@ object CodeGenerator {
       assignLines += Comment("Start of assign", 4)
       assignLines ++= rvalueLines
       assignLines ++= beforeLines
-      assignLines += Mov(target, dest)
+      assignLines += Mov(target, newDest)
       assignLines ++= afterLines
       assignLines += Comment("End of assign", 4)
 
@@ -193,7 +191,7 @@ object CodeGenerator {
           (before, after, target)
         /* Returns register location of pair element as well as instructions for loading and storing to the pair */
         case PairElem(func, lvalue) =>
-          predefinedFunctions += errorNullFunc
+          predefinedFunctions += fs.errorNullFunc
           val (newDest, rLines) = allocator.allocateRegister()
           func match {
             case "fst" =>
@@ -254,7 +252,7 @@ object CodeGenerator {
 
     /* Recursively returns the register location of array element as well as instructions for loading and storing to the array */
     def getArrayElemLocation(arrayType: Type, arrayReg: Register, indices: List[Expr]): (ListBuffer[Instruction], ListBuffer[Instruction], Register) = {
-      predefinedFunctions += arrayLoad4Func
+      predefinedFunctions += fs.arrayLoad4Func
       if (indices.isEmpty) {
         return (ListBuffer(), ListBuffer(), arrayReg)
       }
@@ -263,7 +261,7 @@ object CodeGenerator {
       val (indexReg, r1Lines) = checkRegister(allocator.allocateRegister())
       val (elemReg, r2Lines) = checkRegister(allocator.allocateRegister())
 
-      val indexLines = generateInstructions(indices.head, allocator, indexReg)
+      val indexLines = generateTemporaryInstructions(indices.head, allocator, indexReg)
       beforeLines ++= r1Lines
       beforeLines ++= r2Lines
       beforeLines ++= indexLines
@@ -279,10 +277,10 @@ object CodeGenerator {
       beforeLines ++= before
       val storeFunc = getTypeSize(reduceType(arrayType)) match {
         case 1 =>
-          predefinedFunctions += arrayStoreFunc(OneByte)
+          predefinedFunctions += fs.arrayStoreFunc(OneByte)
           "_arrStore1"
         case _ =>
-          predefinedFunctions += arrayStoreFunc(FourBytes)
+          predefinedFunctions += fs.arrayStoreFunc(FourBytes)
           "_arrStore4"
       }
       afterLines ++= after
@@ -314,19 +312,21 @@ object CodeGenerator {
       val readLines = ListBuffer[Instruction]()
       val _type = lvalue.getType match {
         case BaseT("int") =>
-          predefinedFunctions += readIntFunc
+          predefinedFunctions += fs.readIntFunc
           "i"
         case BaseT("char") =>
-          predefinedFunctions += readCharFunc
+          predefinedFunctions += fs.readCharFunc
           "c"
         case _ => ""
       }
       val (beforeLines, afterLines, target) = getLvalueLocation(lvalue)
+      val (newDest, _) = allocator.allocateRegister()
 
       readLines += Comment("Start of read", 4)
       readLines ++= beforeLines
-      readLines ++= List(Mov(dest, target),
-        Mov(R0, dest),
+      readLines ++= List(
+        Mov(newDest, target),
+        Mov(R0, newDest),
         BInstr(s"_read${_type}", noCondition, storeReturnAddr = true),
         Mov(target, R0))
       readLines ++= afterLines
@@ -339,14 +339,17 @@ object CodeGenerator {
       val ifLines = ListBuffer[Instruction]()
       val elseLabel = getUniqueLabel
       val endLabel = getUniqueLabel
-      val condLines = generateInstructions(cond, allocator, dest)
-      val thenLines = generateInstructions(thenS, allocator, dest)
-      val elseLines = generateInstructions(elseS, allocator, dest)
+      val (condReg, _) = allocator.allocateRegister()
+      val (thenReg, _) = allocator.allocateRegister()
+      val (elseReg, _) = allocator.allocateRegister()
+      val condLines = generateTemporaryInstructions(cond, allocator, condReg)
+      val thenLines = generateTemporaryInstructions(thenS, allocator, thenReg)
+      val elseLines = generateTemporaryInstructions(elseS, allocator, elseReg)
 
       ifLines += Comment("Start of if statement", 4)
       ifLines ++= condLines
       ifLines ++= List(Comment("If statement condition logic", 4),
-        CmpInstr(dest, ImmVal(1)),
+        CmpInstr(condReg, ImmVal(1)),
         BInstr(elseLabel, NEcond))
       ifLines ++= thenLines
       ifLines ++= List(BInstr(endLabel),
@@ -364,17 +367,17 @@ object CodeGenerator {
       val whileLines = ListBuffer[Instruction]()
       val startLabel = getUniqueLabel
       val endLabel = getUniqueLabel
-      val condLines = generateInstructions(cond, allocator, dest)
-      val (newDest, rLines) = allocator.allocateRegister()
-      val stmtLines = generateInstructions(stmt, allocator, newDest)
+      val (condReg, _) = allocator.allocateRegister()
+      val condLines = generateTemporaryInstructions(cond, allocator, condReg)
+      val (newDest, _) = allocator.allocateRegister()
+      val stmtLines = generateTemporaryInstructions(stmt, allocator, newDest)
 
       whileLines ++= List(Comment("Start of while loop", 4),
         Label(startLabel))
       whileLines ++= condLines
       whileLines ++= List(Comment("While loop condition logic", 4),
-        CmpInstr(dest, ImmVal(1)),
+        CmpInstr(condReg, ImmVal(1)),
         BInstr(endLabel, NEcond))
-      whileLines ++= rLines
       whileLines ++= stmtLines
       whileLines ++= List(BInstr(startLabel),
         Label(endLabel),
@@ -386,7 +389,8 @@ object CodeGenerator {
     /* Generates instructions for a new scope */
     def scopeGenerate(body: Statement): ListBuffer[Instruction] = {
       val scopeLines = ListBuffer[Instruction]()
-      val bodyLines = generateInstructions(body, allocator, dest)
+      val (bodyReg, _) = allocator.allocateRegister()
+      val bodyLines = generateTemporaryInstructions(body, allocator, bodyReg)
 
       scopeLines += Comment("Start of new scope", 4)
       scopeLines ++= bodyLines
@@ -398,37 +402,39 @@ object CodeGenerator {
     /* Generates instructions for a free statement */
     def freeGenerate(exp: Expr): ListBuffer[Instruction] = {
       val freeLines = ListBuffer[Instruction]()
-      predefinedFunctions += freeFunc
-      val expLines = generateInstructions(exp, allocator, dest)
+      predefinedFunctions += fs.freeFunc
+      val (expReg, _) = allocator.allocateRegister()
+      val expLines = generateTemporaryInstructions(exp, allocator, expReg)
       val (_type, tLines) = exp.getType match {
         case PairT(_, _) =>
-          predefinedFunctions += freePairFunc
+          predefinedFunctions += fs.freePairFunc
           ("pair", List())
         case ArrayT(_, _) =>
-          ("", List(SubInstr(dest, dest, ImmVal(4))))
+          ("", List(SubInstr(expReg, expReg, ImmVal(4))))
         case _ => ("", List())
       }
 
       freeLines += Comment("Start of free", 4)
       freeLines ++= expLines
       freeLines ++= tLines
-      freeLines ++= List(Mov(R0, dest),
-        BInstr("_free" + _type, noCondition, storeReturnAddr = true))
-
+      freeLines ++= List(
+        Mov(R0, expReg),
+        BInstr("_free" + _type, noCondition, storeReturnAddr = true)
+      )
       freeLines
     }
 
     /* Generates instructions for a return statement */
     def returnGenerate(exp: Expr): ListBuffer[Instruction] = {
       val returnLines = ListBuffer[Instruction]()
-      val expLines = generateInstructions(exp, allocator, dest)
+      val (expReg, _) = allocator.allocateRegister()
+      val expLines = generateTemporaryInstructions(exp, allocator, expReg)
 
       returnLines += Comment("Start of return", 4)
       returnLines ++= expLines
       returnLines ++= List(Comment("Return Logic", 4),
-        Mov(R0, dest),
+        Mov(R0, expReg),
         Mov(SP, FP),
-        Pop(List(R4, R5, R6, R7, R8, R9, R10)),
         Pop(List(FP, PC)))
 
       returnLines
@@ -436,14 +442,15 @@ object CodeGenerator {
 
     /* Generates instructions for an exit statement */
     def exitGenerate(exp: Expr): ListBuffer[Instruction] = {
-      predefinedFunctions += exitFunc
+      predefinedFunctions += fs.exitFunc
       val exitLines = ListBuffer[Instruction]()
-      val expLines = generateInstructions(exp, allocator, dest)
+      val (expReg, _) = allocator.allocateRegister()
+      val expLines = generateTemporaryInstructions(exp, allocator, expReg)
 
       exitLines += Comment("Start of exit", 4)
       exitLines ++= expLines
       exitLines ++= List(Comment("Exit Logic", 4),
-        Mov(R0, dest),
+        Mov(R0, expReg),
         BInstr("_exit", noCondition, storeReturnAddr = true),
         Mov(SP, FP),
         Pop(List(FP, PC)))
@@ -478,39 +485,40 @@ object CodeGenerator {
 
       val t = _type match {
         case BaseT("int") =>
-          predefinedFunctions += printCharOrIntFunc(false)
+          predefinedFunctions += fs.printCharOrIntFunc(false)
           "i"
         case BaseT("char") =>
-          predefinedFunctions += printCharOrIntFunc(true)
+          predefinedFunctions += fs.printCharOrIntFunc(true)
           "c"
         case PairLiter(_) =>
-          predefinedFunctions += printPairFunc
+          predefinedFunctions += fs.printPairFunc
           "p"
         case BaseT("string") =>
-          predefinedFunctions += printStrFunc
+          predefinedFunctions += fs.printStrFunc
           "s"
         case ArrayT(BaseT("char"), 1) =>
-          predefinedFunctions += printStrFunc
+          predefinedFunctions += fs.printStrFunc
           "s"
         case BaseT("bool") =>
-          predefinedFunctions += printBoolFunc
+          predefinedFunctions += fs.printBoolFunc
           "b"
         case PairT(_, _) =>
-          predefinedFunctions += printPairFunc
+          predefinedFunctions += fs.printPairFunc
           "p"
         case ArrayT(_, _) =>
-          predefinedFunctions += printPairFunc
+          predefinedFunctions += fs.printPairFunc
           "p"
         case _ => "error"
       }
 
       val printLines = ListBuffer[Instruction]()
-      val expLines = generateInstructions(exp, allocator, dest)
+      val (expReg, _) = allocator.allocateRegister()
+      val expLines = generateTemporaryInstructions(exp, allocator, expReg)
 
       printLines += Comment("Start of print", 4)
       printLines ++= expLines
       printLines ++= List(Comment("Print Logic", 4),
-        Mov(R0, dest),
+        Mov(R0, expReg),
         BInstr(s"_print$t", noCondition, storeReturnAddr = true))
 
       printLines
@@ -518,7 +526,7 @@ object CodeGenerator {
 
     /* Generates instructions for a println statement */
     def printlnGenerate(exp: Expr): ListBuffer[Instruction] = {
-      predefinedFunctions += printLnFunc
+      predefinedFunctions += fs.printLnFunc
       val printlnLines = ListBuffer[Instruction]()
 
       printlnLines ++= printGenerate(exp)
@@ -529,14 +537,14 @@ object CodeGenerator {
 
     /* Generates instructions to create an array literal */
     def arrayLiterGenerate(elems: List[Expr]): ListBuffer[Instruction] = {
-      predefinedFunctions += mallocFunc
+      predefinedFunctions += fs.mallocFunc
       val arrayLiterLines = ListBuffer[Instruction]()
       val (pointer, r1Lines) = allocator.allocateRegister()
       val arrayLines = new ListBuffer[Instruction]()
       var totalSize = 0
       for (elem <- elems) {
         val (next, r2Lines) = allocator.allocateRegister()
-        val elemLines = generateInstructions(elem, allocator, next)
+        val elemLines = generateTemporaryInstructions(elem, allocator, next)
         val size = getSize(elem)
         val sizeToStore = size match {
           case 1 => OneByte
@@ -545,9 +553,10 @@ object CodeGenerator {
         totalSize += size
         arrayLines ++= r2Lines
         arrayLines ++= elemLines
-        arrayLines ++= List(Mov(dest, next),
-          StrInstr(dest, Addr(pointer, ImmVal(totalSize - size)), sizeToStore))
-
+        arrayLines ++= List(
+          Mov(dest, next),
+          StrInstr(dest, Addr(pointer, ImmVal(totalSize - size)), sizeToStore)
+        )
         allocator.deallocateRegister(next)
       }
       totalSize += 4
@@ -587,7 +596,7 @@ object CodeGenerator {
 
     /* Generates instructions to create a new pair */
     def newPairGenerate(exp1: Expr, exp2: Expr): ListBuffer[Instruction] = {
-      predefinedFunctions += mallocFunc
+      predefinedFunctions += fs.mallocFunc
       val newPairLines = ListBuffer[Instruction]()
       val (next, rLines) = allocator.allocateRegister()
 
@@ -598,9 +607,9 @@ object CodeGenerator {
         BInstr("_malloc", noCondition, storeReturnAddr = true),
         Mov(dest, R0),
       )
-      newPairLines ++= generateInstructions(exp1, allocator, next)
+      newPairLines ++= generateTemporaryInstructions(exp1, allocator, next)
       newPairLines += StrInstr(next, Addr(dest, ImmVal(0)))
-      newPairLines ++= generateInstructions(exp2, allocator, next)
+      newPairLines ++= generateTemporaryInstructions(exp2, allocator, next)
       newPairLines ++= List(
         StrInstr(next, Addr(dest, ImmVal(4))),
         Comment("End of new pair creation", 4)
@@ -620,14 +629,14 @@ object CodeGenerator {
     /* Generates instructions for an expression */
     def generateExpLines(x: ASTNode): (ListBuffer[Instruction], ListBuffer[Instruction], Register) = {
       val (next, rLines) = allocator.allocateRegister()
-      val expLines = generateInstructions(x, allocator, next)
+      val expLines = generateTemporaryInstructions(x, allocator, next)
       allocator.deallocateRegister(next)
       (expLines, rLines, next)
     }
 
     /* Generates instructions for extracting a pair element */
     def pairElemGenerate(func: String, lvalue: LValue): ListBuffer[Instruction] = {
-      predefinedFunctions += errorNullFunc
+      predefinedFunctions += fs.errorNullFunc
       val pairElemLines = ListBuffer[Instruction]()
       val (lvalueLines, rLines, next) = getExpLines(Left(lvalue))
       val funcLines = func match {
@@ -654,32 +663,30 @@ object CodeGenerator {
     }
 
     /* Generates instructions to evaluate two expressions */
-    def addMulGenerate(exp1: Expr, exp2: Expr): (ListBuffer[Instruction], ListBuffer[Instruction]) = {
-      predefinedFunctions += errorOverflowFunc
-      val exp1Lines = generateInstructions(exp1, allocator, dest)
-      val exp2Lines = generateInstructions(exp2, allocator, dest)
+    def addMulGenerate(exp1: Expr, exp2: Expr, expReg: Register): (ListBuffer[Instruction], ListBuffer[Instruction]) = {
+      predefinedFunctions += fs.errorOverflowFunc
+      val exp1Lines = generateTemporaryInstructions(exp1, allocator, expReg)
+      val exp2Lines = generateTemporaryInstructions(exp2, allocator, expReg)
       (exp1Lines, exp2Lines)
     }
 
     /* Generates instructions for a multiplication expression */
     def mulGenerate(exp1: Expr, exp2: Expr): ListBuffer[Instruction] = {
       val mulLines = ListBuffer[Instruction]()
-      val (exp1Lines, exp2Lines) = addMulGenerate(exp1, exp2)
-      val (val1, r1Lines) = allocator.allocateRegister()
-      val (val2, r2Lines) = allocator.allocateRegister()
-      val (hi, r3Lines) = allocator.allocateRegister()
+      val (expReg, _) = allocator.allocateRegister()
+      val (exp1Lines, exp2Lines) = addMulGenerate(exp1, exp2, expReg)
+      val (val1, _) = allocator.allocateRegister()
+      val (val2, _) = allocator.allocateRegister()
+      val (hi, _) = allocator.allocateRegister()
       allocator.deallocateRegister(hi)
       allocator.deallocateRegister(val1)
       allocator.deallocateRegister(val2)
 
       mulLines += Comment("Start of multiplication", 4)
       mulLines ++= exp1Lines
-      mulLines += Push(List(dest))
+      mulLines += Push(List(expReg))
       mulLines ++= exp2Lines
-      mulLines += Push(List(dest))
-      mulLines ++= r1Lines
-      mulLines ++= r2Lines
-      mulLines ++= r3Lines
+      mulLines += Push(List(expReg))
       mulLines ++= List(
         Pop(List(val1, val2).sortBy(_.number)),
         SmullInstr(dest, hi, val1, val2),
@@ -692,17 +699,17 @@ object CodeGenerator {
     }
 
     /* Generates instructions for a division or modulo expression */
-    def divModGenerate(exp1: Expr, exp2: Expr): ListBuffer[Instruction] = {
-      predefinedFunctions += errorDivByZeroFunc
+    def divModGenerate(exp1: Expr, exp2: Expr, expReg: Register): ListBuffer[Instruction] = {
+      predefinedFunctions += fs.errorDivByZeroFunc
       val divModLines = ListBuffer[Instruction]()
-      val exp1Lines = generateInstructions(exp1, allocator, dest)
-      val exp2Lines = generateInstructions(exp2, allocator, dest)
+      val exp1Lines = generateTemporaryInstructions(exp1, allocator, expReg)
+      val exp2Lines = generateTemporaryInstructions(exp2, allocator, expReg)
 
       divModLines ++= exp1Lines
-      divModLines += Mov(R0, dest)
+      divModLines += Mov(R0, expReg)
       divModLines ++= exp2Lines
       divModLines ++= List(
-        Mov(R1, dest),
+        Mov(R1, expReg),
         CmpInstr(R1, ImmVal(0)),
         BInstr("_errDivZero", EQcond, storeReturnAddr = true),
         BInstr("__aeabi_idivmod", noCondition, storeReturnAddr = true),
@@ -713,10 +720,11 @@ object CodeGenerator {
 
     /* Generates instructions for a division expression */
     def divGenerate(exp1: Expr, exp2: Expr): ListBuffer[Instruction] = {
-      val divLines = divModGenerate(exp1, exp2)
+      val (divReg, _) = allocator.allocateRegister()
+      val divLines = ListBuffer[Instruction]()
 
       divLines += Comment("Start of division", 4)
-      divLines ++= divModGenerate(exp1, exp2)
+      divLines ++= divModGenerate(exp1, exp2, divReg)
       divLines += Mov(dest, R0)
 
       divLines
@@ -724,10 +732,11 @@ object CodeGenerator {
 
     /* Generates instructions for a modulo expression */
     def modGenerate(exp1: Expr, exp2: Expr): ListBuffer[Instruction] = {
-      val modLines = divModGenerate(exp1, exp2)
+      val (modReg, _) = allocator.allocateRegister()
+      val modLines = ListBuffer[Instruction]()
 
       modLines += Comment("Start of modulo", 4)
-      modLines ++= divModGenerate(exp1, exp2)
+      modLines ++= divModGenerate(exp1, exp2, modReg)
       modLines += Mov(dest, R1)
 
       modLines
@@ -736,18 +745,19 @@ object CodeGenerator {
     /* Generates instructions for an addition expression */
     def addGenerate(exp1: Expr, exp2: Expr): ListBuffer[Instruction] = {
       val addLines = ListBuffer[Instruction]()
-      val (exp1Lines, exp2Lines) = addMulGenerate(exp1, exp2)
+      val (addReg, _) = allocator.allocateRegister()
+      val (exp1Lines, exp2Lines) = addMulGenerate(exp1, exp2, addReg)
       val (next, rLines) = allocator.allocateRegister()
       allocator.deallocateRegister(next)
 
       addLines += Comment("Start of addition expression", 4)
       addLines ++= exp2Lines
-      addLines += Push(List(dest))
+      addLines += Push(List(addReg))
       addLines ++= exp1Lines
       addLines ++= rLines
       addLines ++= List(
         Pop(List(next)),
-        AddInstr(dest, dest, next, updateFlags = true),
+        AddInstr(dest, addReg, next, updateFlags = true),
         BInstr("_errOverflow", VScond, storeReturnAddr = true),
         Comment("End of addition expression", 4)
       )
@@ -757,16 +767,16 @@ object CodeGenerator {
 
     /* Generates instructions to evaluate exp1 into dest and exp2 into next */
     def exprsGenerateHelper(exp1: Expr, exp2: Expr): (ListBuffer[Instruction], ListBuffer[Instruction], ListBuffer[Instruction], Register) = {
-      val exp1Lines = generateInstructions(exp1, allocator, dest)
+      val exp1Lines = generateTemporaryInstructions(exp1, allocator, dest)
       val (next, rLines) = allocator.allocateRegister()
-      val exp2Lines = generateInstructions(exp2, allocator, next)
+      val exp2Lines = generateTemporaryInstructions(exp2, allocator, next)
       allocator.deallocateRegister(next)
       (exp1Lines, rLines, exp2Lines, next)
     }
 
     /* Generates instructions for a subtraction expression */
     def subGenerate(exp1: Expr, exp2: Expr): ListBuffer[Instruction] = {
-      predefinedFunctions += errorOverflowFunc
+      predefinedFunctions += fs.errorOverflowFunc
       val subLines = ListBuffer[Instruction]()
       val (exp1Lines, rLines, exp2Lines, next) = exprsGenerateHelper(exp1, exp2)
 
@@ -839,7 +849,7 @@ object CodeGenerator {
     /* Generates instructions for a not expression */
     def notGenerate(exp: Expr): ListBuffer[Instruction] = {
       val notLines = ListBuffer[Instruction]()
-      val expLines = generateInstructions(exp, allocator, dest)
+      val expLines = generateTemporaryInstructions(exp, allocator, dest)
 
       notLines += Comment("Start of not expression", 4)
       notLines ++= expLines
@@ -855,7 +865,7 @@ object CodeGenerator {
 
     /* Generates instructions for a negation expression */
     def negGenerate(exp: Expr): ListBuffer[Instruction] = {
-      predefinedFunctions += errorOverflowFunc
+      predefinedFunctions += fs.errorOverflowFunc
       val negLines = ListBuffer[Instruction]()
       val (expLines, rLines, tempReg) = getExpLines(Right(exp))
 
@@ -875,7 +885,7 @@ object CodeGenerator {
     def lenGenerate(exp: Expr): ListBuffer[Instruction] = {
       val lenLines = ListBuffer[Instruction]()
       val (next, rLines) = allocator.allocateRegister()
-      val expLines = generateInstructions(exp, allocator, next)
+      val expLines = generateTemporaryInstructions(exp, allocator, next)
       allocator.deallocateRegister(next)
       lenLines += Comment("Start of length expression", 4)
       lenLines ++= rLines
@@ -891,7 +901,7 @@ object CodeGenerator {
     /* Generates instructions for an ord expression */
     def ordGenerate(exp: Expr): ListBuffer[Instruction] = {
       val ordLines = ListBuffer[Instruction]()
-      val expLines = generateInstructions(exp, allocator, dest)
+      val expLines = generateTemporaryInstructions(exp, allocator, dest)
 
       ordLines += Comment("Start of ord", 4)
       ordLines ++= expLines
@@ -902,10 +912,10 @@ object CodeGenerator {
 
     /* Generates instructions for a chr expression */
     def chrGenerate(exp: Expr): ListBuffer[Instruction] = {
-      predefinedFunctions += errorBadCharFunc
+      predefinedFunctions += fs.errorBadCharFunc
       val chrLines = ListBuffer[Instruction]()
       val (next, rLines) = allocator.allocateRegister()
-      val expLines = generateInstructions(exp, allocator, dest)
+      val expLines = generateTemporaryInstructions(exp, allocator, dest)
 
       chrLines += Comment("Start of chr", 4)
       chrLines ++= expLines
@@ -1003,16 +1013,16 @@ object CodeGenerator {
 
     /* Generates instructions for loading an array element into dest */
     def arrayElemGenerate(id: Ident, indices: List[Expr]): ListBuffer[Instruction] = {
-      predefinedFunctions += arrayLoad4Func
+      predefinedFunctions += fs.arrayLoad4Func
       val arrayElemLines = ListBuffer[Instruction]()
       /* Load the array pointer into the dest register */
-      val idLines = generateInstructions(id, allocator, dest)
+      val idLines = generateTemporaryInstructions(id, allocator, dest)
       val indicesLines = new ListBuffer[Instruction]()
       /* For each index in the list of indices, load the array element into the dest register */
       for (index <- indices) {
         /* Check if allocated register is R10, R3 or R8 and allocate a new register if it is */
         val (next, rLines) = checkRegister(allocator.allocateRegister())
-        val indexLines = generateInstructions(index, allocator, next)
+        val indexLines = generateTemporaryInstructions(index, allocator, next)
         indicesLines ++= rLines
         indicesLines ++= indexLines
         indicesLines ++= List(
@@ -1037,11 +1047,11 @@ object CodeGenerator {
 
       callLines ++= List (
         Comment ("Start of function call", 4),
-        Push (List (R1, R2, R3) ) )
+        Push (List(R1, R2, R3, R4, R5, R6, R7, R8, R9, R10)))
       callLines ++= argsGenerate (args)
       callLines ++= List (
         BInstr (funcName.nickname.get, noCondition, storeReturnAddr = true),
-        Pop (List (R1, R2, R3) ),
+        Pop (List(R1, R2, R3, R4, R5, R6, R7, R8, R9, R10)),
         Mov (dest, R0),
         Comment ("End of function call", 4)
       )
@@ -1055,7 +1065,7 @@ object CodeGenerator {
       for (i <- args.indices) {
         val arg = args(i)
         val (next, rLines) = allocator.allocateRegister()
-        val argLines = generateInstructions(arg, allocator, next)
+        val argLines = generateTemporaryInstructions(arg, allocator, next)
         argsLines ++= rLines
         argsLines ++= argLines
         allocator.deallocateRegister(next)
@@ -1107,7 +1117,11 @@ object CodeGenerator {
 
       case Statements(stmts) =>
         /* Generates instructions for each statement in the list of statements and concatenates them */
-        val stmtLines = ListBuffer() ++= stmts.flatMap(generateInstructions(_, allocator, dest))
+        var stmtLines = ListBuffer[Instruction]()
+        for (stmt <- stmts) {
+          val (stmtReg, _) = allocator.allocateRegister()
+          stmtLines ++= generateTemporaryInstructions(stmt, allocator, stmtReg)
+        }
         stmtLines
 
       case Free(exp) =>

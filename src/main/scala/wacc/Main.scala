@@ -4,8 +4,10 @@ import java.io.{File, PrintWriter}
 import scala.io.Source
 import parsley.{Failure, Result, Success}
 import wacc.ASTNodes._
-import wacc.backend.CodeGenerator._
+import wacc.backend.BasicCodeGenerator._
+import wacc.backend.TemporaryCodeGenerator._
 import wacc.backend.BasicRegisterAllocator
+import wacc.backend.TemporaryRegisterAllocator
 import wacc.frontend.ErrorOutput._
 import wacc.frontend.Error._
 import wacc.frontend.{SemanticAnalyser, parser}
@@ -98,14 +100,23 @@ object Main {
           
           /* Generate assembly instructions from AST */
           println("Generating assembly code...")
-          val registerAllocator = new BasicRegisterAllocator
-          val (reg, _) = registerAllocator.allocateRegister()
-          var assemblyInstructions = generateInstructions(newAST, registerAllocator, reg)
 
-          /* Perform control flow analysis on the generated assembly instructions */
+          val registerAllocator = if (optimise) {
+            new TemporaryRegisterAllocator
+          } else {
+            new BasicRegisterAllocator
+          }
+          val (reg, _) = registerAllocator.allocateRegister()
+          var assemblyInstructions = if (optimise) {
+            generateTemporaryInstructions(newAST, registerAllocator, reg)
+          } else {
+            generateInstructions(ast, registerAllocator, reg)
+          }
+
+          /* Perform efficient register allocation on the generated assembly instructions */
           if (optimise) {
             println("assembly before: " + assemblyInstructions)
-            assemblyInstructions = controlFlowOptimise(assemblyInstructions)
+            assemblyInstructions = registerOptimise(assemblyInstructions)
             println("assembly after: " + assemblyInstructions)
           }
           
