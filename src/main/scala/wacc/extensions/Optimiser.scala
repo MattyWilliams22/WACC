@@ -48,7 +48,7 @@ object Optimiser {
     printColourMap(colourMap)
 
     val registerMapping = new RegisterMapping(colourMap)
-    val newInstrs = registerMapping.replaceInstructions(instrs)
+    val newInstrs = registerMapping.mapInstructions(cfg)
     printInstructions(newInstrs)
     newInstrs
   }
