@@ -1,0 +1,18 @@
+# utilises the median function from the standard library
+
+# Output:
+# 16
+# 45
+#
+
+# Program:
+
+begin
+  int[] y = [16, 11, 34, 97, 13];
+  int x = call median(y);
+  println x;
+
+  y = [56, 11, 34, 97];
+  x = call median(y);
+  println x
+end

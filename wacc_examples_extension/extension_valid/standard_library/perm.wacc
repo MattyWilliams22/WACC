@@ -1,0 +1,12 @@
+# utilises the perm function from the standard library
+
+# Output:
+# 120
+#
+
+# Program:
+
+begin
+  int x = call perm(6, 3);
+  println x
+end

@@ -8,5 +8,5 @@
 
 begin
   int x = call pow(2, 3);
-	println x
+  println x
 end
