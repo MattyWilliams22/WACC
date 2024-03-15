@@ -90,6 +90,7 @@ class ControlFlowGraph {
         case Label(name) =>
           addLabelToNode(name, node)
           node.succs += getCFGNode(nodeId + 1)
+          node.succs += getCFGNode(nodeId - 1)
         case Push(regs) =>
           regs.map(r => node.uses += r)
           node.succs += getCFGNode(nodeId + 1)
@@ -100,9 +101,21 @@ class ControlFlowGraph {
           node.uses += reg
           checkIfOperandUsed(node, operand)
           node.succs += getCFGNode(nodeId + 1)
-        case AdrInstr(reg, _) =>
+          operand match {
+            case LabelAddr(string) =>
+              labelToNode.get(string) match {
+                case Some(n) => node.succs += n
+                case None => addLabelReference(string, node)
+              }
+            case _ =>
+          }
+        case AdrInstr(reg, string) =>
           node.defs += reg
           node.succs += getCFGNode(nodeId + 1)
+          labelToNode.get(string) match {
+            case Some(n) => node.succs += n
+            case None => addLabelReference(string, node)
+          }
         case Mov(reg, operand, _) =>
           node.defs += reg
           checkIfOperandUsed(node, operand)
@@ -133,7 +146,8 @@ class ControlFlowGraph {
           }
         case BicInstr(reg1, reg2, operand) =>
           buildBinOpNode(node, reg1, reg2, operand, nodeId)
-        case AscizInstr(_, _) =>
+        case AscizInstr(string, _) => 
+          addLabelToNode(string, node)
         case StrInstr(reg, operand, _) =>
           node.uses += reg
           checkIfOperandUsed(node, operand)

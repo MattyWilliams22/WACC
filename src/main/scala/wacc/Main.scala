@@ -136,10 +136,15 @@ object Main {
           }
 
           /* Write all pre-defined functions to file */
-          PredefinedFunctions.writeToFile(predefInstructions)
+          if (predefInstructions.nonEmpty) {
+            PredefinedFunctions.writeToFile(predefInstructions)
+          }
+          
 
           /* Write standard library to file */
-          StandardLibrary.writeToFile(stdLibInstructions)
+          if (stdLibInstructions.nonEmpty) {
+            StandardLibrary.writeToFile(stdLibInstructions)
+          }
 
           /* Create a new file to store generated assembly for main program */
           val inputFile = new File(arg)

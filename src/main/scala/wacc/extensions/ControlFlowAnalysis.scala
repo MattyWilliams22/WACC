@@ -143,9 +143,7 @@ object ControlFlowAnalysis {
     val nodesToRemove = cfg.cfgNodes diff reached
     for (node <- nodesToRemove) {
       node.instr match {
-        case Some(AscizInstr(_, _)) =>
         case Some(NewLine()) =>
-        case Some(Command("align 4", _)) =>
         case Some(Command("include \"predefinedFunctions.s\"", _)) =>
         case Some(Command("include \"standardLibrary.s\"", _)) =>
         case _ => cfg.cfgNodes -= node
