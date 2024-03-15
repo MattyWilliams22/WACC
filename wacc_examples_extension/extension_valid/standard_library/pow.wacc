@@ -1,0 +1,12 @@
+# utilises the pow function from the standard library
+
+# Output:
+# 8
+#
+
+# Program:
+
+begin
+  int x = call pow(2, 3);
+	println x
+end
