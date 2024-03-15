@@ -1,0 +1,12 @@
+# utilises the lcm function from the standard library
+
+# Output:
+# 210
+#
+
+# Program:
+
+begin
+  int x = call lcm(15, 42);
+  println x
+end

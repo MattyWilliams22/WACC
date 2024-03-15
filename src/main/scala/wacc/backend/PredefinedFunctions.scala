@@ -1,7 +1,5 @@
 package wacc.backend
 
-import wacc.backend.CodeGenerator.predefinedFunctions
-
 import scala.collection.mutable.ListBuffer
 
 /*
@@ -12,6 +10,20 @@ import scala.collection.mutable.ListBuffer
  * Author: Jamie Willis
  */
 object PredefinedFunctions {
+
+  /* Used to store all the the predefined functions */
+  private val predefinedFunctions: List[Instruction] = Set(exitFunc, printCharOrIntFunc(true), printCharOrIntFunc(false), printStrFunc, printPairFunc, printBoolFunc, printLnFunc, mallocFunc, readIntFunc, readCharFunc, freeFunc, freePairFunc, arrayLoad4Func, arrayStoreFunc(OneByte), arrayStoreFunc(FourBytes), errorOutOfMemoryFunc, errorOutOfBoundsFunc, errorNullFunc, errorOverflowFunc, errorDivByZeroFunc, errorBadCharFunc).foldLeft(List[Instruction]())(_ ++ _)
+
+  def writePredefinedFunctionsToFile(): Unit = {
+    val file = new java.io.File("predefinedFunctions.s")
+    val writer = new java.io.PrintWriter(file)
+    val instructions = List(Command("data", 0), 
+    Command("align 4", 0), 
+    Command("text", 0)) ++
+    PredefinedFunctions.predefinedFunctions
+    ARMAssemblyPrinter.printAssembly(instructions, writer)
+    writer.close()
+  }
 
   /* Generates the instructions for a generic function, given the specified parameters */
   private def functionWrapper(funcName: String, funcLabel: String, stringLiterals: ListBuffer[Instruction],
@@ -184,8 +196,6 @@ object PredefinedFunctions {
 
   /* Generates the instructions for malloc */
   lazy val mallocFunc: ListBuffer[Instruction] = {
-    predefinedFunctions += errorOutOfMemoryFunc
-
     val funcName = "Malloc"
 
     val funcLabel = "_malloc"
@@ -268,9 +278,6 @@ object PredefinedFunctions {
 
   /* Generates the instructions for freeing a pair */
   lazy val freePairFunc: ListBuffer[Instruction] = {
-    predefinedFunctions += freeFunc
-    predefinedFunctions += errorNullFunc
-
     val funcName = "Free pair"
 
     val funcLabel = "_freepair"
@@ -289,7 +296,6 @@ object PredefinedFunctions {
 
   /* Generates the instructions for loading an array */
   lazy val arrayLoad4Func: ListBuffer[Instruction] = {
-    predefinedFunctions += errorOutOfBoundsFunc
     ListBuffer[Instruction](
       NewLine(),
       Comment("Array load function", 0),
@@ -309,7 +315,6 @@ object PredefinedFunctions {
 
   /* Generates the instructions for storing an array */
   def arrayStoreFunc(elemSize: ElemSize): ListBuffer[Instruction] = {
-    predefinedFunctions += errorOutOfBoundsFunc
     val (label, storeInstr) = elemSize match {
       case OneByte => 
         ("_arrStore1", StrInstr(R8, Addr(R3, R0), OneByte))
@@ -335,8 +340,6 @@ object PredefinedFunctions {
 
   /* Generates the instructions for handling an Out of Memory error */
   private lazy val errorOutOfMemoryFunc: ListBuffer[Instruction] = {
-    predefinedFunctions += printStrFunc
-
     val funcName = "Error out of memory"
 
     val funcLabel = "_errOutOfMemory"
@@ -381,8 +384,6 @@ object PredefinedFunctions {
 
   /* Generates the instructions for handling a Null Pointer error */
   lazy val errorNullFunc: ListBuffer[Instruction] = {
-    predefinedFunctions += printStrFunc
-
     val funcName = "Error null pointer"
 
     val funcLabel = "_errNull"
@@ -404,8 +405,6 @@ object PredefinedFunctions {
 
   /* Generates the instructions for handling an Overflow error */
   lazy val errorOverflowFunc: ListBuffer[Instruction] = {
-    predefinedFunctions += printStrFunc
-
     val funcName = "Error overflow"
 
     val funcLabel = "_errOverflow"
@@ -427,8 +426,6 @@ object PredefinedFunctions {
 
   /* Generates the instructions for handling a Division by Zero error */
   lazy val errorDivByZeroFunc: ListBuffer[Instruction] = {
-    predefinedFunctions += printStrFunc
-
     val funcName = "Error division by zero"
 
     val funcLabel = "_errDivZero"
@@ -451,8 +448,6 @@ object PredefinedFunctions {
   /* Generates the instructions for handling a Bad Character error, so when a character
      is not within the acceptable ASCII range */
   lazy val errorBadCharFunc: ListBuffer[Instruction] = {
-    predefinedFunctions += printStrFunc
-
     val funcName = "Error bad character"
 
     val funcLabel = "_errBadChar"
