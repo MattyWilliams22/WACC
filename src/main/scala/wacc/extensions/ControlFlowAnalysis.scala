@@ -1,6 +1,5 @@
 package wacc.extensions
 
-import scala.collection.mutable.ListBuffer
 import scala.collection.mutable
 
 import wacc.ASTNodes._
@@ -183,7 +182,7 @@ object ControlFlowAnalysis {
         val labelNode = cfg.labelToNode(target)
         val nextNode = labelNode.succs.head
         nextNode.instr match {
-          case Some(BInstr(newTarget, noCondition, _)) =>
+          case Some(BInstr(newTarget, _, _)) =>
             node.instr = Some(BInstr(newTarget, cond, link))
             node.succs -= labelNode
             node.succs ++= labelNode.succs
@@ -195,7 +194,7 @@ object ControlFlowAnalysis {
 
   private def checkJumpToNextInstruction(cfg: ControlFlowGraph, node: CFGNode): Unit = {
     node.instr match {
-      case Some(BInstr(target, cond, link)) =>
+      case Some(BInstr(target, _, _)) =>
         val labelNode = cfg.labelToNode.get(target)
         if (labelNode.isDefined && labelNode.get.id == node.id + 1) {
           val prevNode = cfg.getCFGNode(node.id - 1)

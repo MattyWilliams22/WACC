@@ -4,14 +4,18 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import wacc.backend._
 
+import scala.annotation.tailrec
+
 class ControlFlowGraph {
-  object CFGNodeOrdering extends Ordering[CFGNode] {
-    def compare(a: CFGNode, b: CFGNode) = a.id compare b.id
+  private object CFGNodeOrdering extends Ordering[CFGNode] {
+    def compare(a: CFGNode, b: CFGNode): Int = a.id compare b.id
   }
-  val cfgNodes = mutable.SortedSet[CFGNode]()(CFGNodeOrdering)
-  var labelToNode = mutable.Map[String, CFGNode]()
-  var labelReferences = mutable.Map[String, ListBuffer[CFGNode]]()
+
+  val cfgNodes: mutable.Set[CFGNode] = mutable.SortedSet[CFGNode]()(CFGNodeOrdering)
+  var labelToNode: mutable.Map[String, CFGNode] = mutable.Map[String, CFGNode]()
   var startNode: Option[CFGNode] = None
+
+  private val labelReferences: mutable.Map[String, ListBuffer[CFGNode]] = mutable.Map[String, ListBuffer[CFGNode]]()
 
   private def addLabelToNode(label: String, node: CFGNode): Unit = {
     labelToNode += (label -> node)
@@ -28,10 +32,11 @@ class ControlFlowGraph {
     }
   }
 
+  @tailrec
   private def checkIfOperandUsed(node: CFGNode, op: Operand): Unit = {
     op match {
       case r: Register => node.uses += r
-      case RegShift(r, s) => node.uses += r
+      case RegShift(r, _) => node.uses += r
       case Addr(r, o) => 
         node.uses += r
         checkIfOperandUsed(node, o)
@@ -48,6 +53,13 @@ class ControlFlowGraph {
     }
   }
 
+  private def buildBinOpNode(node: CFGNode, reg1: Register, reg2: Register, operand: GeneralOperand, nodeId: Int): Unit = {
+    node.defs += reg1
+    node.uses += reg2
+    checkIfOperandUsed(node, operand)
+    node.succs += getCFGNode(nodeId + 1)
+  }
+
   def buildCFG(instrs: ListBuffer[Instruction]): Unit = {
     var nodeId = 0
 
@@ -56,7 +68,7 @@ class ControlFlowGraph {
       node.instr = Some(instr)
       
       instr match {
-        case Comment(comment, _) =>
+        case Comment(_, _) =>
           nodeId -= 1
         case Command(str, _) => 
           str match {
@@ -83,23 +95,17 @@ class ControlFlowGraph {
           node.uses += reg
           checkIfOperandUsed(node, operand)
           node.succs += getCFGNode(nodeId + 1)
-        case AdrInstr(reg, label) =>
+        case AdrInstr(reg, _) =>
           node.defs += reg
           node.succs += getCFGNode(nodeId + 1)
-        case Mov(reg, operand, condition) =>
+        case Mov(reg, operand, _) =>
           node.defs += reg
           checkIfOperandUsed(node, operand)
           node.succs += getCFGNode(nodeId + 1)
-        case AddInstr(reg1, reg2, operand2, updateFlags) =>
-          node.defs += reg1
-          node.uses += reg2
-          checkIfOperandUsed(node, operand2)
-          node.succs += getCFGNode(nodeId + 1)
-        case SubInstr(reg1, reg2, operand2, updateFlags) =>
-          node.defs += reg1
-          node.uses += reg2
-          checkIfOperandUsed(node, operand2)
-          node.succs += getCFGNode(nodeId + 1)
+        case AddInstr(reg1, reg2, operand2, _) =>
+          buildBinOpNode(node, reg1, reg2, operand2, nodeId)
+        case SubInstr(reg1, reg2, operand2, _) =>
+          buildBinOpNode(node, reg1, reg2, operand2, nodeId)
         case SmullInstr(reg1, reg2, reg3, reg4) =>
           node.defs += reg1
           node.defs += reg2
@@ -114,27 +120,21 @@ class ControlFlowGraph {
           node.uses += reg
           checkIfOperandUsed(node, operand)
           node.succs += getCFGNode(nodeId + 1)
-        case BInstr(label, condition, storeReturnAddr) =>
+        case BInstr(label, _, _) =>
           node.succs += getCFGNode(nodeId + 1)
           labelToNode.get(label) match {
             case Some(n) => node.succs += n
             case None => addLabelReference(label, node)
           }
         case BicInstr(reg1, reg2, operand) =>
-          node.defs += reg1
-          node.uses += reg2
-          checkIfOperandUsed(node, operand)
-          node.succs += getCFGNode(nodeId + 1)
-        case AscizInstr(label: String, operand: AscizOperand) =>
-        case StrInstr(reg, operand, size) =>
+          buildBinOpNode(node, reg1, reg2, operand, nodeId)
+        case AscizInstr(_, _) =>
+        case StrInstr(reg, operand, _) =>
           node.uses += reg
           checkIfOperandUsed(node, operand)
           node.succs += getCFGNode(nodeId + 1)
         case RsbsInstr(reg1, reg2, operand) =>
-          node.defs += reg1
-          node.uses += reg2
-          checkIfOperandUsed(node, operand)
-          node.succs += getCFGNode(nodeId + 1)
+          buildBinOpNode(node, reg1, reg2, operand, nodeId)
         case NewLine() => 
           getCFGNode(nodeId - 1).succs -= getCFGNode(nodeId)
       }
