@@ -1,5 +1,19 @@
 #!/bin/bash
 
+# Initialize our own variables
+optimise=""
+
+# Get the options
+while getopts "o" opt; do
+  case "$opt" in
+  o) optimise="-o"
+     ;;
+  esac
+done
+
+# Shift off the options and optional --.
+shift $((OPTIND-1))
+
 # Get the file name from the command line arguments
 fname=$1
 
@@ -13,8 +27,8 @@ echo "make"
 make
 
 # Print and run the compile command
-echo "./compile $fname"
-./compile $fname
+echo "./compile $optimise $fname"
+./compile $optimise $fname
 
 # Print and run the gcc command
 echo "arm-linux-gnueabi-gcc -o execFile -z noexecstack -march=armv6 $filename.s"

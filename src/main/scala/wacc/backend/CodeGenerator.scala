@@ -76,7 +76,9 @@ object CodeGenerator {
       val funcLines = ListBuffer[Instruction]()
       allocator.setLocation(funcName.nickname.get, VariableLocation(R0, 0, 4, _type))
 
-      funcLines ++= List(Comment("Start of function", 4),
+      funcLines ++= List(
+        NewLine(),
+        Comment("Start of function", 4),
         Label(funcName.nickname.get),
         Push(List(FP, LR)),
         Push(List(R4, R5, R6, R7, R8, R9, R10)),

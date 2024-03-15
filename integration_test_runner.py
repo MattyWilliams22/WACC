@@ -172,7 +172,8 @@ def run_tests(tests_to_run, flag):
 
   # Dictionary of test categories to their respective counts
   validExtensionSubTests = {
-    "function_overloading": (0, 0, "Function Overloading")
+    "function_overloading": (0, 0, "Function Overloading"),
+    "control_flow": (0, 0, "Control Flow")
   }
 
   for test in tests_to_run:
@@ -210,6 +211,8 @@ def run_tests(tests_to_run, flag):
               validSubDir = "heap"
             elif "function_overloading/" in fname:
               validSubDir = "function_overloading"
+            elif "control_flow/" in fname:
+              validSubDir = "control_flow"
             else:
               fileNameParts = fname.split("/")
               validSubDir = fileNameParts[2]

@@ -10,6 +10,7 @@ import wacc.frontend.ErrorOutput._
 import wacc.frontend.Error._
 import wacc.frontend.{SemanticAnalyser, parser}
 import wacc.backend.ARMAssemblyPrinter
+import wacc.backend.Register
 import wacc.extensions.Optimiser._
 
 object Main {
@@ -86,13 +87,29 @@ object Main {
           val semanticAnalyser = new SemanticAnalyser(ast)
           semanticAnalyser.analyse()
 
+          var newAST = ast
+
+          /* Perform control flow analysis on the generated AST */
+          if (optimise) {
+            println("AST before: " + ast)
+            val newAST = controlFlowOptimise(ast)
+            println("AST after: " + newAST)
+          }
+          
           /* Generate assembly instructions from AST */
           println("Generating assembly code...")
           val registerAllocator = new BasicRegisterAllocator
           val (reg, _) = registerAllocator.allocateRegister()
-          var assemblyInstructions = generateInstructions(ast, registerAllocator, reg)
+          var assemblyInstructions = generateInstructions(newAST, registerAllocator, reg)
 
-          /* Check if the code should be optimised */
+          /* Perform control flow analysis on the generated assembly instructions */
+          if (optimise) {
+            println("assembly before: " + assemblyInstructions)
+            assemblyInstructions = controlFlowOptimise(assemblyInstructions)
+            println("assembly after: " + assemblyInstructions)
+          }
+          
+          /* Check if the code should be optimised using the peephole */
           if (optimise) {
             println("Optimising code...")
             assemblyInstructions = optimiseInstructions(assemblyInstructions.toList)
