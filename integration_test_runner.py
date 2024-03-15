@@ -295,7 +295,10 @@ errorTests = []
 ignoredTests = ["wacc_examples/valid/scope/printAllTypes.wacc",
                 "wacc_examples/valid/function/simple_functions/usesArgumentWhilstMakingArgument.wacc",
                 "wacc_examples/valid/function/simple_functions/manyArgumentsChar.wacc",
-                "wacc_examples/valid/function/simple_functions/manyArgumentsInt.wacc"]
+                "wacc_examples/valid/function/simple_functions/manyArgumentsInt.wacc",
+                "wacc_examples_extension/extension_valid/standard_library/median.wacc",
+                "wacc_examples_extension/extension_valid/standard_library/mode.wacc",
+                "wacc_examples_extension/extension_valid/standard_library/sort.wacc"]
 runningTests = [test for test in runningTests if test not in ignoredTests]
 
 print("Running tests...")

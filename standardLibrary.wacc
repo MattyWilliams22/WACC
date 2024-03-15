@@ -73,80 +73,80 @@ begin
         fi
     end
 
-    int mode(int[] arr) is
-        int n = len arr;
-        int maxCount = 0;
-        int mode = 0;
+    # int mode(int[] arr) is
+    #     int n = len arr;
+    #     int maxCount = 0;
+    #     int mode = 0;
+    # 
+    #     int iCounter = 0;
+    # 
+    #     while iCounter < n do
+    #         int count = 0;
+    #         int jCounter = 0;
+    # 
+    #         while jCounter < n do
+    #             if arr[iCounter] == arr[jCounter] then
+    #                 count = count + 1
+    #             else
+    #                 skip
+    #             fi;
+    #             jCounter = jCounter + 1
+    #         done;
+    # 
+    #         if count > maxCount then
+    #             maxCount = count;
+    #             mode = arr[iCounter]
+    #         else
+    #             skip
+    #         fi;
+    # 
+    #         iCounter = iCounter + 1
+    #     done;
+    # 
+    #     return mode
+    # end
 
-        int iCounter = 0;
+    # int[] sort(int[] arr) is
+    #     int n = len arr;
+    #     int i = 0;
+    # 
+    #     while i < n do
+    #         int j = 0;
+    # 
+    #         while j < n - i - 1 do
+    #             if arr[j] > arr[j + 1] then
+    #                 int temp = arr[j];
+    #                 arr[j] = arr[j + 1];
+    #                 arr[j + 1] = temp
+    #             else
+    #                 skip
+    #             fi;
+    # 
+    #             j = j + 1
+    #         done;
+    # 
+    #         i = i + 1
+    #     done;
+    # 
+    #     return arr
+    # end
 
-        while iCounter < n do
-            int count = 0;
-            int jCounter = 0;
-
-            while jCounter < n do
-                if arr[iCounter] == arr[jCounter] then
-                    count = count + 1
-                else
-                    skip
-                fi;
-                jCounter = jCounter + 1
-            done;
-
-            if count > maxCount then
-                maxCount = count;
-                mode = arr[iCounter]
-            else
-                skip
-            fi;
-
-            iCounter = iCounter + 1
-        done;
-
-        return mode
-    end
-
-    int[] sort(int[] arr) is
-        int n = len arr;
-        int i = 0;
-
-        while i < n do
-            int j = 0;
-
-            while j < n - i - 1 do
-                if arr[j] > arr[j + 1] then
-                    int temp = arr[j];
-                    arr[j] = arr[j + 1];
-                    arr[j + 1] = temp
-                else
-                    skip
-                fi;
-
-                j = j + 1
-            done;
-
-            i = i + 1
-        done;
-
-        return arr
-    end
-
-    int median(int[] arr) is
-        int n = len arr;
-        arr = call sort(arr);
-
-        if n % 2 == 0 then
-            int sum = arr[n / 2] + arr[n / 2 - 1];
-
-            if sum % 2 == 0 then
-                return sum / 2
-            else
-                return (sum + 1) / 2
-            fi
-        else
-            return arr[n / 2]
-        fi
-    end
+    # int median(int[] arr) is
+    #     int n = len arr;
+    #     arr = call sort(arr);
+    # 
+    #     if n % 2 == 0 then
+    #         int sum = arr[n / 2] + arr[n / 2 - 1];
+    # 
+    #         if sum % 2 == 0 then
+    #             return sum / 2
+    #         else
+    #             return (sum + 1) / 2
+    #         fi
+    #     else
+    #         return arr[n / 2]
+    #     fi
+    # end
 
     skip
 end
