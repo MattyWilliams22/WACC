@@ -438,7 +438,7 @@ object ASTNodes {
     }
   }
 
-  case class PairT(pet1: PairElemT, pet2: PairElemT) extends Type {
+  case class PairT(pet1: PairElemT, pet2: PairElemT) extends PairElemT {
     // Semantically check if a pair is valid
     def check(): Boolean = {
       // Check that each element of the pair is valid
@@ -538,9 +538,9 @@ object ASTNodes {
     }
 
     private def convertToPairElemType(t: Type): PairElemT = t match {
-      case t: PairElemT => t
-      case _: PairLiter => PairNull()
       case _: PairT => PairNull()
+      case _: PairLiter => PairNull()
+      case t: PairElemT => t
       case _ => BaseT("Error")
     }
 

@@ -136,10 +136,12 @@ object parser {
   private lazy val pairType: Parsley[PairT] =
     ("pair(" ~> pairElemType <~ "," <~> pairElemType <~ rBracket).map(x => PairT(x._1, x._2))
 
-  /* = ⟨base-type⟩ | ⟨⟨type⟩ ‘[’ ‘]’⟩ | ‘pair’ */
+  /* = ⟨base-type⟩ | ⟨⟨type⟩ ‘[’ ‘]’⟩ | ‘pair’ 
+  | ‘pair’ ‘(’ ⟨pair-elem-type⟩ ‘,’ ⟨pair-elem-type⟩ ‘)  */
   private lazy val pairElemType: Parsley[PairElemT] =
-    atomic(pairType <~> some(arrayBraces)).map {
-      case (base: PairT, arr: List[String]) => ArrayT(base, arr.length)
+    atomic(pairType <~> many(arrayBraces)).map {
+        case (base: PairT, arr: List[String]) if arr.isEmpty => base
+        case (base: PairT, arr: List[String]) => ArrayT(base, arr.length)
     } |
       atomic("pair").map(_ => PairNull()) |
       (baseTypes <~> many(arrayBraces)).map {
