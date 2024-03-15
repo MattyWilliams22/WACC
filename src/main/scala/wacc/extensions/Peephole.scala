@@ -54,7 +54,7 @@ object Peephole {
   */
   private def removeRedundantCmp(instr: Instruction, remaining: List[Instruction]): (List[Instruction], Boolean) = {
     (instr, getInstruction(remaining)) match {
-      case (CmpInstr(dest1, ImmVal(0)), Some(CmpInstr(dest2, ImmVal(0)))) if dest1 == dest2 => (remaining, true)
+      case (CmpInstr(dest1, ImmVal(x1)), Some(CmpInstr(dest2, ImmVal(x2)))) if dest1 == dest2 && x1 == x2 => (remaining, true)
       case _ => (instr :: remaining, false)
     }
   }
