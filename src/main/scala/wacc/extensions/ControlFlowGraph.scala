@@ -62,6 +62,9 @@ class ControlFlowGraph {
   }
 
   def addToCFG(instrs: ListBuffer[Instruction]): Unit = {
+    if (instrs.isEmpty) {
+      return
+    }
     var nodeId = 0
     if (fileRanges.nonEmpty) {
       nodeId = fileRanges.last._2 + 1
@@ -177,6 +180,9 @@ class ControlFlowGraph {
   }
 
   def makeInstructions(): ListBuffer[Instruction] = {
+    if (fileRanges.isEmpty) {
+      return ListBuffer[Instruction]()
+    }
     val startId: Int = fileRanges.head._1
     val endId: Int = fileRanges.head._2
     fileRanges = fileRanges.tail

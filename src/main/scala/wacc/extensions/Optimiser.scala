@@ -52,10 +52,10 @@ object Optimiser {
   }
 
   private def checkImports(main: ListBuffer[Instruction], stdLib: ListBuffer[Instruction], predef: ListBuffer[Instruction]): Unit = {
-    if (emptyList(predef)) {
+    if (emptyList(predef) && stdLib.nonEmpty) {
       stdLib.remove(0)
     }
-    if (emptyList(stdLib)) {
+    if (emptyList(stdLib) && main.nonEmpty) {
       main.remove(0)
       if (!emptyList(predef)) {
         main.prepend(Command("include \"predefinedFunctions.s\"", 0))
