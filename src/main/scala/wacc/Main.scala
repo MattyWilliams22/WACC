@@ -86,7 +86,7 @@ object Main {
       result match {
         case Success(ast) =>
           /* Compile standard library */
-          val stdLibSymbolTable = StandardLibrary.compileStdLib()
+          val (stdLibInstructions, stdLibSymbolTable) = StandardLibrary.checkStdLib()
 
           /* Semantically Analyse AST */
           val semanticAnalyser = new SemanticAnalyser(ast, Some(stdLibSymbolTable))
@@ -123,6 +123,9 @@ object Main {
             assemblyInstructions = optimiseInstructions(assemblyInstructions.toList)
             assemblyInstructions = removeComments(assemblyInstructions)
           }
+
+          /* Write standard library to file */
+          StandardLibrary.compileStdLib(stdLibInstructions)
 
           /* Create a new file to store generated assembly */
           val inputFile = new File(arg)

@@ -1,6 +1,7 @@
 package wacc.extensions
 
 import java.io.{File, PrintWriter}
+import scala.collection.mutable.ListBuffer
 import scala.io.Source
 import parsley.{Result, Success}
 import wacc.ASTNodes._
@@ -12,7 +13,7 @@ import wacc.frontend.Error._
 import wacc.SymbolTable
 
 object StandardLibrary {
-  def compileStdLib(): SymbolTable = {
+  def checkStdLib(): (ListBuffer[Instruction], SymbolTable) = {
     val stdLibFile = new File("standardLibrary.wacc")
 
     /* Reads file contents */
@@ -41,20 +42,21 @@ object StandardLibrary {
         val nlInd = assemblyInstructions.indexOf(Pop(List(FP, PC)))
         println(mainInd, nlInd)
         assemblyInstructions.remove(mainInd, nlInd - mainInd + 1)
-
-        /* Create a new file to store generated assembly */
-        val file = new File("standardLibrary.s")
-        file.createNewFile()
-
-        /* Create print writer to allow to write assembly code to file */
-        val writer = new PrintWriter(file)
-
-        /* Write assembly instructions to file using ARM assembly printer */
-        ARMAssemblyPrinter.printAssembly(assemblyInstructions.toList, writer)
-        writer.close()
-        
-        semanticAnalyser.symbolTable
+        (assemblyInstructions, semanticAnalyser.symbolTable)
       case _ => throw new RuntimeException("Failed to compile standard library")
     }
+  }
+
+  def compileStdLib(assemblyInstructions: ListBuffer[Instruction]): Unit = {
+    /* Create a new file to store generated assembly */
+    val file = new File("standardLibrary.s")
+    file.createNewFile()
+
+    /* Create print writer to allow to write assembly code to file */
+    val writer = new PrintWriter(file)
+
+    /* Write assembly instructions to file using ARM assembly printer */
+    ARMAssemblyPrinter.printAssembly(assemblyInstructions.toList, writer)
+    writer.close()
   }
 }
