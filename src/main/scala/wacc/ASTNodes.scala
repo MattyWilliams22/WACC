@@ -176,6 +176,17 @@ object ASTNodes {
     def check(): Boolean = true
   }
 
+  private def checkValidPairTyping(_type: Type, valueType: Type): Boolean = {
+    (_type, valueType) match {
+      case (PairT(p1, p2), PairT(p3, p4)) =>
+        (p1 == p3 || checkValidPairTyping(p1, p3)) && (p2 == p4 || checkValidPairTyping(p2, p4))
+      case (PairT(_, _), PairLiter("null")) => true
+      case (PairNull(), PairT(_, _)) => true
+      case (PairNull(), PairLiter("null")) => true
+      case _ => false
+    }
+  }
+
   case class Declare(_type: Type, ident: Ident, value: RValue) extends Statement {
     // Semantically check a declare statement
     def check(): Boolean = {
@@ -210,17 +221,6 @@ object ASTNodes {
         isPairOfNulls, "Types of variable and rvalue do not match", this)
       true
     }
-
-    private def checkValidPairTyping(_type: Type, valueType: Type): Boolean = {
-      (_type, valueType) match {
-        case (PairT(p1, p2), PairT(p3, p4)) =>
-          (p1 == p3 || checkValidPairTyping(p1, p3)) && (p2 == p4 || checkValidPairTyping(p2, p4))
-        case (PairT(_, _), PairLiter("null")) => true
-        case (PairNull(), PairT(_, _)) => true
-        case (PairNull(), PairLiter("null")) => true
-        case _ => false
-      }
-    }
   }
 
   case class Assign(lvalue: LValue, rvalue: RValue) extends Statement {
@@ -242,12 +242,18 @@ object ASTNodes {
         case ArrayT(BaseT("Empty"),0) => PairNull()
         case _ => rvalueType
       }
+      val isEmptyArrayLiteral = rvalueType match {
+        case ArrayT(BaseT("Empty"), _) => true
+        case _ => false
+      }
       val isPair = lvalueType match {
         case PairT(_, _) => true
         case _ => false
       }
       var valid = lvalueType == rvalueType ||
-        isPair && (rvalueType == PairLiter("null") || rvalueType == PairNull())
+        isPair && checkValidPairTyping(lvalueType, rvalueType) ||
+        isEmptyArrayLiteral && lvalueType.isInstanceOf[ArrayT] ||
+        lvalueType == BaseT("string") && rvalueType == ArrayT(BaseT("char"), 1)
       lvalue match {
         case ident: Ident =>
           if (ident.isFunction) {
