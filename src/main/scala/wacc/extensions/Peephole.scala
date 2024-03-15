@@ -149,8 +149,6 @@ object Peephole {
       case Nil => None
       case Comment(_, _) :: tail => getInstruction(tail, n)
       case _ :: tail if n > 0 => getInstruction(tail, n - 1)
-      case _ :: tail if n > 0 => getInstruction(tail, n - 1)
-      case _ :: tail if n > 0 => getInstruction(tail, n - 1)
       case head :: _ => Some(head)
     }
   }
