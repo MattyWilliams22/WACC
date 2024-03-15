@@ -1,6 +1,8 @@
 package wacc
 
 import java.io.{File, PrintWriter}
+import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
 import scala.io.Source
 import parsley.{Failure, Result, Success}
 import wacc.ASTNodes._
@@ -10,6 +12,7 @@ import wacc.frontend.ErrorOutput._
 import wacc.frontend.Error._
 import wacc.frontend.{SemanticAnalyser, parser}
 import wacc.backend.ARMAssemblyPrinter
+import wacc.backend.Instruction
 import wacc.backend.Register
 import wacc.extensions.Optimiser._
 import wacc.extensions.StandardLibrary
@@ -86,7 +89,7 @@ object Main {
       result match {
         case Success(ast) =>
           /* Compile standard library */
-          val (stdLibInstructions, stdLibSymbolTable) = StandardLibrary.checkStdLib()
+          var (stdLibInstructions, stdLibSymbolTable) = StandardLibrary.checkStdLib()
 
           /* Semantically Analyse AST */
           val semanticAnalyser = new SemanticAnalyser(ast, Some(stdLibSymbolTable))
@@ -100,34 +103,45 @@ object Main {
             val newAST = controlFlowOptimise(ast)
             println("AST after: " + newAST)
           }
-          
-          /* Write all pre-defined functions to file */
-          PredefinedFunctions.writePredefinedFunctionsToFile()
 
           /* Generate assembly instructions from AST */
           println("Generating assembly code...")
           val registerAllocator = new BasicRegisterAllocator
           val (reg, _) = registerAllocator.allocateRegister()
-          var assemblyInstructions = generateInstructions(newAST, registerAllocator, reg)
+          var mainInstructions: ListBuffer[Instruction] = generateInstructions(newAST, registerAllocator, reg)
+          var predefInstructions: ListBuffer[Instruction] = PredefinedFunctions.getPredefinedFunctions
 
           /* Perform control flow analysis on the generated assembly instructions */
           if (optimise) {
-            println("assembly before: " + assemblyInstructions)
-            assemblyInstructions = controlFlowOptimise(assemblyInstructions)
-            println("assembly after: " + assemblyInstructions)
+            println("assembly before: " + mainInstructions)
+            val (optimisedMainInstructions, optimisedStdLibInstructions, optimisedPredefInstructions): 
+              (ListBuffer[Instruction], ListBuffer[Instruction], ListBuffer[Instruction])
+              = controlFlowOptimise(
+                mainInstructions, 
+                stdLibInstructions, 
+                predefInstructions)
+            println("assembly after: " + optimisedMainInstructions)
+            
+            // Replace the original instructions with the optimised ones
+            mainInstructions = optimisedMainInstructions
+            stdLibInstructions = optimisedStdLibInstructions
+            predefInstructions = optimisedPredefInstructions
           }
           
           /* Check if the code should be optimised using the peephole */
           if (optimise) {
             println("Optimising code...")
-            assemblyInstructions = optimiseInstructions(assemblyInstructions.toList)
-            assemblyInstructions = removeComments(assemblyInstructions)
+            mainInstructions = optimiseInstructions(mainInstructions.toList)
+            mainInstructions = removeComments(mainInstructions)
           }
 
-          /* Write standard library to file */
-          StandardLibrary.compileStdLib(stdLibInstructions)
+          /* Write all pre-defined functions to file */
+          PredefinedFunctions.writeToFile(predefInstructions)
 
-          /* Create a new file to store generated assembly */
+          /* Write standard library to file */
+          StandardLibrary.writeToFile(stdLibInstructions)
+
+          /* Create a new file to store generated assembly for main program */
           val inputFile = new File(arg)
           val outputFileName = inputFile.getName.split('.').head + ".s"
           val file = new File(outputFileName)
@@ -137,7 +151,7 @@ object Main {
           val writer = new PrintWriter(file)
 
           /* Write assembly instructions to file using ARM assembly printer */
-          ARMAssemblyPrinter.printAssembly(assemblyInstructions.toList, writer)
+          ARMAssemblyPrinter.printAssembly(mainInstructions.toList, writer)
           writer.close()
 
           System.exit(SUCCESS_CODE)

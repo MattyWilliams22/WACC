@@ -21,12 +21,22 @@ object Optimiser {
     }
   }
 
-  def controlFlowOptimise(instructions: ListBuffer[Instruction]): ListBuffer[Instruction] = {
+  def controlFlowOptimise(main: ListBuffer[Instruction], 
+                          stdLib: ListBuffer[Instruction], 
+                          predef: ListBuffer[Instruction]): 
+                            (ListBuffer[Instruction], 
+                             ListBuffer[Instruction], 
+                             ListBuffer[Instruction]) = {
     val controlFlowGraph = new ControlFlowGraph
-    controlFlowGraph.buildCFG(instructions)
+    controlFlowGraph.addToCFG(main)
+    controlFlowGraph.addToCFG(stdLib)
+    controlFlowGraph.addToCFG(predef)
     analyseControlFlowGraph(controlFlowGraph)
     controlFlowGraph.printCFG()
-    controlFlowGraph.makeInstructions()
+    val newMain = controlFlowGraph.makeInstructions()
+    val newStdLib = controlFlowGraph.makeInstructions()
+    val newPredef = controlFlowGraph.makeInstructions()
+    (newMain, newStdLib, newPredef)
   }
 
   def controlFlowOptimise(ast: Program): Program = {

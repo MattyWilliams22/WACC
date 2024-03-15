@@ -14,6 +14,7 @@ class ControlFlowGraph {
   val cfgNodes: mutable.Set[CFGNode] = mutable.SortedSet[CFGNode]()(CFGNodeOrdering)
   var labelToNode: mutable.Map[String, CFGNode] = mutable.Map[String, CFGNode]()
   var startNode: Option[CFGNode] = None
+  var fileRanges: List[(Int, Int)] = List[(Int, Int)]()
 
   private val labelReferences: mutable.Map[String, ListBuffer[CFGNode]] = mutable.Map[String, ListBuffer[CFGNode]]()
 
@@ -60,8 +61,12 @@ class ControlFlowGraph {
     node.succs += getCFGNode(nodeId + 1)
   }
 
-  def buildCFG(instrs: ListBuffer[Instruction]): Unit = {
+  def addToCFG(instrs: ListBuffer[Instruction]): Unit = {
     var nodeId = 0
+    if (fileRanges.nonEmpty) {
+      nodeId = fileRanges.last._2 + 1
+    }
+    val startId = nodeId
 
     for (instr <- instrs) {
       val node = getCFGNode(nodeId)
@@ -141,8 +146,9 @@ class ControlFlowGraph {
 
       nodeId += 1
     }
-
-    println(cfgNodes.mkString("\n"))
+    getCFGNode(nodeId - 1).succs.clear()
+    val newRange = (startId, nodeId - 1)
+    fileRanges = fileRanges :+ newRange
   }
 
   def getCFGNode(id: Int): CFGNode = {
@@ -157,11 +163,16 @@ class ControlFlowGraph {
   }
 
   def makeInstructions(): ListBuffer[Instruction] = {
+    val startId: Int = fileRanges.head._1
+    val endId: Int = fileRanges.head._2
+    fileRanges = fileRanges.tail
     val instrs = ListBuffer[Instruction]()
     for (node <- cfgNodes) {
-      node.instr match {
-        case Some(i) => instrs += i
-        case None =>
+      if (node.id >= startId && node.id <= endId) {
+        node.instr match {
+          case Some(i) => instrs += i
+          case None =>
+        }
       }
     }
     instrs

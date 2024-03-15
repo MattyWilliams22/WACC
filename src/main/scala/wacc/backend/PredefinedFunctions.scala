@@ -12,15 +12,18 @@ import scala.collection.mutable.ListBuffer
 object PredefinedFunctions {
 
   /* Used to store all the the predefined functions */
-  private val predefinedFunctions: List[Instruction] = Set(exitFunc, printCharOrIntFunc(true), printCharOrIntFunc(false), printStrFunc, printPairFunc, printBoolFunc, printLnFunc, mallocFunc, readIntFunc, readCharFunc, freeFunc, freePairFunc, arrayLoad4Func, arrayStoreFunc(OneByte), arrayStoreFunc(FourBytes), errorOutOfMemoryFunc, errorOutOfBoundsFunc, errorNullFunc, errorOverflowFunc, errorDivByZeroFunc, errorBadCharFunc).foldLeft(List[Instruction]())(_ ++ _)
+  private val predefinedFunctions: ListBuffer[Instruction] = Set(exitFunc, printCharOrIntFunc(true), printCharOrIntFunc(false), printStrFunc, printPairFunc, printBoolFunc, printLnFunc, mallocFunc, readIntFunc, readCharFunc, freeFunc, freePairFunc, arrayLoad4Func, arrayStoreFunc(OneByte), arrayStoreFunc(FourBytes), errorOutOfMemoryFunc, errorOutOfBoundsFunc, errorNullFunc, errorOverflowFunc, errorDivByZeroFunc, errorBadCharFunc).foldLeft(ListBuffer[Instruction]())(_ ++ _)
 
-  def writePredefinedFunctionsToFile(): Unit = {
+  def getPredefinedFunctions: ListBuffer[Instruction] = predefinedFunctions
+
+
+  def writeToFile(predefInstructions: ListBuffer[Instruction]): Unit = {
     val file = new java.io.File("predefinedFunctions.s")
     val writer = new java.io.PrintWriter(file)
     val instructions = List(Command("data", 0), 
     Command("align 4", 0), 
     Command("text", 0)) ++
-    PredefinedFunctions.predefinedFunctions
+    predefInstructions.toList
     ARMAssemblyPrinter.printAssembly(instructions, writer)
     writer.close()
   }

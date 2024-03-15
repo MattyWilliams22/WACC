@@ -47,7 +47,7 @@ object StandardLibrary {
     }
   }
 
-  def compileStdLib(assemblyInstructions: ListBuffer[Instruction]): Unit = {
+  def writeToFile(assemblyInstructions: ListBuffer[Instruction]): Unit = {
     /* Create a new file to store generated assembly */
     val file = new File("standardLibrary.s")
     file.createNewFile()
