@@ -1,0 +1,36 @@
+# utilises the sort function from the standard library
+
+# Output:
+# 5
+# 3
+# 4
+# 2
+# 1
+# 1
+# 2
+# 3
+# 4
+# 5
+#
+
+# Program:
+
+begin
+  int[] x = [5, 3, 4, 2, 1];
+  int iCounter = 0;
+  int arrLength = len x;
+
+  while iCounter < arrLength do
+      println(x[iCounter]);
+      iCounter = iCounter + 1
+  done;
+
+  int[] y = call sort(x);
+
+  iCounter = 0;
+
+  while iCounter < arrLength do
+      println(y[iCounter]);
+      iCounter = iCounter + 1
+  done
+end

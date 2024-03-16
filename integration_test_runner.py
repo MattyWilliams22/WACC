@@ -172,7 +172,8 @@ def run_tests(tests_to_run, flag):
 
   # Dictionary of test categories to their respective counts
   validExtensionSubTests = {
-    "function_overloading": (0, 0, "Function Overloading")
+    "function_overloading": (0, 0, "Function Overloading"),
+    "standard_library": (0, 0, "Standard Library")
   }
 
   for test in tests_to_run:
@@ -210,6 +211,8 @@ def run_tests(tests_to_run, flag):
               validSubDir = "heap"
             elif "function_overloading/" in fname:
               validSubDir = "function_overloading"
+            elif "standard_library/" in fname:
+              validSubDir = "standard_library"
             else:
               fileNameParts = fname.split("/")
               validSubDir = fileNameParts[2]
@@ -292,7 +295,10 @@ errorTests = []
 ignoredTests = ["wacc_examples/valid/scope/printAllTypes.wacc",
                 "wacc_examples/valid/function/simple_functions/usesArgumentWhilstMakingArgument.wacc",
                 "wacc_examples/valid/function/simple_functions/manyArgumentsChar.wacc",
-                "wacc_examples/valid/function/simple_functions/manyArgumentsInt.wacc"]
+                "wacc_examples/valid/function/simple_functions/manyArgumentsInt.wacc",
+                "wacc_examples_extension/extension_valid/standard_library/median.wacc",
+                "wacc_examples_extension/extension_valid/standard_library/mode.wacc",
+                "wacc_examples_extension/extension_valid/standard_library/sort.wacc"]
 runningTests = [test for test in runningTests if test not in ignoredTests]
 
 print("Running tests...")

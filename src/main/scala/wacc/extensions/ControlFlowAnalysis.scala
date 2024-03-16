@@ -143,9 +143,9 @@ object ControlFlowAnalysis {
     val nodesToRemove = cfg.cfgNodes diff reached
     for (node <- nodesToRemove) {
       node.instr match {
-        case Some(AscizInstr(_, _)) =>
         case Some(NewLine()) =>
-        case Some(Command("align 4", _)) =>
+        case Some(Command("include \"predefinedFunctions.s\"", _)) =>
+        case Some(Command("include \"standardLibrary.s\"", _)) =>
         case _ => cfg.cfgNodes -= node
       }
     }
@@ -179,14 +179,20 @@ object ControlFlowAnalysis {
   private def checkJumpToUnconditionalJump(cfg: ControlFlowGraph, node: CFGNode): Unit = {
     node.instr match {
       case Some(BInstr(target, cond, link)) if cond != noCondition =>
-        val labelNode = cfg.labelToNode(target)
-        val nextNode = labelNode.succs.head
-        nextNode.instr match {
-          case Some(BInstr(newTarget, _, _)) =>
-            node.instr = Some(BInstr(newTarget, cond, link))
-            node.succs -= labelNode
-            node.succs ++= labelNode.succs
-          case _ =>
+        val labelNode = cfg.labelToNode.get(target)
+        labelNode match {
+          case None =>
+          case Some(labelNode) =>
+            if (labelNode.succs.size == 1) {
+              val nextNode = labelNode.succs.head
+              nextNode.instr match {
+                case Some(BInstr(newTarget, _, _)) =>
+                  node.instr = Some(BInstr(newTarget, cond, link))
+                  node.succs -= labelNode
+                  node.succs ++= labelNode.succs
+                case _ =>
+              }
+            }
         }
       case _ =>
     }

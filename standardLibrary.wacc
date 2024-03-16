@@ -1,0 +1,219 @@
+begin
+    int abs(int num) is
+        if num < 0 then
+            return num * -1
+        else
+            return num
+        fi
+    end
+
+    int pow(int num, int exp) is
+        int funcExp = exp - 1;
+        int result = num;
+
+        while funcExp != 0 do
+            result = result * num;
+            funcExp = funcExp - 1
+        done;
+
+        return result
+    end
+
+    int gcd(int num1, int num2) is
+        int a = num1;
+        int b = num2;
+
+        while b != 0 do
+            int temp = b;
+            b = a % b;
+            a = temp
+        done;
+
+        return a
+    end
+
+    int lcm(int num1, int num2) is
+        int gcd = call gcd(num1, num2);
+        return (num1 * num2) / gcd
+    end
+
+    int fact(int num) is
+        int result = 1;
+        int funcNum = 1;
+
+        while funcNum <= num do
+            result = result * funcNum;
+            funcNum = funcNum + 1
+        done;
+
+        return result
+    end
+
+    int perm(int n, int r) is
+        if n < r then
+            return 0
+        else
+            int numerator = call fact(n);
+            int denominator = call fact(n - r);
+            int result = numerator / denominator;
+            return result
+        fi
+    end
+
+    int comb(int n, int r) is
+        if n < r then
+            return 0
+        else
+            int numerator = call fact(n);
+            int denominator1 = call fact(r);
+            int demoninator2 = call fact(n - r);
+            int denominator = denominator1 * demoninator2;
+            int result = numerator / denominator;
+            return result
+        fi
+    end
+
+    # int mode(int[] arr) is
+    #     int n = len arr;
+    #     int maxCount = 0;
+    #     int mode = 0;
+    # 
+    #     int iCounter = 0;
+    # 
+    #     while iCounter < n do
+    #         int count = 0;
+    #         int jCounter = 0;
+    # 
+    #         while jCounter < n do
+    #             if arr[iCounter] == arr[jCounter] then
+    #                 count = count + 1
+    #             else
+    #                 skip
+    #             fi;
+    #             jCounter = jCounter + 1
+    #         done;
+    # 
+    #         if count > maxCount then
+    #             maxCount = count;
+    #             mode = arr[iCounter]
+    #         else
+    #             skip
+    #         fi;
+    # 
+    #         iCounter = iCounter + 1
+    #     done;
+    # 
+    #     return mode
+    # end
+
+    # int[] sort(int[] arr) is
+    #     int n = len arr;
+    #     int i = 0;
+    # 
+    #     while i < n do
+    #         int j = 0;
+    # 
+    #         while j < n - i - 1 do
+    #             if arr[j] > arr[j + 1] then
+    #                 int temp = arr[j];
+    #                 arr[j] = arr[j + 1];
+    #                 arr[j + 1] = temp
+    #             else
+    #                 skip
+    #             fi;
+    # 
+    #             j = j + 1
+    #         done;
+    # 
+    #         i = i + 1
+    #     done;
+    # 
+    #     return arr
+    # end
+
+    # int median(int[] arr) is
+    #     int n = len arr;
+    #     arr = call sort(arr);
+    # 
+    #     if n % 2 == 0 then
+    #         int sum = arr[n / 2] + arr[n / 2 - 1];
+    # 
+    #         if sum % 2 == 0 then
+    #             return sum / 2
+    #         else
+    #             return (sum + 1) / 2
+    #         fi
+    #     else
+    #         return arr[n / 2]
+    #     fi
+    # end
+
+    # string concat(string str1, string str2) is
+    #    pair(string, string) p1 = newpair(str1, str2);
+    #    pair(pair, bool) pair1 = newpair(p1, false);
+    #    char[] strArr1 = fst fst pair1;
+    #    char[] strArr2 = snd fst pair1;
+    #    int newArrayLen = len strArr1 + len strArr2;
+    #    char[] resultArr = ['a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a'];
+    #
+    #    int i = 0;
+    #
+    #    while i < len strArr1 do
+    #        resultArr[i] = strArr1[i];
+    #        i = i + 1
+    #    done;
+    #
+    #    int j = 0;
+    #
+    #    while j < len strArr2 do
+    #        resultArr[i] = strArr2[j];
+    #        i = i + 1;
+    #        j = j + 1
+    #    done;
+    #
+    #    resultArr[i] = '\0';
+
+    #    pair(char[], bool) p2 = newpair(resultArr, true);
+    #    pair(pair, bool) pair2 = newpair(p2, false);
+    #    string resultStr = fst fst pair2;
+    #
+    #    return resultStr
+    # end
+
+    # string substring(string str, int start, int endIn) is
+    #    pair(string, bool) p1 = newpair(str, false);
+    #    pair(pair, bool) pair1 = newpair(p1, false);
+    #    char[] resultArr = fst fst pair1;
+    #
+    #    int i = 0;
+    #
+    #    if start < 0 then
+    #        start = 0
+    #    else
+    #        skip
+    #    fi;
+    #
+    #    if endIn > len resultArr then
+    #        endIn = len resultArr
+    #    else
+    #        skip
+    #    fi;
+    #
+    #    int length = endIn - start;
+    #
+    #    while i < length do
+    #        resultArr[i] = resultArr[start + i];
+    #        i = i + 1
+    #    done;
+    #
+    #    resultArr[i] = '\0';
+    #
+    #    pair(char[], bool) p2 = newpair(resultArr, true);
+    #    pair(pair, bool) pair2 = newpair(p2, false);
+    #    string resultStr = fst fst pair2;
+    #
+    #    return resultStr
+    # end
+
+    skip
+end

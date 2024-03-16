@@ -1,0 +1,13 @@
+# utilises the mode function from the standard library
+
+# Output:
+# 5
+#
+
+# Program:
+
+begin
+  int[] y = [5, 7, 4, 5, 5, 2, 1, 2];
+  int x = call mode(y);
+  println x
+end

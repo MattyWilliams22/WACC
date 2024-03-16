@@ -4,12 +4,13 @@ import wacc.ASTNodes._
 import wacc.Main.SEMANTIC_ERR_CODE
 import wacc.SymbolTable
 
-class SemanticAnalyser(program: Program) {
+class SemanticAnalyser(program: Program, stdLibSymbolTable: Option[SymbolTable]) {
   val symbolTable: SymbolTable = program.symbolTable
 
   def analyse(): Unit = {
     println("Running Semantic Analysis...")
     symbolTable.generateSymbolTable(program)
+    symbolTable.parent = stdLibSymbolTable
     val semanticErrors: List[SemanticError] = program.check()
     if (semanticErrors.nonEmpty) {
       semanticErrors.foreach(e => e.print())
