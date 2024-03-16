@@ -181,8 +181,9 @@ object ASTNodes {
       case (PairT(p1, p2), PairT(p3, p4)) =>
         (p1 == p3 || checkValidPairTyping(p1, p3)) && (p2 == p4 || checkValidPairTyping(p2, p4))
       case (PairT(_, _), PairLiter("null")) => true
-      case (PairNull(), PairT(_, _)) => true
-      case (PairNull(), PairLiter("null")) => true
+      case (PairT(_, _), PairNull(_)) => true
+      case (PairNull(_), PairT(_, _)) => true
+      case (PairNull(_), PairLiter("null")) => true
       case _ => false
     }
   }
@@ -211,14 +212,16 @@ object ASTNodes {
         case _ => false
       }
       val isPairOfNulls = valueType match {
-        case PairT(PairNull(),PairNull()) => true
+        case PairT(PairNull(_),PairNull(_)) => true
         case _ => false
       }
       checkValid(_type == valueType ||
         isPair && checkValidPairTyping(_type, valueType) ||
+        _type != PairNull(false) && valueType == PairNull(true) ||
         isEmptyArrayLiteral && _type.isInstanceOf[ArrayT] ||
         _type == BaseT("string") && valueType == ArrayT(BaseT("char"), 1) ||
-        isPairOfNulls, "Types of variable and rvalue do not match", this)
+        isPairOfNulls ||
+        valueType == PairNull(), "Types of variable and rvalue do not match", this)
       true
     }
   }
@@ -250,10 +253,12 @@ object ASTNodes {
         case PairT(_, _) => true
         case _ => false
       }
-      var valid = lvalueType == rvalueType ||
+      var valid = (lvalueType == rvalueType ||
+        lvalueType == PairNull(false) && rvalueType.isInstanceOf[PairT]||
+        lvalueType == PairNull(true) && rvalueType != PairNull(true) ||
         isPair && checkValidPairTyping(lvalueType, rvalueType) ||
         isEmptyArrayLiteral && lvalueType.isInstanceOf[ArrayT] ||
-        lvalueType == BaseT("string") && rvalueType == ArrayT(BaseT("char"), 1)
+        lvalueType == BaseT("string") && rvalueType == ArrayT(BaseT("char"), 1)) && !(lvalueType == PairNull(true) && rvalueType == PairNull(true))
       lvalue match {
         case ident: Ident =>
           if (ident.isFunction) {
@@ -471,7 +476,7 @@ object ASTNodes {
     }
   }
 
-  case class PairNull() extends PairElemT {
+  case class PairNull(val accessed: Boolean = false) extends PairElemT {
     // Semantically check if a pair null is valid
     def check(): Boolean = {
       true
@@ -599,17 +604,9 @@ object ASTNodes {
             case "fst" => pairType.pet1
             case "snd" => pairType.pet2
           }
-          if (childType == PairNull()) {
-            childType = lvalue match {
-              case Ident(str, _, _) =>
-                currentSymbolTable.lookupAllVariables(str) match {
-                  case Some(Declare(t, _, _)) => t
-                  case _ => childType
-                }
-              case _ => childType
-            }
-          }
           childType
+        case t2: PairNull =>
+          PairNull(true)
         case _ =>
           // If the parent is not a pair, return an error
           BaseT("ERROR")
