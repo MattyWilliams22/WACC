@@ -1,0 +1,13 @@
+# allowed for the extraction from an erase nested pair to a lvalue of any type as long
+# as it's type is known
+
+# Output:
+#
+
+# Program:
+
+begin
+  pair(int, int) x = newpair(1, 2);
+  pair(pair, bool) y = newpair(x, true);
+  string z = snd fst y
+end

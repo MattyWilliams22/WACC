@@ -1,0 +1,14 @@
+# allowed for nested pairs to have full type information
+
+# Output:
+# 2
+#
+
+# Program:
+
+begin
+  pair(int, int) x = newpair(1, 2);
+  pair(pair(int, int), bool) y = newpair(x, true);
+  int z = snd fst y;
+  println z
+end

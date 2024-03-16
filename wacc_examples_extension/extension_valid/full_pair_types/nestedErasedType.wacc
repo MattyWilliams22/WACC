@@ -1,0 +1,15 @@
+# allowed for nested pairs to have erased type information and to extract values from
+# erased pairs
+
+# Output:
+# 2
+#
+
+# Program:
+
+begin
+  pair(int, int) x = newpair(1, 2);
+  pair(pair, bool) y = newpair(x, true);
+  int z = snd fst y;
+  println z
+end
