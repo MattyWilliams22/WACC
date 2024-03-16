@@ -31,7 +31,7 @@ object StandardLibrary {
         semanticAnalyser.analyse()
 
         /* Generate assembly instructions from AST */
-        println("Generating assembly code...")
+        println("Generating assembly instructions for standard library...")
         val registerAllocator = new BasicRegisterAllocator
         val (reg, _) = registerAllocator.allocateRegister()
         val assemblyInstructions = generateInstructions(ast, registerAllocator, reg)

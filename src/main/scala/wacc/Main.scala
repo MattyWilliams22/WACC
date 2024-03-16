@@ -99,13 +99,13 @@ object Main {
 
           /* Perform control flow analysis on the generated AST */
           if (optimise) {
-            println("AST before: " + ast)
+            println("\nAST before: " + ast)
             val newAST = controlFlowOptimise(ast)
-            println("AST after: " + newAST)
+            println("\nAST after: " + newAST)
           }
 
           /* Generate assembly instructions from AST */
-          println("Generating assembly code...")
+          println("\nGenerating assembly instructions for main program...")
           val registerAllocator = new BasicRegisterAllocator
           val (reg, _) = registerAllocator.allocateRegister()
           var mainInstructions: ListBuffer[Instruction] = generateInstructions(newAST, registerAllocator, reg)
@@ -113,16 +113,15 @@ object Main {
 
           /* Perform control flow analysis on the generated assembly instructions */
           if (optimise) {
-            println("assembly before: " + mainInstructions)
+            println("\nInstructions before optimisation: " + mainInstructions)
             val (optimisedMainInstructions, optimisedStdLibInstructions, optimisedPredefInstructions): 
               (ListBuffer[Instruction], ListBuffer[Instruction], ListBuffer[Instruction])
               = controlFlowOptimise(
                 mainInstructions, 
                 stdLibInstructions, 
                 predefInstructions)
-            println("assembly after: " + optimisedMainInstructions)
+            println("\nInstructions after control flow analysis: " + optimisedMainInstructions)
             
-            // Replace the original instructions with the optimised ones
             mainInstructions = optimisedMainInstructions
             stdLibInstructions = optimisedStdLibInstructions
             predefInstructions = optimisedPredefInstructions
@@ -130,9 +129,9 @@ object Main {
           
           /* Check if the code should be optimised using the peephole */
           if (optimise) {
-            println("Optimising code...")
             mainInstructions = optimiseInstructions(mainInstructions.toList)
             mainInstructions = removeComments(mainInstructions)
+            println("\nInstructions after peephole optimisations: " + mainInstructions)
           }
 
           /* Write all pre-defined functions to file */

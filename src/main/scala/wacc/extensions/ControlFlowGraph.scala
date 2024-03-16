@@ -46,11 +46,12 @@ class ControlFlowGraph {
   }
 
   def printCFG(): Unit = {
+    println("\nControl Flow Graph")
     for (cfgNode <- cfgNodes) {
       println("Node " + cfgNode.id + ": " + cfgNode.instr.getOrElse("No instruction"))
-      println("Uses: " + cfgNode.uses.mkString(", "))
-      println("Defs: " + cfgNode.defs.mkString(", "))
-      println("-> " + cfgNode.succs.map(_.id).mkString(", "))
+      println("  Uses: " + cfgNode.uses.mkString(", "))
+      println("  Defs: " + cfgNode.defs.mkString(", "))
+      println("  -> " + cfgNode.succs.map(_.id).mkString(", "))
     }
   }
 
