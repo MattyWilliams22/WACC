@@ -173,7 +173,8 @@ def run_tests(tests_to_run, flag):
   # Dictionary of test categories to their respective counts
   validExtensionSubTests = {
     "function_overloading": (0, 0, "Function Overloading"),
-    "standard_library": (0, 0, "Standard Library")
+    "standard_library": (0, 0, "Standard Library"),
+    "full_pair_types": (0, 0, "Full Pair Types")
   }
 
   for test in tests_to_run:
@@ -213,6 +214,8 @@ def run_tests(tests_to_run, flag):
               validSubDir = "function_overloading"
             elif "standard_library/" in fname:
               validSubDir = "standard_library"
+            elif "full_pair_types/" in fname:
+              validSubDir = "full_pair_types"
             else:
               fileNameParts = fname.split("/")
               validSubDir = fileNameParts[2]
@@ -298,7 +301,8 @@ ignoredTests = ["wacc_examples/valid/scope/printAllTypes.wacc",
                 "wacc_examples/valid/function/simple_functions/manyArgumentsInt.wacc",
                 "wacc_examples_extension/extension_valid/standard_library/median.wacc",
                 "wacc_examples_extension/extension_valid/standard_library/mode.wacc",
-                "wacc_examples_extension/extension_valid/standard_library/sort.wacc"]
+                "wacc_examples_extension/extension_valid/standard_library/sort.wacc",
+                "wacc_examples/invalid/syntaxErr/pairs/noNesting.wacc"]
 runningTests = [test for test in runningTests if test not in ignoredTests]
 
 print("Running tests...")

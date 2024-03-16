@@ -1,0 +1,16 @@
+# can't assign the incorrect pair type to a nested pair with full type information
+
+# Output:
+#
+
+# Exit:
+# 200
+
+# Program:
+
+begin
+  pair(char, int) x = newpair('a', 2);
+  pair(pair(int, int), bool) y = newpair(x, true);
+  int z = snd fst y;
+  println z
+end

@@ -1,0 +1,16 @@
+# can't assign the incorrect type to a value extracted from a nested pair with full type # information
+
+# Output:
+#
+
+# Exit:
+# 200
+
+# Program:
+
+begin
+  pair(int, int) x = newpair(1, 2);
+  pair(pair(int, int), bool) y = newpair(x, true);
+  char z = snd fst y;
+  println z
+end
