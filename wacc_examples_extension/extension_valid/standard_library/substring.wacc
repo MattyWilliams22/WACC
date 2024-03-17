@@ -1,0 +1,12 @@
+# utilises the substring function from the standard library
+
+# Output:
+# Hello
+#
+
+# Program:
+
+begin
+  string x = call substring("Hello World!", 0, 5);
+  println x
+end

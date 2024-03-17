@@ -172,7 +172,7 @@ begin
     #    done;
     #
     #    resultArr[i] = '\0';
-
+    #
     #    pair(char[], bool) p2 = newpair(resultArr, true);
     #    pair(pair, bool) pair2 = newpair(p2, false);
     #    string resultStr = fst fst pair2;

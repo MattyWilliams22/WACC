@@ -98,7 +98,7 @@ object Main {
     }
 
     /* To be able to run tests */
-    if (args.length > 1 && !args.contains("-o") && !args.contains("--graph-colouring")){
+    if (args.length > 1 && !args.contains("-o") && !args.contains("--graph-colouring")) {
       /* Invoke your parser's parse method */
       val result: Result[SyntaxError, Expr] = parser.parseTest(input)
       result match {

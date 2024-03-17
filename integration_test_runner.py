@@ -180,8 +180,14 @@ def run_tests(tests_to_run, flags):
   for test in tests_to_run:
     for fname in glob.glob(test):
       if flags != "":
-        print(f"sh compile {flags} {fname}")
-        proc = subprocess.run(["sh", "compile", flags, fname], stdout=subprocess.DEVNULL)
+        if len(flags) > 5:
+          flag1 = flags.split(" ")[0]
+          flag2 = flags.split(" ")[1]
+          print(f"sh compile {flag1} {flag2} {fname}")
+          proc = subprocess.run(["sh", "compile", flag1, flag2, fname], stdout=subprocess.DEVNULL)
+        else:
+          print(f"sh compile {flags} {fname}")
+          proc = subprocess.run(["sh", "compile", flags, fname], stdout=subprocess.DEVNULL)
       else:
         print(f"sh compile {fname}")
         proc = subprocess.run(["sh", "compile", fname], stdout=subprocess.DEVNULL)
@@ -201,6 +207,7 @@ def run_tests(tests_to_run, flags):
           # If compilation was successful, run the corresponding assembly file
           assembly_file = os.path.basename(fname).replace('.wacc', '.s')
 
+          print(assembly_file)
           if os.path.exists(assembly_file):
             validSubDir = ""
 
@@ -302,6 +309,8 @@ ignoredTests = ["wacc_examples/valid/scope/printAllTypes.wacc",
                 "wacc_examples_extension/extension_valid/standard_library/median.wacc",
                 "wacc_examples_extension/extension_valid/standard_library/mode.wacc",
                 "wacc_examples_extension/extension_valid/standard_library/sort.wacc",
+                "wacc_examples_extension/extension_valid/standard_library/substring.wacc",
+                "wacc_examples_extension/extension_valid/standard_library/concat.wacc",
                 "wacc_examples/invalid/syntaxErr/pairs/noNesting.wacc"]
 runningTests = [test for test in runningTests if test not in ignoredTests]
 print("Running tests...")

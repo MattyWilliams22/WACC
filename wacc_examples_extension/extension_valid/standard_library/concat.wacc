@@ -1,0 +1,12 @@
+# utilises the concat function from the standard library
+
+# Output:
+# Hello World!
+#
+
+# Program:
+
+begin
+  string x = call concat("Hello", " World!");
+  println x
+end
