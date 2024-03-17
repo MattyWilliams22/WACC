@@ -143,10 +143,11 @@ object Main {
           } else {
             generateInstructions(newAST, registerAllocator, reg)
           }
+
           var predefInstructions: ListBuffer[Instruction] = PredefinedFunctions.getPredefinedFunctions
 
-          /* Perform efficient register allocation on the generated assembly instructions */
           if (graph_colouring) {
+            /* Perform efficient register allocation on the generated assembly instructions */
             val (optimisedMainInstructions, optimisedStdLibInstructions, optimisedPredefInstructions): 
               (ListBuffer[Instruction], ListBuffer[Instruction], ListBuffer[Instruction])
               = registerOptimise(
@@ -157,10 +158,8 @@ object Main {
             mainInstructions = optimisedMainInstructions
             stdLibInstructions = optimisedStdLibInstructions
             predefInstructions = optimisedPredefInstructions
-          } 
-          
-          /* Perform control flow analysis on the generated assembly instructions */
-          if (optimise) {
+          } else if (optimise) {
+            /* Perform control flow analysis on the generated assembly instructions */
             val (optimisedMainInstructions, optimisedStdLibInstructions, optimisedPredefInstructions): 
               (ListBuffer[Instruction], ListBuffer[Instruction], ListBuffer[Instruction])
               = controlFlowOptimise(
@@ -187,14 +186,10 @@ object Main {
           println("Time to optimise assembly: " + (time2 - time1) + "ns")
 
           /* Write all pre-defined functions to file */
-          if (predefInstructions.nonEmpty) {
-            PredefinedFunctions.writeToFile(predefInstructions)
-          }
+          PredefinedFunctions.writeToFile(predefInstructions)
           
           /* Write standard library to file */
-          if (stdLibInstructions.nonEmpty) {
-            StandardLibrary.writeToFile(stdLibInstructions)
-          }
+          StandardLibrary.writeToFile(stdLibInstructions)
 
           /* Create a new file to store generated assembly for main program */
           val inputFile = new File(arg)

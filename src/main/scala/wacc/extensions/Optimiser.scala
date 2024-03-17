@@ -72,6 +72,10 @@ object Optimiser {
     val newMain = registerMapping.mapInstructions(cfg, mainRange)
     val newStdLib = registerMapping.mapInstructions(cfg, stdLibRange)
     val newPredef = registerMapping.mapInstructions(cfg, predefRange)
+    checkImports(newMain, newStdLib, newPredef)
+    shrinkNewLines(newMain)
+    shrinkNewLines(newStdLib)
+    shrinkNewLines(newPredef)
     printInstructions(newMain)
     (newMain, newStdLib, newPredef)
   }

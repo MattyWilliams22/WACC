@@ -52,6 +52,7 @@ object TemporaryCodeGenerator {
       }
 
       programLines ++= List(Comment("Start of program", 4),
+        Command("include \"standardLibrary.s\"", 0),
         Command("data", 0))
       programLines ++= stringPool.toList
       programLines ++= List(Command("align 4", 0),
