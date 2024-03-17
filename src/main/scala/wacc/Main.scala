@@ -99,8 +99,15 @@ object Main {
 
           var newAST = ast
 
+          /* Perform control flow analysis on the generated AST */
+          if (optimise) {
+            println("\nAST before: " + ast)
+            val newAST = controlFlowOptimise(ast)
+            println("\nAST after: " + newAST)
+          }
+
           /* Generate assembly instructions from AST */
-          println("Generating assembly code...")
+          println("\nGenerating assembly instructions for main program...")
           val registerAllocator = new BasicRegisterAllocator
           val (reg, _) = registerAllocator.allocateRegister()
           var mainInstructions: ListBuffer[Instruction] = generateInstructions(newAST, registerAllocator, reg)
@@ -115,7 +122,6 @@ object Main {
                 stdLibInstructions, 
                 predefInstructions)
             
-            // Replace the original instructions with the optimised ones
             mainInstructions = optimisedMainInstructions
             stdLibInstructions = optimisedStdLibInstructions
             predefInstructions = optimisedPredefInstructions
@@ -126,9 +132,9 @@ object Main {
           println("Time to generate assembly: " + (time1 - start) + "ns")
           /* Check if the code should be optimised using the peephole */
           if (optimise) {
-            println("Optimising code...")
             mainInstructions = optimiseInstructions(mainInstructions.toList)
             mainInstructions = removeComments(mainInstructions)
+            println("\nInstructions after peephole optimisations: " + mainInstructions)
           }
           val time2 = System.nanoTime()
           println("Time to optimise assembly: " + (time2 - time1) + "ns")

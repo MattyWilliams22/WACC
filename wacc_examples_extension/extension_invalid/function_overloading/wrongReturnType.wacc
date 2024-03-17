@@ -1,0 +1,21 @@
+# attempt to call a function that does not exist
+
+# Output:
+
+# Exit:
+# 200
+
+# Program:
+
+begin
+  bool f(int x, bool y) is
+    return y
+  end
+
+  int f(int x, bool y) is
+    return x
+  end
+
+  int[] k = call f(4, false);
+  println k
+end

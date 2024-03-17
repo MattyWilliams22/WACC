@@ -1,0 +1,40 @@
+# overloading functions with different names at the same time
+
+# Output:
+# 2
+# true
+# 8
+# 5
+#
+
+# Program:
+
+begin
+  int f(int x, bool y) is
+    return x
+  end
+
+  bool f(int x, bool y) is
+    return y
+  end
+
+  int g(int x, bool y) is
+    return x
+  end
+
+  int g(bool x, int y) is
+    return y
+  end
+
+  int a = call f(2, false);
+  println a;
+
+  bool b = call f(11, true);
+  println b;
+
+  int c = call g(8, true);
+  println c;
+
+  int d = call g(false, 5);
+  println d
+end

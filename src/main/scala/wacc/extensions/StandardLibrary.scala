@@ -31,7 +31,7 @@ object StandardLibrary {
         semanticAnalyser.analyse()
 
         /* Generate assembly instructions from AST */
-        println("Generating assembly code...")
+        println("Generating assembly instructions for standard library...")
         val registerAllocator = new BasicRegisterAllocator
         val (reg, _) = registerAllocator.allocateRegister()
         val assemblyInstructions = generateInstructions(ast, registerAllocator, reg)
@@ -40,7 +40,6 @@ object StandardLibrary {
 
         val mainInd = assemblyInstructions.indexOf(Label("main"))
         val nlInd = assemblyInstructions.indexOf(Pop(List(FP, PC)))
-        println(mainInd, nlInd)
         assemblyInstructions.remove(mainInd, nlInd - mainInd + 1)
         (assemblyInstructions, semanticAnalyser.symbolTable)
       case _ => throw new RuntimeException("Failed to compile standard library")

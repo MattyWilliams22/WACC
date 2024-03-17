@@ -1,0 +1,25 @@
+# call a different overloading function from within another overloading function
+
+# Output:
+# 1
+# 8
+#
+
+# Program:
+
+begin
+  int f(int x, bool y) is
+    int z = call f(false, 0);
+    return z
+  end
+
+  int f(bool x, int y) is
+    return y + 1
+  end
+
+  int z = call f(4, true);
+  println z;
+
+  int w = call f(false, 7);
+  println w
+end

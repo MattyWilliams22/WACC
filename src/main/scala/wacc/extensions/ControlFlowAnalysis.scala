@@ -32,6 +32,9 @@ object ControlFlowAnalysis {
         case Bool("false") => Skip()
         case _ => While(analyseExpr(cond), analyseStatement(stmt))
       }
+
+      case Scope(stmt) =>
+      Scope(analyseStatement(stmt))
       
       case Statements(stmts) =>
       Statements(stmts.map(analyseStatement))
