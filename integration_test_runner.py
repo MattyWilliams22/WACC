@@ -146,7 +146,7 @@ def compile_run_assembly_file(fname, assembly_file):
     errorTests.append(fname)
     return False
 
-def run_tests(tests_to_run, flag):
+def run_tests(tests_to_run, flags):
   syntaxPasses = 0
   semanticPasses = 0
   validPasses = 0
@@ -179,9 +179,9 @@ def run_tests(tests_to_run, flag):
 
   for test in tests_to_run:
     for fname in glob.glob(test):
-      if flag == "-o":
-        print(f"sh compile {flag} {fname}")
-        proc = subprocess.run(["sh", "compile", flag, fname], stdout=subprocess.DEVNULL)
+      if flags != "":
+        print(f"sh compile {flags} {fname}")
+        proc = subprocess.run(["sh", "compile", flags, fname], stdout=subprocess.DEVNULL)
       else:
         print(f"sh compile {fname}")
         proc = subprocess.run(["sh", "compile", fname], stdout=subprocess.DEVNULL)
@@ -261,13 +261,13 @@ tests.update(add_tests_to_dict(extension_base))
 runningTests = []
 
 # If no arguments are given, run all tests
-if len(sys.argv) < 2 or (len(sys.argv) == 2 and "-o" in sys.argv):
+if len(sys.argv) < 2 or (len(sys.argv) == 2 and ("-o" in sys.argv or "--graph-colouring" in sys.argv)) or (len(sys.argv) == 3 and "-o" in sys.argv and "--graph-colouring" in sys.argv):
   runningTests = tests["valid"] + tests["invalid"] + tests["extension_invalid"] + tests["extension_valid"]
 elif sys.argv[1] == "--syntax":
   runningTests = tests["invalid-syntax"] + tests["valid"]
 elif sys.argv[1] == "--semantic":
   runningTests = tests["invalid-semantic"] + tests["valid"]
-elif (len(sys.argv) == 2) or (len(sys.argv) == 3 and "-o" in sys.argv):
+elif (len(sys.argv) == 2) or (len(sys.argv) == 3 and "-o" in sys.argv) or (len(sys.argv) == 3 and "--graph-colouring" in sys.argv) or (len(sys.argv) == 4 and "-o" in sys.argv and "--graph-colouring" in sys.argv):
   runningTests = tests[sys.argv[1]]
 else:
   if sys.argv[1] == "valid":
@@ -304,14 +304,21 @@ ignoredTests = ["wacc_examples/valid/scope/printAllTypes.wacc",
                 "wacc_examples_extension/extension_valid/standard_library/sort.wacc",
                 "wacc_examples/invalid/syntaxErr/pairs/noNesting.wacc"]
 runningTests = [test for test in runningTests if test not in ignoredTests]
-
 print("Running tests...")
+
+flags = ""
 
 # Run the tests
 if "-o" in sys.argv:
-  syntaxPasses, semanticPasses, validPasses, validSubTests, extensionInvalidPasses, extensionValidPasses = run_tests(runningTests, "-o")
-else:
-  syntaxPasses, semanticPasses, validPasses, validSubTests, extensionInvalidPasses, extensionValidPasses = run_tests(runningTests, "")
+  flags = "-o"
+
+if "--graph-colouring" in sys.argv:
+  if flags == "":
+    flags = "--graph-colouring"
+  else:
+    flags = flags + " --graph-colouring"
+
+syntaxPasses, semanticPasses, validPasses, validSubTests, extensionInvalidPasses, extensionValidPasses = run_tests(runningTests, flags)
 syntaxTotal = len(tests["invalid-syntax"])
 semanticTotal = len(tests["invalid-semantic"])
 validTotal = len(tests["valid"])

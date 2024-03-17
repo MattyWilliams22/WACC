@@ -40,15 +40,35 @@ object Main {
     var input = ""
     var arg = args(0)
     var optimise = false
+    var graph_colouring = false
 
     /* Check for -o flag */
-    if (arg == "-o") {
+    if (args.contains("-o")) {
       if (args.length < 2) {
         println("Please specify an input file!")
         System.exit(FILE_ERR_CODE)
       }
       arg = args(1)
       optimise = true
+    }
+
+    /* Check for --graph-colouring flag */
+    if (args.contains("--graph-colouring")) {
+      if (args.length < 2) {
+        println("Please specify an input file!")
+        System.exit(FILE_ERR_CODE)
+      }
+      arg = args(1)
+      graph_colouring = true
+    }
+
+    /* Check if both flags are present */
+    if (optimise && graph_colouring) {
+      if (args.length < 3) {
+        println("Please specify an input file!")
+        System.exit(FILE_ERR_CODE)
+      }
+      arg = args(2)
     }
 
     /* Parses files only if argument ends with ".wacc" */
@@ -78,7 +98,7 @@ object Main {
     }
 
     /* To be able to run tests */
-    if (args.length > 1 && args(0) != "-o"){
+    if (args.length > 1 && !args.contains("-o") && !args.contains("--graph-colouring")){
       /* Invoke your parser's parse method */
       val result: Result[SyntaxError, Expr] = parser.parseTest(input)
       result match {
@@ -92,8 +112,6 @@ object Main {
       /* Parsing of expression */
       result match {
         case Success(ast) =>
-          val graph_colouring = false
-
           /* Compile standard library */
           var (stdLibInstructions, stdLibSymbolTable) = StandardLibrary.checkStdLib()
 
@@ -106,7 +124,7 @@ object Main {
           /* Perform control flow analysis on the generated AST */
           if (optimise) {
             println("\nAST before: " + ast)
-            val newAST = controlFlowOptimise(ast)
+            newAST = controlFlowOptimise(ast)
             println("\nAST after: " + newAST)
           }
 
@@ -122,14 +140,11 @@ object Main {
           val (reg, _) = registerAllocator.allocateRegister()
           var mainInstructions: ListBuffer[Instruction] = if (graph_colouring) {
             generateTemporaryInstructions(newAST, registerAllocator, reg)
-          } else if (optimise) {
-            generateInstructions(newAST, registerAllocator, reg)
           } else {
-            generateInstructions(ast, registerAllocator, reg)
+            generateInstructions(newAST, registerAllocator, reg)
           }
           var predefInstructions: ListBuffer[Instruction] = PredefinedFunctions.getPredefinedFunctions
 
-          /* Perform control flow analysis on the generated assembly instructions */
           /* Perform efficient register allocation on the generated assembly instructions */
           if (graph_colouring) {
             val (optimisedMainInstructions, optimisedStdLibInstructions, optimisedPredefInstructions): 
@@ -142,7 +157,10 @@ object Main {
             mainInstructions = optimisedMainInstructions
             stdLibInstructions = optimisedStdLibInstructions
             predefInstructions = optimisedPredefInstructions
-          } else if (optimise) {
+          } 
+          
+          /* Perform control flow analysis on the generated assembly instructions */
+          if (optimise) {
             val (optimisedMainInstructions, optimisedStdLibInstructions, optimisedPredefInstructions): 
               (ListBuffer[Instruction], ListBuffer[Instruction], ListBuffer[Instruction])
               = controlFlowOptimise(
@@ -173,7 +191,6 @@ object Main {
             PredefinedFunctions.writeToFile(predefInstructions)
           }
           
-
           /* Write standard library to file */
           if (stdLibInstructions.nonEmpty) {
             StandardLibrary.writeToFile(stdLibInstructions)
