@@ -180,7 +180,7 @@ def run_tests(tests_to_run, flags):
   for test in tests_to_run:
     for fname in glob.glob(test):
       if flags != "":
-        if len(flags) > 5:
+        if len(flags.split(" ")) > 5:
           flag1 = flags.split(" ")[0]
           flag2 = flags.split(" ")[1]
           print(f"sh compile {flag1} {flag2} {fname}")
