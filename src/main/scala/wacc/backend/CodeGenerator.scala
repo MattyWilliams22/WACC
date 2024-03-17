@@ -7,7 +7,7 @@ import wacc.ASTNodes._
 import wacc.backend.PredefinedFunctions
 
 /* Used to generate instructions for an AST */
-object BasicCodeGenerator {
+object CodeGenerator {
 
   /* Used to generate a unique label */
   private var labelCounter: Int = -1

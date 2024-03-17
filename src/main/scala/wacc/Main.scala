@@ -4,7 +4,7 @@ import java.io.{File, PrintWriter}
 import scala.io.Source
 import parsley.{Failure, Result, Success}
 import wacc.ASTNodes._
-import wacc.backend.BasicCodeGenerator._
+import wacc.backend.CodeGenerator._
 import wacc.backend.TemporaryCodeGenerator._
 import wacc.backend.BasicRegisterAllocator
 import wacc.backend.TemporaryRegisterAllocator
@@ -85,6 +85,9 @@ object Main {
       /* Parsing of expression */
       result match {
         case Success(ast) =>
+          val graph_colouring = false
+
+
           /* Semantically Analyse AST */
           val semanticAnalyser = new SemanticAnalyser(ast)
           semanticAnalyser.analyse()
@@ -101,23 +104,24 @@ object Main {
           /* Generate assembly instructions from AST */
           println("Generating assembly code...")
 
-          val registerAllocator = if (optimise) {
+          val registerAllocator = if (graph_colouring) {
             new TemporaryRegisterAllocator
           } else {
             new BasicRegisterAllocator
           }
+
           val (reg, _) = registerAllocator.allocateRegister()
-          var assemblyInstructions = if (optimise) {
+          var assemblyInstructions = if (graph_colouring) {
             generateTemporaryInstructions(newAST, registerAllocator, reg)
           } else {
             generateInstructions(ast, registerAllocator, reg)
           }
 
           /* Perform efficient register allocation on the generated assembly instructions */
-          if (optimise) {
-            println("assembly before: " + assemblyInstructions)
+          if (graph_colouring) {
             assemblyInstructions = registerOptimise(assemblyInstructions)
-            println("assembly after: " + assemblyInstructions)
+          } else if (optimise) {
+            assemblyInstructions = controlFlowOptimise(assemblyInstructions)
           }
           
           /* Check if the code should be optimised using the peephole */
