@@ -1,5 +1,6 @@
 package wacc.extensions
 
+import scala.collection.mutable.SortedSet
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import wacc.backend._
@@ -45,13 +46,17 @@ class ControlFlowGraph {
     }
   }
 
-  def printCFG(): Unit = {
+  def printCFG(graph_colouring: Boolean): Unit = {
     println("\nControl Flow Graph")
     for (cfgNode <- cfgNodes) {
       println("Node " + cfgNode.id + ": " + cfgNode.instr.getOrElse("No instruction"))
       println("  Uses: " + cfgNode.uses.mkString(", "))
       println("  Defs: " + cfgNode.defs.mkString(", "))
-      println("  -> " + cfgNode.succs.map(_.id).mkString(", "))
+      println("  Succs: " + cfgNode.succs.map(_.id).mkString(", "))
+      if (graph_colouring) {
+        println("  LiveIn: " + cfgNode.liveIn.mkString(", "))
+        println("  LiveOut: " + cfgNode.liveOut.mkString(", "))
+      }
     }
   }
 
@@ -62,9 +67,9 @@ class ControlFlowGraph {
     node.succs += getCFGNode(nodeId + 1)
   }
 
-  def addToCFG(instrs: ListBuffer[Instruction]): Unit = {
+  def addToCFG(instrs: ListBuffer[Instruction]): (Int, Int) = {
     if (instrs.isEmpty) {
-      return
+      return (-1, -1)
     }
     var nodeId = 0
     if (fileRanges.nonEmpty) {
@@ -164,13 +169,15 @@ class ControlFlowGraph {
 
       nodeId += 1
     }
+
     getCFGNode(nodeId - 1).succs.clear()
     val newRange = (startId, nodeId - 1)
     fileRanges = fileRanges :+ newRange
+    newRange
   }
 
   def getCFGNode(id: Int): CFGNode = {
-    val newNode = cfgNodes.find(_.id == id)
+    val newNode: Option[CFGNode] = cfgNodes.find(_.id == id)
     newNode match {
       case Some(n) => n
       case None =>
@@ -197,5 +204,36 @@ class ControlFlowGraph {
       }
     }
     instrs
+  }
+
+  def setLiveInsAndOuts(): Unit = {
+    separateFunctions()
+
+    var hasChanged = true
+    while (hasChanged) {
+      hasChanged = false
+      for (node <- cfgNodes) {
+        val oldIn = node.liveIn
+        val oldOut = node.liveOut
+        node.liveIn = node.uses ++ (node.liveOut diff node.defs)
+        node.liveOut = node.succs.flatMap(_.liveIn)
+        if (oldIn != node.liveIn || oldOut != node.liveOut) {
+          hasChanged = true
+        }
+      }
+    }
+  }
+
+  private def separateFunctions(): Unit = {
+    for (node <- cfgNodes) {
+      node.instr match {
+        case Some(BInstr(label, _, true)) => 
+          labelToNode.get(label) match {
+            case Some(n) => node.succs -= n
+            case None => 
+          }
+        case _ => 
+      }
+    }
   }
 }

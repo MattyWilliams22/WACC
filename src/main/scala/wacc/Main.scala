@@ -7,7 +7,9 @@ import scala.io.Source
 import parsley.{Failure, Result, Success}
 import wacc.ASTNodes._
 import wacc.backend.CodeGenerator._
+import wacc.backend.TemporaryCodeGenerator._
 import wacc.backend.BasicRegisterAllocator
+import wacc.backend.TemporaryRegisterAllocator
 import wacc.frontend.ErrorOutput._
 import wacc.frontend.Error._
 import wacc.frontend.{SemanticAnalyser, parser}
@@ -90,6 +92,8 @@ object Main {
       /* Parsing of expression */
       result match {
         case Success(ast) =>
+          val graph_colouring = false
+
           /* Compile standard library */
           var (stdLibInstructions, stdLibSymbolTable) = StandardLibrary.checkStdLib()
 
@@ -107,14 +111,38 @@ object Main {
           }
 
           /* Generate assembly instructions from AST */
-          println("\nGenerating assembly instructions for main program...")
-          val registerAllocator = new BasicRegisterAllocator
+          println("Generating assembly code...")
+
+          val registerAllocator = if (graph_colouring) {
+            new TemporaryRegisterAllocator
+          } else {
+            new BasicRegisterAllocator
+          }
+
           val (reg, _) = registerAllocator.allocateRegister()
-          var mainInstructions: ListBuffer[Instruction] = generateInstructions(newAST, registerAllocator, reg)
+          var mainInstructions: ListBuffer[Instruction] = if (graph_colouring) {
+            generateTemporaryInstructions(newAST, registerAllocator, reg)
+          } else if (optimise) {
+            generateInstructions(newAST, registerAllocator, reg)
+          } else {
+            generateInstructions(ast, registerAllocator, reg)
+          }
           var predefInstructions: ListBuffer[Instruction] = PredefinedFunctions.getPredefinedFunctions
 
           /* Perform control flow analysis on the generated assembly instructions */
-          if (optimise) {
+          /* Perform efficient register allocation on the generated assembly instructions */
+          if (graph_colouring) {
+            val (optimisedMainInstructions, optimisedStdLibInstructions, optimisedPredefInstructions): 
+              (ListBuffer[Instruction], ListBuffer[Instruction], ListBuffer[Instruction])
+              = registerOptimise(
+                mainInstructions, 
+                stdLibInstructions, 
+                predefInstructions)
+            
+            mainInstructions = optimisedMainInstructions
+            stdLibInstructions = optimisedStdLibInstructions
+            predefInstructions = optimisedPredefInstructions
+          } else if (optimise) {
             val (optimisedMainInstructions, optimisedStdLibInstructions, optimisedPredefInstructions): 
               (ListBuffer[Instruction], ListBuffer[Instruction], ListBuffer[Instruction])
               = controlFlowOptimise(
@@ -130,6 +158,7 @@ object Main {
           // time 1 record
           val time1 = System.nanoTime()
           println("Time to generate assembly: " + (time1 - start) + "ns")
+          
           /* Check if the code should be optimised using the peephole */
           if (optimise) {
             mainInstructions = optimiseInstructions(mainInstructions.toList)

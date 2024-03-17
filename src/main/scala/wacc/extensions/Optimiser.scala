@@ -31,6 +31,7 @@ object Optimiser {
     controlFlowGraph.addToCFG(stdLib)
     controlFlowGraph.addToCFG(predef)
     analyseControlFlowGraph(controlFlowGraph)
+    controlFlowGraph.printCFG(false)
     val newMain = controlFlowGraph.makeInstructions()
     val newStdLib = controlFlowGraph.makeInstructions()
     val newPredef = controlFlowGraph.makeInstructions()
@@ -43,6 +44,48 @@ object Optimiser {
 
   def controlFlowOptimise(ast: Program): Program = {
     analyseProgram(ast)
+  }
+
+  def registerOptimise(main: ListBuffer[Instruction], 
+                       stdLib: ListBuffer[Instruction], 
+                       predef: ListBuffer[Instruction]): 
+                      (ListBuffer[Instruction], 
+                       ListBuffer[Instruction], 
+                       ListBuffer[Instruction]) = {
+    printInstructions(main)
+
+    val cfg = new ControlFlowGraph()
+    val mainRange = cfg.addToCFG(main)
+    val stdLibRange = cfg.addToCFG(stdLib)
+    val predefRange = cfg.addToCFG(predef)
+    analyseControlFlowGraph(cfg)
+    cfg.setLiveInsAndOuts()
+    cfg.printCFG(true)
+
+    val interferenceGraph = new InterferenceGraph()
+    interferenceGraph.buildInterferenceGraph(cfg)
+    interferenceGraph.printInterferenceGraph()
+    val colourMap = interferenceGraph.getColourMap
+    printColourMap(colourMap)
+
+    val registerMapping = new RegisterMapping(colourMap)
+    val newMain = registerMapping.mapInstructions(cfg, mainRange)
+    val newStdLib = registerMapping.mapInstructions(cfg, stdLibRange)
+    val newPredef = registerMapping.mapInstructions(cfg, predefRange)
+    printInstructions(newMain)
+    (newMain, newStdLib, newPredef)
+  }
+
+  private def printColourMap(colourMap: Map[Register, RegisterLocation]): Unit = {
+    for ((reg, colour) <- colourMap) {
+      println(reg.toString() + " -> " + colour.reg.toString())
+    }
+  }
+
+  private def printInstructions(instrs: ListBuffer[Instruction]): Unit = {
+    for (instr <- instrs) {
+      println(instr)
+    }
   }
 
   /* Removes all comments from the list of instructions */

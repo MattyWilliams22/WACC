@@ -64,7 +64,7 @@ object ARMAssemblyPrinter {
       case LR => "lr"
       case PC => "pc"
       case IP => "ip"
-      case T(n) => s"r${n.toString}"
+      case T(_) => "temp"
     }
 
     def formatInstr(instr: Instruction): String = instr match {

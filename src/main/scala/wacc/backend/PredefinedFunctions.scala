@@ -1,7 +1,5 @@
 package wacc.backend
 
-import wacc.backend.CodeGenerator.predefinedFunctions
-
 import scala.collection.mutable.ListBuffer
 
 /*

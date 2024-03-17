@@ -7,6 +7,14 @@ import wacc.ASTNodes._
 /* Represents an object that is used to allocate general purpose registers within the ARM architecture */
 sealed trait RegisterAllocator {
   def allocateRegister(): (Register, ListBuffer[Instruction])
+
+  def deallocateRegister(register: Register): Unit
+
+  def setLocation(varName: String, location: VariableLocation): Unit
+
+  def lookupLocation(varName: String): Option[VariableLocation]
+
+  def getNewRegisterAllocator(): RegisterAllocator
 }
 
 /* Represents the location of a variable in the program state, as well as the variable's type */
@@ -75,5 +83,45 @@ class BasicRegisterAllocator extends RegisterAllocator {
   def deallocateRegister(register: Register): Unit = {
     /* Add the deallocated register to the list of available registers */
     availableRegisters = register :: availableRegisters
+  }
+
+  def getNewRegisterAllocator(): RegisterAllocator = {
+    new BasicRegisterAllocator()
+  }
+}
+
+class TemporaryRegisterAllocator extends RegisterAllocator {
+  private var registerCount: Int = 0
+
+  /* Map of variable names to their locations where they are stored */
+  private val varMap: mutable.Map[String, VariableLocation] = mutable.Map.empty[String, VariableLocation]
+
+  /* Stores the current stack pointer */
+  private var stackPointer = 0
+
+  /* Allocate a register */
+  def allocateRegister(): (Register, ListBuffer[Instruction]) = {
+    val result = T(registerCount)
+    registerCount += 1
+    (result, ListBuffer[Instruction]())
+  }
+
+  /* Lookup the location of a variable in the varMap */
+  def lookupLocation(varName: String): Option[VariableLocation] = {
+    varMap.get(varName)
+  }
+
+  /* Set the location of a variable in the varMap */
+  def setLocation(varName: String, location: VariableLocation): Unit = {
+    varMap(varName) = location
+  }
+
+  /* Deallocate a register */
+  def deallocateRegister(register: Register): Unit = {
+    
+  }
+
+  def getNewRegisterAllocator(): RegisterAllocator = {
+    new TemporaryRegisterAllocator()
   }
 }
