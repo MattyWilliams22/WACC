@@ -26,6 +26,8 @@ object Main {
 
   def main(args: Array[String]): Unit = {
     println("Compiling...")
+    // start timer
+    val start = System.nanoTime()
 
     /* Exits if arguments are not defined */
     if (args.length < 1) {
@@ -97,13 +99,6 @@ object Main {
 
           var newAST = ast
 
-          /* Perform control flow analysis on the generated AST */
-          if (optimise) {
-            println("AST before: " + ast)
-            val newAST = controlFlowOptimise(ast)
-            println("AST after: " + newAST)
-          }
-
           /* Generate assembly instructions from AST */
           println("Generating assembly code...")
           val registerAllocator = new BasicRegisterAllocator
@@ -113,14 +108,12 @@ object Main {
 
           /* Perform control flow analysis on the generated assembly instructions */
           if (optimise) {
-            println("assembly before: " + mainInstructions)
             val (optimisedMainInstructions, optimisedStdLibInstructions, optimisedPredefInstructions): 
               (ListBuffer[Instruction], ListBuffer[Instruction], ListBuffer[Instruction])
               = controlFlowOptimise(
                 mainInstructions, 
                 stdLibInstructions, 
                 predefInstructions)
-            println("assembly after: " + optimisedMainInstructions)
             
             // Replace the original instructions with the optimised ones
             mainInstructions = optimisedMainInstructions
@@ -128,12 +121,17 @@ object Main {
             predefInstructions = optimisedPredefInstructions
           }
           
+          // time 1 record
+          val time1 = System.nanoTime()
+          println("Time to generate assembly: " + (time1 - start) + "ns")
           /* Check if the code should be optimised using the peephole */
           if (optimise) {
             println("Optimising code...")
             mainInstructions = optimiseInstructions(mainInstructions.toList)
             mainInstructions = removeComments(mainInstructions)
           }
+          val time2 = System.nanoTime()
+          println("Time to optimise assembly: " + (time2 - time1) + "ns")
 
           /* Write all pre-defined functions to file */
           if (predefInstructions.nonEmpty) {
@@ -159,6 +157,9 @@ object Main {
           ARMAssemblyPrinter.printAssembly(mainInstructions.toList, writer)
           writer.close()
 
+          val end = System.nanoTime()
+          println("Time to write assembly to file: " + (end - time2) + "ns")
+          
           System.exit(SUCCESS_CODE)
 
         case Failure(msg) =>

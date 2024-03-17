@@ -31,7 +31,6 @@ object Optimiser {
     controlFlowGraph.addToCFG(stdLib)
     controlFlowGraph.addToCFG(predef)
     analyseControlFlowGraph(controlFlowGraph)
-    controlFlowGraph.printCFG()
     val newMain = controlFlowGraph.makeInstructions()
     val newStdLib = controlFlowGraph.makeInstructions()
     val newPredef = controlFlowGraph.makeInstructions()
