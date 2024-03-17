@@ -7,13 +7,14 @@ import parsley.{Result, Success}
 import wacc.ASTNodes._
 import wacc.backend._
 import wacc.backend.CodeGenerator._
+import wacc.backend.TemporaryCodeGenerator._
 import wacc.frontend.SemanticAnalyser
 import wacc.frontend.parser
 import wacc.frontend.Error._
 import wacc.SymbolTable
 
 object StandardLibrary {
-  def checkStdLib(): (ListBuffer[Instruction], SymbolTable) = {
+  def checkStdLib(graph_colouring: Boolean): (ListBuffer[Instruction], SymbolTable) = {
     val stdLibFile = new File("standardLibrary.wacc")
 
     /* Reads file contents */
@@ -32,9 +33,17 @@ object StandardLibrary {
 
         /* Generate assembly instructions from AST */
         println("Generating assembly instructions for standard library...")
-        val registerAllocator = new BasicRegisterAllocator
+        val registerAllocator = if (graph_colouring) {
+          new TemporaryRegisterAllocator
+        } else {
+          new BasicRegisterAllocator
+        }
         val (reg, _) = registerAllocator.allocateRegister()
-        val assemblyInstructions = generateInstructions(ast, registerAllocator, reg)
+        val assemblyInstructions = if (graph_colouring) {
+          generateTemporaryInstructions(ast, registerAllocator, reg)
+        } else {
+          generateInstructions(ast, registerAllocator, reg)
+        }
         assemblyInstructions.remove(1)
         assemblyInstructions.insertAll(1, List(Command("include \"predefinedFunctions.s\"", 0)))
 

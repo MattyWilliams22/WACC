@@ -113,7 +113,7 @@ object Main {
       result match {
         case Success(ast) =>
           /* Compile standard library */
-          var (stdLibInstructions, stdLibSymbolTable) = StandardLibrary.checkStdLib()
+          var (stdLibInstructions, stdLibSymbolTable) = StandardLibrary.checkStdLib(graph_colouring)
 
           /* Semantically Analyse AST */
           val semanticAnalyser = new SemanticAnalyser(ast, Some(stdLibSymbolTable))
