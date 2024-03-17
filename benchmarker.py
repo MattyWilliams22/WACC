@@ -108,16 +108,17 @@ def benchmark_tests():
 # run benchmark 50 times and find averages of averages
 compile_times = []
 optimising_times = []
-times = []
+file_write_time = []
 for i in range(50):
     compile_time, optimising_time, time = benchmark_tests()
     compile_times.append(compile_time)
     optimising_times.append(optimising_time)
-    times.append(time)
+    file_write_time.append(time)
 
 print("Average compile time: " + str(sum(compile_times) / len(compile_times)) + "ns")
 print("Average optimising time: " + str(sum(optimising_times) / len(optimising_times)) + "ns")
-print("Average time: " + str(sum(times) / len(times)) + "ns")
+print("Average file writing time: " + str(sum(file_write_time) / len(file_write_time)) + "ns")
+print("Average total time: " + str((sum(compile_times) + sum(optimising_times) + sum(file_write_time)) / len(compile_times)) + "ns")
 
 # benchmark change in number of lines of code by optimising
 
