@@ -21,10 +21,9 @@ This project is a compiler for the **WACC (While And Control Command)** programm
 
 ## Repository Structure
 
-- **`src/`**: Core source code for the compiler, organized into front-end, back-end, and extensions.
-- **`examples/`**: Sample WACC programs for testing the compiler.
-- **`tests/`**: Automated test suite to verify the correctness of implemented features.
-- **`doc/`**: Design documents and additional documentation.
+- **`src/main/scala/wacc/`**: Core source code for the compiler, organized into front-end, back-end, and extensions.
+- **`wacc_examples/`**: Sample WACC programs for testing the compiler.
+- **`src/test/wacc/`**: Tests to verify the correctness of implemented features.
 
 ## Technologies Used
 
@@ -53,7 +52,3 @@ This project is a compiler for the **WACC (While And Control Command)** programm
 ### Testing 
 
 Tests can be ran via `scala-cli test .`.
-
-### License
-
-This project is licensed under MIT License. See the LICENSE file for details.
