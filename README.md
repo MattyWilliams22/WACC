@@ -1,34 +1,59 @@
-This is the provided git repository for the WACC compilers lab. You should work
-in this repository regularly committing and pushing your work back to GitLab.
+# WACC Compiler
 
-# Provided files/directories
+This project is a compiler for the **WACC (While And Control Command)** programming language. Developed as part of a group project during the spring term of our second year at university, the compiler was designed with a modular structure, including a front-end, back-end, and additional extensions.
 
-## src/main
+## Features
 
-The src/main directory is where you code for your compiler should go, and just
-contains a stub hello world file with a simple calculator inside.
+- **Front-End**:
+  - Lexical analysis.
+  - Syntax analysis.
+  - Semantic analysis to validate WACC programs.
 
-## src/test
-The src/test directory is where you should put the code for your tests, which
-can be ran via `scala-cli test .`. The suggested framework is `scalatest`, the dependency
-for which has already been included.
+- **Back-End**:
+  - Intermediate representation (IR) generation.
+  - Code generation for ARM architecture.
 
-## project.scala
-The `project.scala` is the definition of your project's build requirements. By default,
-this skeleton has added the latest stable versions of both `scalatest` and `parsley`
-to the build: you should check **regularly** to see if your `parsley` needs updating
-during the course of WACC!
+- **Extensions**:
+  - Additional features to extend WACC functionality:
+    - Peephole optimisations
+    - Standard library functions
+    - Control flow analysis
 
-## compile
+## Repository Structure
 
-The compile script can be edited to change the frontend interface to your WACC
-compiler. You are free to change the language used in this script, but do not
-change its name.
+- **`src/`**: Core source code for the compiler, organized into front-end, back-end, and extensions.
+- **`examples/`**: Sample WACC programs for testing the compiler.
+- **`tests/`**: Automated test suite to verify the correctness of implemented features.
+- **`doc/`**: Design documents and additional documentation.
 
-## Makefile
+## Technologies Used
 
-Your Makefile should be edited so that running 'make' in the root directory
-builds your WACC compiler. Currently running 'make' will call
-`scala-cli --power package . --server=false --jvm system --force`, producing a file called
-`wacc-compiler`
-in the root directory of the project.
+- **Scala**: Primary language for compiler implementation.
+- **ARM Assembly**: Target architecture for code generation.
+
+## Getting Started
+
+### Prerequisites
+
+- Java Development Kit (JDK 8 or later).
+- A Linux or macOS system for ARM code emulation (via QEMU).
+
+### Installation
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/MattyWilliams22/WACC.git
+   cd WACC
+   ```
+2. Build the project:
+   ```bash
+   make
+   ```
+
+### Testing 
+
+Tests can be ran via `scala-cli test .`.
+
+### License
+
+This project is licensed under MIT License. See the LICENSE file for details.
